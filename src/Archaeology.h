@@ -55,7 +55,7 @@ namespace Archaeology
         uint32 ipNorthrendState = 13;
         uint32 ipQuestBase = 66000;
         uint32 ipMaxState = 18;
-        uint32 telescopeEntry = 9503400;
+        uint32 telescopeEntry = 9503500;
         uint32 telescopeSeconds = 6;
         uint32 findSeconds = 180;
     };

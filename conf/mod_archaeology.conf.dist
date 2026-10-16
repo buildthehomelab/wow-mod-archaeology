@@ -120,8 +120,8 @@ Archaeology.IndividualProgression.MaxState = 18
 #        Description: Gameobject that points toward the find after a survey, and how long it stays.
 #    Archaeology.Find.Seconds
 #        Description: How long an uncovered find waits to be dug up.
-#        Default:     9503400, 6, 180
+#        Default:     9503500, 6, 180
 
-Archaeology.Telescope.Entry = 9503400
+Archaeology.Telescope.Entry = 9503500
 Archaeology.Telescope.Seconds = 6
 Archaeology.Find.Seconds = 180

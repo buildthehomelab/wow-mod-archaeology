@@ -28,7 +28,7 @@ Until the addon exists, everything works through `.arch` chat commands.
 3. Copy `conf/mod_archaeology.conf.dist` to `mod_archaeology.conf` and adjust.
 4. Spawn the trainer where you want it, for example once in Stormwind and once in Orgrimmar:
    ```
-   .npc add 9503400
+   .npc add 9503500
    ```
 
 ## Playing
@@ -56,8 +56,8 @@ Outland races open at skill 300, Northrend races at 375. With mod-individual-pro
 
 | What | Range |
 | --- | --- |
-| Trainer creature, npc_text | 9503400 |
-| Survey marker, finds (gameobject_template) | 9503400, 9503410-9503417 |
+| Trainer creature, npc_text | 9503500 |
+| Survey marker, finds (gameobject_template) | 9503500, 9503510-9503517 |
 | Keystones and artifacts (item_template) | 9504010-9504499 |
 | Tables | `mod_archaeology_*` |
 

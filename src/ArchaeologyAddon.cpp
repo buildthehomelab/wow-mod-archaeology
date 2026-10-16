@@ -37,7 +37,7 @@ namespace
 {
     constexpr std::size_t MAX_PAYLOAD = 240;
     constexpr Milliseconds REQUEST_COOLDOWN = 1s;
-    constexpr uint32 TRAINER_TEXT = 9503400;
+    constexpr uint32 TRAINER_TEXT = 9503500;
 
     enum Request : uint8 { REQUEST_HELLO, REQUEST_SITES, REQUEST_RACES, REQUEST_PROJ, REQUEST_SOLVE, REQUEST_COUNT };
     std::unordered_map<ObjectGuid::LowType, std::array<Milliseconds, REQUEST_COUNT>> lastRequest;

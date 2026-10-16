@@ -2,14 +2,14 @@
 
 DELETE FROM `mod_archaeology_race`;
 INSERT INTO `mod_archaeology_race` (`id`, `name`, `keystone_item`, `unlock_skill`, `find_go`) VALUES
-(1, 'Dwarf', 9504010, 0, 9503410),
-(4, 'Night Elf', 9504011, 0, 9503411),
-(8, 'Troll', 9504012, 0, 9503412),
-(3, 'Fossil', 0, 0, 9503413),
-(2, 'Draenei', 9504014, 300, 9503414),
-(6, 'Orc', 9504015, 300, 9503415),
-(5, 'Nerubian', 9504016, 375, 9503416),
-(27, 'Vrykul', 9504017, 375, 9503417);
+(1, 'Dwarf', 9504010, 0, 9503510),
+(4, 'Night Elf', 9504011, 0, 9503511),
+(8, 'Troll', 9504012, 0, 9503512),
+(3, 'Fossil', 0, 0, 9503513),
+(2, 'Draenei', 9504014, 300, 9503514),
+(6, 'Orc', 9504015, 300, 9503515),
+(5, 'Nerubian', 9504016, 375, 9503516),
+(27, 'Vrykul', 9504017, 375, 9503517);
 
 DELETE FROM `mod_archaeology_site`;
 INSERT INTO `mod_archaeology_site` (`id`, `map`, `race`, `name`, `min_skill`, `min_level`) VALUES

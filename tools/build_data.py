@@ -39,7 +39,7 @@ ITEM_LAST = 9504499
 # Race id (= Cata ResearchBranch id), keystone value, find gameobject entry
 # Unlock skill follows the race's lowest site skill.
 RACE_ORDER = [1, 4, 8, 3, 2, 6, 5, 27]
-FIND_GO = {1: 9503410, 4: 9503411, 8: 9503412, 3: 9503413, 2: 9503414, 6: 9503415, 5: 9503416, 27: 9503417}
+FIND_GO = {1: 9503510, 4: 9503511, 8: 9503512, 3: 9503513, 2: 9503514, 6: 9503515, 5: 9503516, 27: 9503517}
 
 # Cata item class 15 (misc) subclass 4 (other) for commons; quality from the DB2.
 CLASS_MISC, SUBCLASS_OTHER = 15, 4
