@@ -1,0 +1,127 @@
+[worldserver]
+
+########################################
+# mod-archaeology
+########################################
+#
+#    Archaeology.Enable
+#        Description: Turn the whole module on or off.
+#        Default:     1
+
+Archaeology.Enable = 1
+
+#
+#    Archaeology.MinLevel
+#        Description: Character level needed to learn Archaeology (Apprentice). Higher ranks
+#                     keep their Cataclysm level requirements (20, 20, 35, 50, 65).
+#        Default:     1
+
+Archaeology.MinLevel = 1
+
+#
+#    Archaeology.SitesPerContinent
+#        Description: Dig sites each character holds per continent (Cataclysm: 4).
+#        Default:     4
+
+Archaeology.SitesPerContinent = 4
+
+#
+#    Archaeology.FindsPerSite
+#        Description: Finds before a dig site is depleted and a new one is revealed (Cataclysm: 3).
+#        Default:     3
+
+Archaeology.FindsPerSite = 3
+
+#
+#    Archaeology.FragmentsPerFind.Min
+#    Archaeology.FragmentsPerFind.Max
+#        Description: Fragments from one find (Cataclysm 4.3: 5-9).
+#        Default:     5, 9
+
+Archaeology.FragmentsPerFind.Min = 5
+Archaeology.FragmentsPerFind.Max = 9
+
+#
+#    Archaeology.FragmentCap
+#        Description: Most fragments a character can hold per race.
+#        Default:     200
+
+Archaeology.FragmentCap = 200
+
+#
+#    Archaeology.KeystoneChance
+#        Description: Percent chance a find also gives that race's keystone.
+#    Archaeology.KeystoneValue
+#        Description: Fragments one keystone is worth when solving.
+#        Default:     12, 12
+
+Archaeology.KeystoneChance = 12
+Archaeology.KeystoneValue = 12
+
+#
+#    Archaeology.Survey.RedYards
+#    Archaeology.Survey.YellowYards
+#        Description: Distances that make a survey read red (far), yellow, or green (close).
+#    Archaeology.Survey.DigYards
+#        Description: Within this distance a survey uncovers the find.
+#    Archaeology.Survey.MinSpotYards
+#        Description: A new find is hidden at least this far from where you first survey.
+#    Archaeology.Survey.CooldownMs
+#        Description: Time between surveys.
+#        Default:     100, 50, 8, 40, 3000
+
+Archaeology.Survey.RedYards = 100
+Archaeology.Survey.YellowYards = 50
+Archaeology.Survey.DigYards = 8
+Archaeology.Survey.MinSpotYards = 40
+Archaeology.Survey.CooldownMs = 3000
+
+#
+#    Archaeology.Skill.Max
+#        Description: Highest skill (450 = Grand Master).
+#    Archaeology.Skill.FindsUntil
+#        Description: Each find gives 1 skill until this value; after it only solving raises skill.
+#    Archaeology.Skill.PerCommon
+#    Archaeology.Skill.PerRare
+#        Description: Skill from solving a common or a rare project.
+#    Archaeology.Skill.SkillLine
+#        Description: SkillLine id to mirror the skill to, so it shows in the Skills tab. Needs a
+#                     client patch and skillline_dbc row for that id. 0 = keep the skill in the
+#                     module only (the addon and .arch show it).
+#        Default:     450, 50, 5, 15, 0
+
+Archaeology.Skill.Max = 450
+Archaeology.Skill.FindsUntil = 50
+Archaeology.Skill.PerCommon = 5
+Archaeology.Skill.PerRare = 15
+Archaeology.Skill.SkillLine = 0
+
+#
+#    Archaeology.IndividualProgression.Enable
+#        Description: With mod-individual-progression, Outland and Northrend dig sites only come
+#                     up once the character has reached that era.
+#    Archaeology.IndividualProgression.OutlandState
+#    Archaeology.IndividualProgression.NorthrendState
+#        Description: Progression state needed for each continent.
+#    Archaeology.IndividualProgression.QuestBase
+#    Archaeology.IndividualProgression.MaxState
+#        Description: How the state is read: rewarded quest QuestBase + state.
+#        Default:     0, 8, 13, 66000, 18
+
+Archaeology.IndividualProgression.Enable = 0
+Archaeology.IndividualProgression.OutlandState = 8
+Archaeology.IndividualProgression.NorthrendState = 13
+Archaeology.IndividualProgression.QuestBase = 66000
+Archaeology.IndividualProgression.MaxState = 18
+
+#
+#    Archaeology.Telescope.Entry
+#    Archaeology.Telescope.Seconds
+#        Description: Gameobject that points toward the find after a survey, and how long it stays.
+#    Archaeology.Find.Seconds
+#        Description: How long an uncovered find waits to be dug up.
+#        Default:     9503400, 6, 180
+
+Archaeology.Telescope.Entry = 9503400
+Archaeology.Telescope.Seconds = 6
+Archaeology.Find.Seconds = 180
