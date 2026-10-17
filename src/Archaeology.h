@@ -55,7 +55,7 @@ namespace Archaeology
         uint32 ipNorthrendState = 13;
         uint32 ipQuestBase = 66000;
         uint32 ipMaxState = 18;
-        uint32 telescopeEntry = 9503500;
+        std::array<uint32, 3> telescopeEntry = { 9503502, 9503501, 9503500 };   // by SurveyBand: red, yellow, green
         uint32 telescopeSeconds = 6;
         uint32 findSeconds = 180;
     };

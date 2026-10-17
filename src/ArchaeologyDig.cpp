@@ -164,7 +164,7 @@ namespace Archaeology
         float ang = Position::NormalizeOrientation(player->GetAngle(spot.x, spot.y) + error);
 
         float tx = px + std::cos(ang) * 1.5f, ty = py + std::sin(ang) * 1.5f;
-        player->SummonGameObject(cfg.telescopeEntry, tx, ty, player->GetPositionZ(), ang, 0.0f, 0.0f,
+        player->SummonGameObject(cfg.telescopeEntry[band], tx, ty, player->GetPositionZ(), ang, 0.0f, 0.0f,
             std::sin(ang / 2.0f), std::cos(ang / 2.0f), cfg.telescopeSeconds);
 
         static char const* const colours[3] = { "|cffff2020far away (red)|r", "|cffffff20closer (yellow)|r", "|cff20ff20close (green)|r" };
@@ -192,7 +192,8 @@ namespace Archaeology
         Config const& cfg = GetConfig();
         PendingFind find = itr->second;
         pendingFinds.erase(itr);
-        go->DespawnOrUnsummon();
+        // DespawnOrUnsummon would only reset a summon whose timer is still running; delete it outright.
+        player->RemoveGameObject(go, true);
 
         CharState* state = GetState(player);
         Site const* site = GetSite(find.site);

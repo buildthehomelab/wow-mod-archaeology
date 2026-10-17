@@ -56,7 +56,9 @@ namespace Archaeology
         c.ipNorthrendState = sConfigMgr->GetOption<uint32>("Archaeology.IndividualProgression.NorthrendState", 13);
         c.ipQuestBase = sConfigMgr->GetOption<uint32>("Archaeology.IndividualProgression.QuestBase", 66000);
         c.ipMaxState = sConfigMgr->GetOption<uint32>("Archaeology.IndividualProgression.MaxState", 18);
-        c.telescopeEntry = sConfigMgr->GetOption<uint32>("Archaeology.Telescope.Entry", 9503500);
+        c.telescopeEntry[BAND_RED] = sConfigMgr->GetOption<uint32>("Archaeology.Telescope.Red", 9503502);
+        c.telescopeEntry[BAND_YELLOW] = sConfigMgr->GetOption<uint32>("Archaeology.Telescope.Yellow", 9503501);
+        c.telescopeEntry[BAND_GREEN] = sConfigMgr->GetOption<uint32>("Archaeology.Telescope.Green", 9503500);
         c.telescopeSeconds = sConfigMgr->GetOption<uint32>("Archaeology.Telescope.Seconds", 6);
         c.findSeconds = sConfigMgr->GetOption<uint32>("Archaeology.Find.Seconds", 180);
         config = c;

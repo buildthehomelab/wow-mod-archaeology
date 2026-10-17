@@ -82,7 +82,10 @@ INSERT INTO `npc_text` (`ID`, `text0_0`, `text0_1`, `BroadcastTextID0`, `lang0`,
 -- client already has.
 DELETE FROM `gameobject_template` WHERE `entry` BETWEEN 9503500 AND 9503549;
 INSERT INTO `gameobject_template` (`entry`, `type`, `displayId`, `name`, `IconName`, `castBarCaption`, `unk1`, `size`, `ScriptName`, `VerifiedBuild`) VALUES
-(9503500, 5, 5191, 'Survey Tool', '', '', '', 1, '', 0),
+(9503500, 5, 10101, 'Survey Tool', '', '', '', 1, '', 0),
+(9503501, 5, 10102, 'Survey Tool', '', '', '', 1, '', 0),
+(9503502, 5, 10103, 'Survey Tool', '', '', '', 1, '', 0),
+(9503503, 5, 5191, 'Survey Tool', '', '', '', 1, '', 0),
 (9503510, 10, 53, 'Dwarf Archaeology Find', '', '', '', 0.5, 'go_archaeology_find', 0),
 (9503511, 10, 256, 'Night Elf Archaeology Find', '', '', '', 0.5, 'go_archaeology_find', 0),
 (9503512, 10, 5, 'Troll Archaeology Find', '', '', '', 0.35, 'go_archaeology_find', 0),

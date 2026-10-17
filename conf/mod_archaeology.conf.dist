@@ -115,13 +115,20 @@ Archaeology.IndividualProgression.QuestBase = 66000
 Archaeology.IndividualProgression.MaxState = 18
 
 #
-#    Archaeology.Telescope.Entry
+#    Archaeology.Telescope.Green
+#    Archaeology.Telescope.Yellow
+#    Archaeology.Telescope.Red
 #    Archaeology.Telescope.Seconds
-#        Description: Gameobject that points toward the find after a survey, and how long it stays.
+#        Description: Gameobject that points toward the find after a survey (close, closer, far away),
+#                     and how long it stays. 9503500-9503502 are Cataclysm's telescopes and need the
+#                     client patch (GameObjectDisplayInfo 10101-10103); without it set all three to
+#                     9503503, the excavation banner.
 #    Archaeology.Find.Seconds
 #        Description: How long an uncovered find waits to be dug up.
-#        Default:     9503500, 6, 180
+#        Default:     9503500, 9503501, 9503502, 6, 180
 
-Archaeology.Telescope.Entry = 9503500
+Archaeology.Telescope.Green = 9503500
+Archaeology.Telescope.Yellow = 9503501
+Archaeology.Telescope.Red = 9503502
 Archaeology.Telescope.Seconds = 6
 Archaeology.Find.Seconds = 180
