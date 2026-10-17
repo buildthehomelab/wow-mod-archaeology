@@ -91,3 +91,7 @@ INSERT INTO `gameobject_template` (`entry`, `type`, `displayId`, `name`, `IconNa
 (9503515, 10, 6365, 'Orc Archaeology Find', '', '', '', 2, 'go_archaeology_find', 0),
 (9503516, 10, 8541, 'Nerubian Archaeology Find', '', '', '', 1, 'go_archaeology_find', 0),
 (9503517, 10, 8217, 'Vrykul Archaeology Find', '', '', '', 0.35, 'go_archaeology_find', 0);
+
+-- Survey, the spell the client patch adds (90506): the module runs the survey when it is cast.
+DELETE FROM `spell_script_names` WHERE `spell_id` = 90506 AND `ScriptName` = 'spell_archaeology_survey';
+INSERT INTO `spell_script_names` (`spell_id`, `ScriptName`) VALUES (90506, 'spell_archaeology_survey');

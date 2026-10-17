@@ -117,7 +117,7 @@ python3 tools/build_patch.py --patch <your spell/item patch>.MPQ --skill-patch <
 The patches carry rows only for the spells, the skill and the telescope; the module itself doesn't use them yet:
 
 - The trainer still sets the skill directly. Teaching the rank spells instead, and opening the research window when the rank spell is cast, is module work still to do.
-- Survey (90506) needs a spell script that runs the survey. Until then players survey with `.arch survey` or the addon.
+- Survey (90506) runs the survey (`spell_archaeology_survey`). `.arch survey` and the addon button still work without the patch.
 - The survey marker (gameobject 9503500) still uses the excavation banner (display 5191). Showing the telescope means one marker per colour (displays 10101-10103) or setting the display when it spawns.
 
 ## Rebuilding the data

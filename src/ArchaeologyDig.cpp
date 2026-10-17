@@ -14,6 +14,8 @@
 #include "Player.h"
 #include "Random.h"
 #include "ScriptMgr.h"
+#include "SpellScript.h"
+#include "SpellScriptLoader.h"
 #include <cmath>
 
 namespace
@@ -305,7 +307,25 @@ public:
     }
 };
 
+// Survey (spell 90506 in the client patch): a Dummy on yourself; the module does the survey.
+class spell_archaeology_survey : public SpellScript
+{
+    PrepareSpellScript(spell_archaeology_survey);
+
+    void HandleDummy(SpellEffIndex /*effIndex*/)
+    {
+        if (Player* player = GetCaster() ? GetCaster()->ToPlayer() : nullptr)
+            Archaeology::Survey(player);
+    }
+
+    void Register() override
+    {
+        OnEffectHitTarget += SpellEffectFn(spell_archaeology_survey::HandleDummy, EFFECT_0, SPELL_EFFECT_DUMMY);
+    }
+};
+
 void AddArchaeologyDigScripts()
 {
     new go_archaeology_find();
+    RegisterSpellScript(spell_archaeology_survey);
 }
