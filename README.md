@@ -13,7 +13,7 @@ This is the server side of the first build phase.
 | Dig sites, survey, finds, fragments, keystones, solving, skill | Done (this module) |
 | 8 races: Dwarf, Night Elf, Troll, Fossil, Draenei, Orc, Nerubian, Vrykul | Data imported; Tol'vir is left out |
 | ArchaeologyUI addon (map dig sites, research window, survey button) | First version in `addon/ArchaeologyUI`, not yet tried in the game client |
-| Client patch (skill line, telescope model, item icons) | Built by `tools/build_patch.py`, not yet tried in the game client; the module doesn't use the spells or the telescope yet (see [Client patch](#client-patch)) |
+| Client patch (skill line, telescope model, item icons) | Built by `tools/build_patch.py`; Survey and the telescope are used, the rank spells not yet (see [Client patch](#client-patch)) |
 | Rare rewards as mounts, pets and toys | Rares are placeholder items for now |
 
 Everything also works without the addon, through `.arch` chat commands.
@@ -57,7 +57,7 @@ Outland races open at skill 300, Northrend races at 375. With mod-individual-pro
 | What | Range |
 | --- | --- |
 | Trainer creature, npc_text | 9503500 |
-| Survey marker, finds (gameobject_template) | 9503500, 9503510-9503517 |
+| Survey telescopes + banner, finds (gameobject_template) | 9503500-9503503, 9503510-9503517 |
 | Keystones and artifacts (item_template, Item.dbc) | 9504010-9504499 |
 | Item displays (ItemDisplayInfo.dbc) | 950410-950899: 950400 + (item - 9504000) |
 | Spells (Spell.dbc, SkillLineAbility.dbc) | 90500-90505 ranks, 90506 Survey (90500-90529 reserved) |
@@ -114,11 +114,10 @@ python3 tools/build_patch.py --patch <your spell/item patch>.MPQ --skill-patch <
 
 `--patch` is the patch with your Spell, SkillLineAbility, SpellIcon, Item and ItemDisplayInfo DBCs. `--skill-patch` is the one with SkillRaceClassInfo.dbc, if that is another patch. A DBC neither ships (often SkillLine and GameObjectDisplayInfo) comes from the client's newest copy and goes into `--patch`. Each patch that changed is written to `--out` under its own name, with every other file in it unchanged. It also reads `c_Item.csv`, `c_GODI.csv` (Cataclysm Classic GameObjectDisplayInfo) and `listfile_archaeology.csv` from `tools/cata-data/`. Models and icons come from [wago.tools](https://wago.tools), cached in `tools/cata-data/cache`. Running it again on its own output changes nothing.
 
-The patches carry rows only for the spells, the skill and the telescope; the module itself doesn't use them yet:
+The survey shows Cataclysm's telescope (gameobjects 9503500-9503502, displays 10101-10103) in the colour of the distance band. A client without the patch doesn't see it; set `Archaeology.Telescope.Green/Yellow/Red` to 9503503 (the excavation banner) until the patch is out. Some patch rows the module doesn't use yet:
 
 - The trainer still sets the skill directly. Teaching the rank spells instead, and opening the research window when the rank spell is cast, is module work still to do.
 - Survey (90506) runs the survey (`spell_archaeology_survey`). `.arch survey` and the addon button still work without the patch.
-- The survey marker (gameobject 9503500) still uses the excavation banner (display 5191). Showing the telescope means one marker per colour (displays 10101-10103) or setting the display when it spawns.
 
 ## Rebuilding the data
 
