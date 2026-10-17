@@ -144,10 +144,12 @@ lore:SetJustifyV("TOP")
 local REST_HEIGHT = 236
 page:SetScript("OnSizeChanged", function(self, width, height)
     loreBox:SetHeight(math.max(100, (height or self:GetHeight()) - REST_HEIGHT))
-    local w = scroll:GetWidth()
-    if w and w > 0 then
-        loreContent:SetWidth(w)
-        lore:SetWidth(w)
+end)
+scroll:SetScript("OnSizeChanged", function(self, width)
+    width = width or self:GetWidth()
+    if width and width > 0 then
+        loreContent:SetWidth(width)
+        lore:SetWidth(width)
         loreContent:SetHeight(math.max(10, lore:GetStringHeight() + 4))
     end
 end)
@@ -372,6 +374,12 @@ end
 
 function A.ToggleWindow()
     R.toggle()
+end
+
+-- Opens the research window (or its page), leaving it open if it is.
+function A.OpenWindow()
+    R.toggle(true)
+    refresh()
 end
 
 function A.ShowRace(id)

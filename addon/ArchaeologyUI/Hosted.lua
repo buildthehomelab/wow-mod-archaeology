@@ -160,9 +160,17 @@ end
 local function start()
     local H, P, D = api()
     if not H then return end
+    -- Our own window's, for when DragonUI's window won't open (its professions module turned
+    -- off, or a replacement such as Skillet loaded since).
+    local own = { shown = R.shown, drawSkill = R.drawSkill, drawRaces = R.drawRaces, toggle = R.toggle }
+    local fallback = false
 
-    R.shown = function() return holder ~= nil and holder:IsVisible() and true or false end
+    R.shown = function()
+        if fallback then return own.shown() end
+        return holder ~= nil and holder:IsVisible() and true or false
+    end
     R.drawSkill = function(skill, maxSkill)
+        if fallback then return own.drawSkill(skill, maxSkill) end
         if not bar then return end
         if not skill then
             bar:Hide()
@@ -173,6 +181,7 @@ local function start()
         bar.rank:Set(string.format("%s %d", TITLE, skill), maxSkill)
     end
     R.drawRaces = function(races, current)
+        if fallback then return own.drawRaces(races, current) end
         if not holder then return end
         for i, race in ipairs(races) do
             local row = rowFor(holder.list, i)
@@ -204,8 +213,21 @@ local function start()
         end
     end
     R.toggle = function(open)
-        if open and H.Page() == PAGE and TradeSkillFrame and TradeSkillFrame:IsShown() then return end
-        H.TogglePage(PAGE)
+        if not fallback then
+            if open and H.Page() == PAGE and TradeSkillFrame and TradeSkillFrame:IsShown() then return end
+            if H.TogglePage(PAGE) then return end
+            -- The page and its pieces stay where they are; our window gets them back.
+            fallback = true
+            R.page:SetParent(ArchaeologyUIFrame)
+            R.page:ClearAllPoints()
+            R.page:SetPoint("TOPLEFT", 20, -56)
+            R.page:SetPoint("BOTTOMRIGHT", -20, 18)
+            R.empty:SetParent(ArchaeologyUIFrame)
+            R.empty:ClearAllPoints()
+            R.empty:SetPoint("CENTER")
+            R.empty:SetWidth(340)
+        end
+        own.toggle(open)
     end
 
     H.AddPage(PAGE, {
