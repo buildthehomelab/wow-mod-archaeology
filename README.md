@@ -75,11 +75,12 @@ Cataclysm's item ids clash with 3.3.5, so every artifact gets a new id. `mod_arc
 - **Minimap:** a shovel pin for each dig site on your continent. Sites out of range wait on the minimap's edge, faded, in their direction. Works with Rotate Minimap and with square minimaps (`GetMinimapShape`).
 - **Survey button:** shows while you stand in one of your dig sites. Click it (or bind a key under Key Bindings, ArchaeologyUI) to survey. The border turns red, yellow or green, and an arrow above the button points toward the find as you turn. Shift-drag moves the button; right-click opens the research window.
 - **Research window** (`/arch`): a tab per race you can research, with the current project's name, lore and artifact, your fragments against its cost, a socket per keystone the project takes (click to put one in or take it out), and Solve.
+- **In DragonUI's professions window:** with DragonUI 2.12 or later (its professions window on), the research window is a page of that window instead, with an Archaeology side tab after your profession tabs once you know Archaeology: races in the list column, the project on the recipe card, your skill on the rank bar. `/arch` and everything else that opens the research window opens that page. Retail Professions also lists Archaeology in its professions book and Training column.
 - **Fragments bar:** slides in at the top when you loot fragments, showing progress toward that race's project. Click it to open that race in the research window.
 
 Slash commands: `/arch` (window), `/arch survey`, `/arch reset` (survey button back to its default spot), `/arch refresh` (ask the server again).
 
-Surveying is an addon message, not a spell, so the button is a plain button and nothing is locked in combat. The addon has its own map maths (world bounds of every map in `MapData.lua`), so it needs no Astrolabe. It uses stock 3.3.5 frames and textures, so UI skins such as DragonUI restyle it.
+Surveying is an addon message, not a spell, so the button is a plain button and nothing is locked in combat. The addon has its own map maths (world bounds of every map in `MapData.lua`), so it needs no Astrolabe. It uses stock 3.3.5 frames and textures for its own window.
 
 The addon assumes the server's defaults for two values it is not sent: `Archaeology.KeystoneValue = 12` (for the progress bar with keystones in) and `Archaeology.Survey.CooldownMs = 3000` (the button's cooldown). The server always has the final say when you solve or survey.
 

@@ -4,6 +4,10 @@
 --
 -- Click a socket to put a keystone in or take it out; each one counts as KEYSTONE_VALUE
 -- fragments. The server checks everything again when you press Solve.
+--
+-- The view (A.Research) can also live in another window: with DragonUI's professions window it
+-- is a page of that (Hosted.lua), which moves R.page and R.empty there and draws the races and
+-- the skill its own way.
 
 local A = ArchaeologyUI
 local WIDTH, HEIGHT = 400, 470
@@ -24,6 +28,16 @@ local RACE_ICONS = {
 function A.RaceIcon(id)
     return RACE_ICONS[id] or A.SHOVEL
 end
+
+-- The skill's icon: Trade_Archaeology from the realm's client patch (it names rank 1, spell
+-- 90500), the shovel without the patch.
+function A.Icon()
+    local _, _, icon = GetSpellInfo(90500)
+    return icon or A.SHOVEL
+end
+
+local R = {}
+A.Research = R
 
 local window = CreateFrame("Frame", "ArchaeologyUIFrame", UIParent)
 window:SetSize(WIDTH, HEIGHT)
@@ -58,11 +72,13 @@ skillText:SetPoint("TOP", title, "BOTTOM", 0, -4)
 local empty = window:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
 empty:SetPoint("CENTER")
 empty:SetWidth(WIDTH - 60)
+R.empty = empty
 
 -- Everything below the title belongs to the selected race.
 local page = CreateFrame("Frame", nil, window)
 page:SetPoint("TOPLEFT", 20, -56)
 page:SetPoint("BOTTOMRIGHT", -20, 18)
+R.page = page
 
 local raceIcon = page:CreateTexture(nil, "ARTWORK")
 raceIcon:SetSize(36, 36)
@@ -109,10 +125,12 @@ loreBox:SetBackdrop({
 })
 loreBox:SetBackdropColor(0, 0, 0, 0.5)
 loreBox:SetBackdropBorderColor(0.6, 0.6, 0.6)
+R.loreBox = loreBox
 
 local scroll = CreateFrame("ScrollFrame", "ArchaeologyUILoreScroll", loreBox, "UIPanelScrollFrameTemplate")
 scroll:SetPoint("TOPLEFT", 8, -8)
 scroll:SetPoint("BOTTOMRIGHT", -28, 8)
+R.loreScroll = scroll
 local loreContent = CreateFrame("Frame", nil, scroll)
 loreContent:SetSize(WIDTH - 90, 10)
 scroll:SetScrollChild(loreContent)
@@ -121,6 +139,20 @@ lore:SetPoint("TOPLEFT")
 lore:SetWidth(WIDTH - 90)
 lore:SetJustifyH("LEFT")
 lore:SetJustifyV("TOP")
+
+-- The lore takes whatever height the page has over the rest, and the scroll frame's width.
+local REST_HEIGHT = 236
+page:SetScript("OnSizeChanged", function(self, width, height)
+    loreBox:SetHeight(math.max(100, (height or self:GetHeight()) - REST_HEIGHT))
+end)
+scroll:SetScript("OnSizeChanged", function(self, width)
+    width = width or self:GetWidth()
+    if width and width > 0 then
+        loreContent:SetWidth(width)
+        lore:SetWidth(width)
+        loreContent:SetHeight(math.max(10, lore:GetStringHeight() + 4))
+    end
+end)
 
 -- Progress toward the project's cost.
 local bar = CreateFrame("StatusBar", nil, page)
@@ -178,6 +210,7 @@ for i = 1, MAX_SOCKETS do
 end
 
 local solve = CreateFrame("Button", "ArchaeologyUISolveButton", page, "UIPanelButtonTemplate")
+R.solve = solve
 solve:SetSize(120, 24)
 solve:SetPoint("BOTTOMRIGHT", -4, 4)
 solve:SetText("Solve")
@@ -194,7 +227,7 @@ hint:SetPoint("BOTTOMLEFT", 4, 10)
 hint:SetPoint("RIGHT", solve, "LEFT", -8, 0)
 hint:SetJustifyH("LEFT")
 
--- Race tabs down the right side, spellbook style.
+-- Race tabs down the right side, spellbook style (in our own window).
 local tabs = {}
 local function tab(i)
     local t = tabs[i]
@@ -202,8 +235,7 @@ local function tab(i)
         t = CreateFrame("CheckButton", "ArchaeologyUIRaceTab" .. i, window, "SpellBookSkillLineTabTemplate")
         t:SetPoint("TOPLEFT", window, "TOPRIGHT", -4, -48 - (i - 1) * 46)
         t:SetScript("OnClick", function(self)
-            selected = self.race
-            refresh()
+            R.Select(self.race)
         end)
         tabs[i] = t
     end
@@ -272,18 +304,43 @@ local function drawRace(race)
     end
 end
 
-refresh = function()
-    if not window:IsShown() then
-        return
-    end
-    local races = A.UnlockedRaces()
+-- How our own window shows the skill and the races; Hosted.lua swaps these for its own.
+R.shown = function() return window:IsShown() end
+R.drawSkill = function(skill, maxSkill)
+    skillText:SetText(skill and string.format("Skill %d / %d", skill, maxSkill) or "")
+end
+R.drawRaces = function(races, current)
     for i, t in ipairs(tabs) do
         if i > #races then
             t:Hide()
         end
     end
+    for i, race in ipairs(races) do
+        local t = tab(i)
+        t.race = race.id
+        t.tooltip = race.name
+        t:SetNormalTexture(A.RaceIcon(race.id))
+        t:SetChecked(race.id == current)
+        t:Show()
+    end
+end
+-- Opens the view (or, open already, closes it); open = true only opens it.
+R.toggle = function(open)
+    if window:IsShown() and not open then
+        window:Hide()
+    else
+        window:Show()
+    end
+end
+
+refresh = function()
+    if not R.shown() then
+        return
+    end
+    local races = A.UnlockedRaces()
     if A.skill == 0 or #races == 0 then
-        skillText:SetText("")
+        R.drawSkill(nil)
+        R.drawRaces({}, nil)
         empty:SetText(A.connected and "You don't know Archaeology yet. Find an archaeology trainer to learn it."
             or "Waiting for the server. Archaeology needs mod-archaeology on the realm.")
         empty:Show()
@@ -292,42 +349,48 @@ refresh = function()
     end
     empty:Hide()
     page:Show()
-    skillText:SetText(string.format("Skill %d / %d", A.skill, A.maxSkill))
+    R.drawSkill(A.skill, A.maxSkill)
 
     if not (selected and A.races[selected] and A.races[selected].unlocked) then
         selected = races[1].id
     end
-    for i, race in ipairs(races) do
-        local t = tab(i)
-        t.race = race.id
-        t.tooltip = race.name
-        t:SetNormalTexture(A.RaceIcon(race.id))
-        t:SetChecked(race.id == selected)
-        t:Show()
-    end
+    R.drawRaces(races, selected)
     drawRace(A.races[selected])
+end
+R.Refresh = refresh
+
+function R.Select(id)
+    selected = id
+    refresh()
+end
+
+-- The view opens (and asks the server once more if it hasn't answered yet).
+function R.Opened()
+    if not A.connected then
+        A.Request("HELLO", "HELLO")
+    end
+    refresh()
 end
 
 function A.ToggleWindow()
-    if window:IsShown() then
-        window:Hide()
-    else
-        window:Show()
-        if not A.connected then
-            A.Request("HELLO", "HELLO")
-        end
-    end
+    R.toggle()
+end
+
+-- Opens the research window (or its page), leaving it open if it is.
+function A.OpenWindow()
+    R.toggle(true)
+    refresh()
 end
 
 function A.ShowRace(id)
     selected = id
-    window:Show()
+    R.toggle(true)
     refresh()
 end
 
 window:SetScript("OnShow", function()
     PlaySound("igCharacterInfoOpen")
-    refresh()
+    R.Opened()
 end)
 window:SetScript("OnHide", function()
     PlaySound("igCharacterInfoClose")
