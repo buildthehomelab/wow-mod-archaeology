@@ -146,20 +146,32 @@ class Dbc:
         self.rows = {}
         for i in range(count):
             row = list(struct.unpack_from("<%dI" % fields, data, 20 + i * size))
+            if row[0] in self.rows:
+                sys.exit("%s.dbc has row %d twice" % (table, row[0]))
             self.rows[row[0]] = row
         self.strings = bytearray(data[20 + count * size:20 + count * size + strsize])
         self.ours = []
         self.by_id = list(self.rows) == sorted(self.rows)
 
     def write(self, path):
+        # A file in id order stays so; any other keeps its own order, our new rows after it (a
+        # replaced row keeps its place). The client needs that: it indexes SkillRaceClassInfo.dbc
+        # by runs of rows with the same skill, so a skill's rows have to stay together, as in
+        # Blizzard's file. Apart (sorted by id), the client reaches only one run, and most
+        # characters lose the skill (First Aid, Defense, weapon skills, Riding) from the Skills
+        # tab and the spellbook.
+        keys = sorted(self.rows) if self.by_id else list(self.rows)
+        if self.table == "SkillRaceClassInfo":
+            seen, last = set(), None
+            for key in keys:
+                skill = self.rows[key][1]
+                if skill != last and skill in seen:
+                    sys.exit("SkillRaceClassInfo.dbc: skill %d's rows aren't together; build on a "
+                             "copy in Blizzard's order (grouped by skill)" % skill)
+                seen.add(skill)
+                last = skill
         with open(path, "wb") as f:
             f.write(struct.pack("<4s4I", b"WDBC", len(self.rows), self.fields, self.fields * 4, len(self.strings)))
-            # A file in id order stays so; any other keeps its own order, our new rows after it (a
-            # replaced row keeps its place). The client needs that: Blizzard's
-            # SkillRaceClassInfo.dbc is sorted by skill, and sorted by id it drops every skill
-            # whose rows end up apart (First Aid, Defense, weapon skills, Riding) from the Skills
-            # tab and the spellbook.
-            keys = sorted(self.rows) if self.by_id else list(self.rows)
             for key in keys:
                 f.write(struct.pack("<%dI" % self.fields, *self.rows[key]))
             f.write(self.strings)
