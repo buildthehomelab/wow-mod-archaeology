@@ -149,11 +149,18 @@ class Dbc:
             self.rows[row[0]] = row
         self.strings = bytearray(data[20 + count * size:20 + count * size + strsize])
         self.ours = []
+        self.by_id = list(self.rows) == sorted(self.rows)
 
     def write(self, path):
         with open(path, "wb") as f:
             f.write(struct.pack("<4s4I", b"WDBC", len(self.rows), self.fields, self.fields * 4, len(self.strings)))
-            for key in sorted(self.rows):
+            # A file in id order stays so; any other keeps its own order, our new rows after it (a
+            # replaced row keeps its place). The client needs that: Blizzard's
+            # SkillRaceClassInfo.dbc is sorted by skill, and sorted by id it drops every skill
+            # whose rows end up apart (First Aid, Defense, weapon skills, Riding) from the Skills
+            # tab and the spellbook.
+            keys = sorted(self.rows) if self.by_id else list(self.rows)
+            for key in keys:
                 f.write(struct.pack("<%dI" % self.fields, *self.rows[key]))
             f.write(self.strings)
 
