@@ -58,6 +58,20 @@ def sql_str(s):
     return "'" + s.replace("\\", "\\\\").replace("'", "''").replace("\r", "").replace("\n", "\\n") + "'"
 
 
+def item_desc(text, limit=255):
+    """Fits item_template.description (VARCHAR(255)): whole sentences while they fit, else a word cut.
+    The full lore stays in mod_archaeology_project.description."""
+    text = re.sub(r"\s+", " ", text).strip()
+    if len(text) <= limit:
+        return text
+    out = ""
+    for sentence in re.split(r"(?<=[.!?])\s+", text):
+        if len(out) + len(sentence) + 1 > limit:
+            break
+        out = f"{out} {sentence}" if out else sentence
+    return out or text[:limit - 3].rsplit(" ", 1)[0] + "..."
+
+
 def sf_rows(text, table):
     """Rows of one REPLACE INTO block from the SkyFire dump, as tuples of strings."""
     start = text.index(f"`{table}`")
@@ -138,7 +152,7 @@ def main():
         item_map_rows.append(f"({new_id}, {cata_id}, {sql_str(name)})")
         # Display id matches the ItemDisplayInfo row tools/build_patch.py adds for this item.
         return (f"({new_id}, {item_class}, {subclass}, {sql_str(name)}, {DISPLAY_BASE + new_id - 9504000}, {quality}, {sell * 4}, {sell}, "
-                f"0, -1, -1, {max_count}, {stackable}, 1, {sql_str(desc)})")
+                f"0, -1, -1, {max_count}, {stackable}, 1, {sql_str(item_desc(desc))})")
 
     for i, race in enumerate(RACE_ORDER):
         b = branches[race]
