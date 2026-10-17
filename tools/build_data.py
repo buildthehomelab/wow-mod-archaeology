@@ -35,6 +35,7 @@ MAX_SITE_SKILL = 449
 KEYSTONE_BASE = 9504010   # one keystone item per race, in race order
 ITEM_BASE = 9504020       # artifacts, in project id order
 ITEM_LAST = 9504499
+DISPLAY_BASE = 950400    # ItemDisplayInfo id = DISPLAY_BASE + (item - 9504000), see build_patch.py
 
 # Race id (= Cata ResearchBranch id), keystone value, find gameobject entry
 # Unlock skill follows the race's lowest site skill.
@@ -135,7 +136,8 @@ def main():
         name = s["Display_lang"]
         sell = int(s["SellPrice"])
         item_map_rows.append(f"({new_id}, {cata_id}, {sql_str(name)})")
-        return (f"({new_id}, {item_class}, {subclass}, {sql_str(name)}, 0, {quality}, {sell * 4}, {sell}, "
+        # Display id matches the ItemDisplayInfo row tools/build_patch.py adds for this item.
+        return (f"({new_id}, {item_class}, {subclass}, {sql_str(name)}, {DISPLAY_BASE + new_id - 9504000}, {quality}, {sell * 4}, {sell}, "
                 f"0, -1, -1, {max_count}, {stackable}, 1, {sql_str(desc)})")
 
     for i, race in enumerate(RACE_ORDER):

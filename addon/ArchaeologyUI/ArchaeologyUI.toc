@@ -1,0 +1,13 @@
+## Interface: 30300
+## Title: ArchaeologyUI
+## Notes: Archaeology dig sites on your maps, a survey button and a research window. Needs mod-archaeology on the realm.
+## Author: buildthehomelab
+## Version: 0.1.0
+## SavedVariables: ArchaeologyUIDB
+
+ArchaeologyUI.lua
+MapData.lua
+WorldMap.lua
+Minimap.lua
+Survey.lua
+Research.lua

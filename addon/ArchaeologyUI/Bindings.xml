@@ -1,0 +1,8 @@
+<Bindings>
+	<Binding name="ARCHAEOLOGYUI_SURVEY" header="ARCHAEOLOGYUI">
+		ArchaeologyUI.SurveyButtonClick()
+	</Binding>
+	<Binding name="ARCHAEOLOGYUI_TOGGLE">
+		ArchaeologyUI.ToggleWindow()
+	</Binding>
+</Bindings>

@@ -287,6 +287,7 @@ namespace Archaeology
         PickProject(player, raceId);
         SaveRace(player, raceId);
         SendRaces(player);
+        SendSites(player);   // a skill-up can open new dig sites
         return true;
     }
 }
