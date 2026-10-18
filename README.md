@@ -6,7 +6,7 @@ The server owns all of it: skill, dig sites, fragments, the survey and the solve
 
 ## Status
 
-The dig loop is done; the relic's ranks, forms and item ladder are in, its traits are not yet.
+The dig loop is done, and so is the relic: ranks, forms, item ladder, traits, capstone quests and achievements. Its Cataclysm looks are not in yet.
 
 | Piece | State |
 | --- | --- |
@@ -16,7 +16,8 @@ The dig loop is done; the relic's ranks, forms and item ladder are in, its trait
 | Client patch (skill line, telescope model, item icons) | Built by `tools/build_patch.py`; Survey and the telescope are used, the rank spells not yet (see [Client patch](#client-patch)) |
 | Rare rewards as mounts, pets and toys | Rares are placeholder items for now |
 | Unearthed Relic: ranks, forms, item ladder, quest | Done; not yet tried in the game client |
-| Relic traits, capstone raid quests, relic achievements and looks | Not started |
+| Relic traits, capstone raid quests, relic achievements | Done; not yet tried in the game client |
+| Relic looks (Cataclysm rare weapons, awakened looks) | Not started |
 
 Everything also works without the addon, through `.arch` chat commands.
 
@@ -42,7 +43,7 @@ Everything also works without the addon, through `.arch` chat commands.
 5. After 3 finds the site is depleted and a new one is revealed.
 6. `.arch solve <race> [keystones]` solves the current project for that race when you have enough fragments. Each keystone counts as 12 fragments.
 
-7. At 50 skill, the trainer has a quest, *A Weapon in Pieces*. Turn it in and choose your relic's form (see [The Unearthed Relic](#the-unearthed-relic)).
+7. At 50 skill, the trainer has a quest, *A Weapon in Pieces*. Turn it in and choose your relic's form (see [The Unearthed Relic](#the-unearthed-relic)). At 60, 70 and 80 the trainer has a capstone quest for each era's last raid boss.
 
 Outland races open at skill 300, Northrend races at 375. With mod-individual-progression and `Archaeology.IndividualProgression.Enable = 1`, those continents also wait until the character reaches that era.
 
@@ -53,7 +54,7 @@ Outland races open at skill 300, Northrend races at 375. With mod-individual-pro
 | `.arch` | Player | Skill, fragments, current projects and dig sites |
 | `.arch survey` | Player | Survey where you stand |
 | `.arch solve <race> [keystones]` | Player | Solve that race's current project |
-| `.arch relic` | Player | Your relic's rank, Relic Power and what holds it back |
+| `.arch relic` | Player | Your relic's rank, Relic Power, what holds it back, and its traits |
 | `.arch skill <value>` | GM | Set the selected player's skill (and matching rank) |
 | `.arch relic power <amount>` | GM | Give the selected player Relic Power |
 | `.arch reload` | Admin | Reload dig sites and projects from the database |
@@ -63,12 +64,14 @@ Outland races open at skill 300, Northrend races at 375. With mod-individual-pro
 | What | Range |
 | --- | --- |
 | Trainer creature (also the relic quest giver), npc_text | 9503500, npc_text 9503500-9503501 |
-| Quest *A Weapon in Pieces* | 9503500 (9503500-9503519 reserved) |
+| Capstone kill credit (creature_template, never spawned) | 9503510-9503512 |
+| Quests: *A Weapon in Pieces*, capstones | 9503500, 9503501-9503503 (9503500-9503519 reserved) |
 | Relic items (item_template, Item.dbc) | 9505000-9505999: 9505000 + step x 30 + kind |
 | Survey telescopes + banner, finds (gameobject_template) | 9503500-9503503, 9503510-9503517 |
 | Keystones and artifacts (item_template, Item.dbc) | 9504010-9504499 |
 | Item displays (ItemDisplayInfo.dbc) | 950410-950899: 950400 + (item - 9504000) |
-| Spells (Spell.dbc, SkillLineAbility.dbc) | 90500-90505 ranks, 90506 Survey (90500-90529 reserved) |
+| Spells (Spell.dbc, SkillLineAbility.dbc) | 90500-90505 ranks, 90506 Survey, 90507-90514 relic traits, 90515-90521 what they cast (90500-90529 reserved) |
+| Achievements (Achievement.dbc, Achievement_Criteria.dbc) | 9240-9245, criteria 19240 (9240-9259 and 19240-19279 reserved) |
 | Skill line (SkillLine.dbc), SkillRaceClassInfo.dbc, SpellIcon.dbc | 794, 90500, 90500 |
 | Survey telescope (GameObjectDisplayInfo.dbc) | 10101-10103, Cataclysm's own |
 | Tables | `mod_archaeology_*` |
@@ -97,10 +100,37 @@ One weapon per character, pieced together from its finds. It never leaves the ch
 
 - **Progression.** With mod-individual-progression and `Archaeology.IndividualProgression.Enable = 1`, a rank only opens at its progression state. Without it, every character counts as `Archaeology.Relic.StateWithoutProgression` (18: no cap).
 - **Level.** The item a character holds is the highest rank its level can use, so a low-level character banks ranks and its relic catches up as it levels.
-- **The last rank of an era** (16, 21, 28) needs every rare of that era's races solved: Dwarf, Night Elf, Troll and Fossil; Draenei and Orc; Nerubian and Vrykul. `Archaeology.Relic.CapstoneQuest.*` can add a quest on top.
+- **The last rank of an era** (16, 21, 28) needs every rare of that era's races solved: Dwarf, Night Elf, Troll and Fossil; Draenei and Orc; Nerubian and Vrykul. It also needs that era's capstone quest (`Archaeology.Relic.CapstoneQuest.*`, see below).
 - **Awakening** (29) needs every project of every race solved, and the top skill (`AwakenNeedsMaxSkill`).
 
 Ranks are never lost. When rank, level or progression changes what the relic should be, the module swaps the item for that step in the same place (equipped or in a bag), out of combat. Its enchant, temporary enchant (poisons, oils) and the gems of sockets the new item also has carry over, as does a transmogrified look (stored per slot). A relic in the bank is swapped when it is equipped. Sockets start at rank 17: one on one-handers, shields and ranged weapons, two on two-handers, and a third from rank 26.
+
+**Capstone quests.** The last rank of each era waits for a quest from the trainer that takes the relic into the era's last raid:
+
+| Quest | Offered at | Slay, with the relic equipped |
+| --- | --- | --- |
+| 9503501 *The Lich in the Necropolis* | level 60 | Kel'Thuzad in Naxxramas: the 40-man one (mod-individual-progression's 351019) or the level-80 one (15990) |
+| 9503502 *The Deceiver's Fall* | level 70 | Kil'jaeden, Sunwell Plateau |
+| 9503503 *The Frozen Throne* | level 80 | The Lich King, Icecrown Citadel |
+
+They open once the character has the relic. Everyone in the instance who is in the group that tapped the boss gets the kill, if they have the quest and wear the relic, dead or alive, as long as they are inside the instance. They are raid quests, so a raid group counts. The 80 Kel'Thuzad counts too because individual progression closes the 40-man Naxxramas later on, and a character that missed it there could otherwise never finish the old world's ranks. The quests give nothing but the rank they unlock. Set a `CapstoneQuest` to 0 to drop it; ranks already earned are never taken back, whatever the config says. Upgrading: a `mod_archaeology.conf` copied before the capstones existed still has `CapstoneQuest.* = 0`, so the quests unlock nothing there; set them to 9503501-9503503 (the server logs a warning at startup for each one left at 0).
+
+**Traits.** One per race, waking when one of that race's rares is solved, or after 10 of its commons (`Archaeology.Relic.Traits.WakeCommons`, repeats count). While the relic is equipped, every awake trait is an aura on the character (spells 90507-90514). The numbers below are at full rank. A trait starts at 40% of them (`FirstRankStrength`) and grows with the ladder step the relic shows, so level and progression hold it back as they do the item. Solving every project of its race doubles it (`RaceCompleteMultiplier`).
+
+| Race | Trait | What it does (full rank) |
+| --- | --- | --- |
+| Dwarf | Thaurissan's Ember | 3 procs a minute: Fire damage worth 40% of attack or spell power (the higher) |
+| Night Elf | Highborne Focus | 2 a minute: 4% of max mana, or 10 rage or runic power, or 20 energy |
+| Troll | Zandalari Vigor | 1.5 a minute: 8% melee, ranged and casting haste for 10 sec |
+| Fossil | Amber Ward | 10% of hits taken (15 sec cooldown): absorb 5% of max health for 10 sec |
+| Draenei | Light of the Naaru | 2 a minute: heal you or the most hurt group member within 30 yards for 4% of their max health |
+| Orc | Blood of the Horde | Up to 8% more damage as your health falls, all of it at 20% health |
+| Nerubian | Ahn'kahar Venom | 3 a minute: Nature poison worth 10% of attack or spell power over 12 sec, stacking to 5 |
+| Vrykul | Val'kyr's Mercy | A killing blow leaves you at 20% health instead, once every 10 minutes (race complete: every 5). Other shields take the hit first, and duels don't spend it |
+
+Procs come from melee and ranged hits and from spells (helpful ones too, for the non-damage traits). A chance per minute becomes a chance per hit from the weapon's speed (a spell's cast time, at least 1.5 sec), and two weapons swinging share it, so a pair procs as often as a two-hander. A spell that hits many targets rolls once. Hits from triggered spells don't roll (so the second strike of Mutilate or Stormstrike doesn't, but the white hits do). The numbers live in `mod_archaeology_relic_trait` (world database); change them there and restart. `.arch relic` lists each trait, its strength and what wakes the ones still asleep.
+
+**Achievements**, under Professions, granted by the module (and none of them a boss kill, so mod-individual-progression's raid checks never see them): *A Weapon in Pieces* (the relic), *Tempered by the Ages* (rank 16), *Legend of the Outlands* (rank 21, Legendary), *Every Voice Awake* (all eight traits), *Keeper of All Ages* (every project of every race), *Awakened* (rank 29, Artifact). Characters that already qualify get them at their next login.
 
 **The ladder** is generated by `tools/build_relic.py` into `data/sql/db-world/mod_archaeology_world_relic.sql`: the steps, the forms, which item each form shows at each step, and the 812 item_template + item_dbc rows. Stats come from a budget per item level fitted to 3.3.5's best raid weapons of each tier, so at the top of a tier the relic matches that tier's best item. The items use weapon models the client already has; `tools/build_patch.py` adds their Item.dbc rows to the client patch, which the client needs to draw them. Change the tables in the script and run it again rather than editing the SQL.
 
@@ -142,6 +172,8 @@ The 3.3.5 client has no Archaeology. `tools/build_patch.py` adds what it needs t
 
 - SkillLine 794 "Archaeology" (a secondary skill, like Cooking) and a SkillRaceClassInfo row, so `Archaeology.Skill.SkillLine = 794` can show the skill in the Skills tab. Set it only once players have the patch.
 - Spells 90500-90505 (Apprentice to Grand Master, each a Skill effect on 794 and a Dummy cast) and 90506 Survey (1 s cast, Dummy), with SkillLineAbility rows. Survey is learned with the skill.
+- Spells 90507-90521, the relic's traits and what they cast, so their buffs, debuffs and combat log lines have names, icons and tooltips. The module sets the numbers.
+- Achievement.dbc 9240-9245 and Achievement_Criteria.dbc 19240, the relic achievements (category Professions).
 - Item.dbc and ItemDisplayInfo.dbc rows with the Cataclysm icon of every keystone and artifact. Without them the items show a question mark. Icons the client lacks are added to the patch.
 - Item.dbc rows for the relic's 812 items (9505000-9505999), from `mod_archaeology_world_relic.sql`. They use models the client has, so they need no display rows; the server already has the same rows in that file.
 - The survey telescope: GameObjectDisplayInfo 10101-10103 (green, yellow, red) and Cataclysm's three models, converted to the 3.3.5 format by [wow-mod-retail-creatures](https://github.com/buildthehomelab/wow-mod-retail-creatures) (clone it next to this repo, or set `RETAIL_CREATURES`).
@@ -153,7 +185,7 @@ python3 tools/build_patch.py --patch <your spell/item patch>.MPQ --skill-patch <
     --client <WoW folder> --out <folder> --sql data/sql/db-world/mod_archaeology_world_dbc.sql
 ```
 
-`--patch` is the patch with your Spell, SkillLineAbility, SpellIcon, Item and ItemDisplayInfo DBCs. `--skill-patch` is the one with SkillRaceClassInfo.dbc, if that is another patch. A DBC neither ships (often SkillLine and GameObjectDisplayInfo) comes from the client's newest copy and goes into `--patch`. Each patch that changed is written to `--out` under its own name, with every other file in it unchanged. It also reads `c_Item.csv`, `c_GODI.csv` (Cataclysm Classic GameObjectDisplayInfo) and `listfile_archaeology.csv` from `tools/cata-data/`. Models and icons come from [wago.tools](https://wago.tools), cached in `tools/cata-data/cache`. Running it again on its own output changes nothing.
+`--patch` is the patch with your Spell, SkillLineAbility, SpellIcon, Item and ItemDisplayInfo DBCs. `--skill-patch` is the one with SkillRaceClassInfo.dbc, if that is another patch. `--also-patch` (repeatable) adds any other patch carrying a DBC the tool edits, such as Achievement.dbc. A DBC neither ships (often SkillLine and GameObjectDisplayInfo) comes from the client's newest copy and goes into `--patch`. Each patch that changed is written to `--out` under its own name, with every other file in it unchanged. It also reads `c_Item.csv`, `c_GODI.csv` (Cataclysm Classic GameObjectDisplayInfo) and `listfile_archaeology.csv` from `tools/cata-data/`. Models and icons come from [wago.tools](https://wago.tools), cached in `tools/cata-data/cache`. Running it again on its own output changes nothing.
 
 The survey shows Cataclysm's telescope (gameobjects 9503500-9503502, displays 10101-10103) in the colour of the distance band. A client without the patch doesn't see it; set `Archaeology.Telescope.Green/Yellow/Red` to 9503503 (the excavation banner) until the patch is out. Some patch rows the module doesn't use yet:
 

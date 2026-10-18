@@ -24,6 +24,7 @@
 #include "DatabaseEnv.h"
 #include "GameTime.h"
 #include "Item.h"
+#include "Map.h"
 #include "Player.h"
 #include "QuestDef.h"
 #include "ScriptMgr.h"
@@ -225,7 +226,7 @@ public:
     ArchaeologyPlayerScript() : PlayerScript("ArchaeologyPlayerScript", {
         PLAYERHOOK_ON_LOGIN, PLAYERHOOK_ON_LOGOUT, PLAYERHOOK_ON_DELETE, PLAYERHOOK_ON_LEVEL_CHANGED,
         PLAYERHOOK_CAN_PLAYER_USE_PRIVATE_CHAT, PLAYERHOOK_ON_UPDATE, PLAYERHOOK_ON_MAP_CHANGED, PLAYERHOOK_ON_EQUIP,
-        PLAYERHOOK_ON_BEFORE_QUEST_COMPLETE }) { }
+        PLAYERHOOK_ON_UNEQUIP_ITEM, PLAYERHOOK_ON_BEFORE_QUEST_COMPLETE, PLAYERHOOK_ON_PLAYER_RESURRECT }) { }
 
     void OnPlayerLogin(Player* player) override
     {
@@ -238,6 +239,7 @@ public:
         lastRequest.erase(player->GetGUID().GetCounter());
         ForgetFinds(player);
         ForgetRelic(player);
+        ForgetTraits(player);
         if (CharState* s = GetState(player); s && (s->relic.rank || s->relic.earned))
             SaveRelic(player);
         UnloadCharacter(player);
@@ -268,18 +270,38 @@ public:
     void OnPlayerMapChanged(Player* player) override
     {
         QueueRelic(player);
+        if (GetState(player))
+            QueueTraits(player);   // entering an arena takes buffs off
     }
 
-    // A relic taken out of the bank may be an older step.
-    void OnPlayerEquip(Player* player, Item* item, uint8 /*bag*/, uint8 /*slot*/, bool /*update*/) override
+    // A relic taken out of the bank may be an older step. Any weapon put on may push the relic
+    // off, so the traits look again either way.
+    void OnPlayerEquip(Player* player, Item* item, uint8 bag, uint8 slot, bool /*update*/) override
     {
         if (item && IsRelicItem(item->GetEntry()))
             QueueRelic(player);
+        if (bag == INVENTORY_SLOT_BAG_0 && (slot == EQUIPMENT_SLOT_MAINHAND || slot == EQUIPMENT_SLOT_OFFHAND || slot == EQUIPMENT_SLOT_RANGED) &&
+            GetState(player))
+            QueueTraits(player);
+    }
+
+    // Traits can't go on a dead character, so a refresh then waits for this.
+    void OnPlayerResurrect(Player* player, float /*restorePercent*/, bool& /*applySickness*/) override
+    {
+        if (GetState(player))
+            QueueTraits(player);
+    }
+
+    void OnPlayerUnequip(Player* player, Item* item) override
+    {
+        if (item && IsRelicItem(item->GetEntry()))
+            QueueTraits(player);
     }
 
     void OnPlayerUpdate(Player* player, uint32 /*diff*/) override
     {
         UpdateQueuedRelic(player);
+        UpdateQueuedTraits(player);
     }
 
     bool OnPlayerBeforeQuestComplete(Player* player, uint32 questId) override
@@ -358,6 +380,19 @@ public:
     }
 };
 
+// A capstone boss's death credits the relic quest of everyone who brought the relic to it.
+class ArchaeologyUnitScript : public UnitScript
+{
+public:
+    ArchaeologyUnitScript() : UnitScript("ArchaeologyUnitScript", true, { UNITHOOK_ON_UNIT_DEATH }) { }
+
+    void OnUnitDeath(Unit* unit, Unit* /*killer*/) override
+    {
+        if (Creature* creature = unit->ToCreature(); creature && GetConfig().enabled && creature->GetMap()->IsDungeon())
+            CapstoneBossDied(creature);
+    }
+};
+
 class npc_archaeology_trainer : public CreatureScript
 {
 public:
@@ -378,6 +413,11 @@ public:
 
     bool OnQuestReward(Player* player, Creature* creature, Quest const* quest, uint32 /*opt*/) override
     {
+        if (IsCapstoneQuest(quest->GetQuestId()))
+        {
+            QueueRelic(player);   // the rank it held back can come now
+            return false;
+        }
         if (quest->GetQuestId() != RELIC_QUEST)
             return false;
         RelicQuestRewarded(player, creature);
@@ -547,6 +587,7 @@ void AddArchaeologyAddonScripts()
 {
     new ArchaeologyPlayerScript();
     new ArchaeologyWorldScript();
+    new ArchaeologyUnitScript();
     new npc_archaeology_trainer();
     new ArchaeologyCommandScript();
 }
