@@ -32,3 +32,18 @@ CREATE TABLE IF NOT EXISTS `mod_archaeology_char_history` (
   `first_solved` INT UNSIGNED NOT NULL DEFAULT 0 COMMENT 'unix time',
   PRIMARY KEY (`guid`, `project`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- The Unearthed Relic. The item a character holds is only a projection of this row, so a lost
+-- relic can be restored at the trainer.
+CREATE TABLE IF NOT EXISTS `mod_archaeology_char_relic` (
+  `guid` INT UNSIGNED NOT NULL,
+  `form` TINYINT UNSIGNED NOT NULL DEFAULT 0 COMMENT 'mod_archaeology_relic_form id, 0 = not chosen yet',
+  `relic_rank` TINYINT UNSIGNED NOT NULL DEFAULT 0 COMMENT '0 = no relic yet',
+  `power` INT UNSIGNED NOT NULL DEFAULT 0 COMMENT 'Relic Power not spent on ranks yet',
+  `earned` INT UNSIGNED NOT NULL DEFAULT 0 COMMENT 'all Relic Power ever earned',
+  `traits` INT UNSIGNED NOT NULL DEFAULT 0 COMMENT 'awake trait bits',
+  `form_changes` SMALLINT UNSIGNED NOT NULL DEFAULT 0,
+  `main_item` INT UNSIGNED NOT NULL DEFAULT 0 COMMENT 'item guid of the relic',
+  `off_item` INT UNSIGNED NOT NULL DEFAULT 0 COMMENT 'item guid of its off-hand half or shield',
+  PRIMARY KEY (`guid`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

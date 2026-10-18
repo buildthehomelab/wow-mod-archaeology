@@ -1,7 +1,8 @@
 -- mod-archaeology: world database tables, the trainer and the dig gameobjects.
 --
--- Ids: creature / npc_text 9503500-9503599, gameobject_template 9503500-9503549,
--- items 9504000-9504499 (filled by mod_archaeology_world_data.sql). Idempotent: safe to run again.
+-- Ids: creature / npc_text / quest 9503500-9503599, gameobject_template 9503500-9503549,
+-- items 9504000-9504499 (filled by mod_archaeology_world_data.sql), relic items 9505000-9505999
+-- (mod_archaeology_world_relic.sql). Idempotent: safe to run again.
 -- Undo with data/sql/uninstall/mod_archaeology_uninstall_world.sql.
 
 CREATE TABLE IF NOT EXISTS `mod_archaeology_race` (
@@ -65,17 +66,18 @@ CREATE TABLE IF NOT EXISTS `mod_archaeology_item_source` (
   PRIMARY KEY (`item`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='which Cataclysm item each artifact was built from';
 
--- The archaeology trainer. Not spawned: place one per city with .npc add 9503500.
+-- The archaeology trainer, who also gives the relic quest. Not spawned: place one per city with .npc add 9503500.
 DELETE FROM `creature_template_model` WHERE `CreatureID` BETWEEN 9503500 AND 9503599;
 DELETE FROM `creature_template` WHERE `entry` BETWEEN 9503500 AND 9503599;
 INSERT INTO `creature_template` (`entry`, `name`, `subname`, `gossip_menu_id`, `minlevel`, `maxlevel`, `faction`, `npcflag`, `speed_walk`, `speed_run`, `BaseAttackTime`, `RangeAttackTime`, `unit_class`, `unit_flags`, `unit_flags2`, `type`, `flags_extra`, `ScriptName`) VALUES
-(9503500, 'Harrison Jones', 'Archaeology Trainer', 0, 70, 70, 35, 1, 1, 1.14286, 2000, 2000, 1, 768, 2048, 7, 2, 'npc_archaeology_trainer');
+(9503500, 'Harrison Jones', 'Archaeology Trainer', 0, 70, 70, 35, 3, 1, 1.14286, 2000, 2000, 1, 768, 2048, 7, 2, 'npc_archaeology_trainer');
 INSERT INTO `creature_template_model` (`CreatureID`, `Idx`, `CreatureDisplayID`, `DisplayScale`, `Probability`) VALUES
 (9503500, 0, 22340, 1, 1);
 
 DELETE FROM `npc_text` WHERE `ID` BETWEEN 9503500 AND 9503509;
 INSERT INTO `npc_text` (`ID`, `text0_0`, `text0_1`, `BroadcastTextID0`, `lang0`, `Probability0`) VALUES
-(9503500, 'History is buried under our feet, $c. Every dwarf ruin, every troll altar, every fossil bed holds a piece of a story nobody has told yet.$B$BLearn to survey, and I''ll show you where to dig.', 'History is buried under our feet, $c. Every dwarf ruin, every troll altar, every fossil bed holds a piece of a story nobody has told yet.$B$BLearn to survey, and I''ll show you where to dig.', 0, 0, 1);
+(9503500, 'History is buried under our feet, $c. Every dwarf ruin, every troll altar, every fossil bed holds a piece of a story nobody has told yet.$B$BLearn to survey, and I''ll show you where to dig.', 'History is buried under our feet, $c. Every dwarf ruin, every troll altar, every fossil bed holds a piece of a story nobody has told yet.$B$BLearn to survey, and I''ll show you where to dig.', 0, 0, 1),
+(9503501, 'Every relic remembers the hand that dug it up. What shape should yours take?$B$BChoose well, but don''t fret: I can reshape it later, and its rank stays with it.', 'Every relic remembers the hand that dug it up. What shape should yours take?$B$BChoose well, but don''t fret: I can reshape it later, and its rank stays with it.', 0, 0, 1);
 
 -- 9503500: the survey marker that points toward the find (an excavation banner until a client
 -- patch ships the Cataclysm telescope). 9503510-9503517: one find per race, models the 3.3.5
@@ -98,3 +100,18 @@ INSERT INTO `gameobject_template` (`entry`, `type`, `displayId`, `name`, `IconNa
 -- Survey, the spell the client patch adds (90506): the module runs the survey when it is cast.
 DELETE FROM `spell_script_names` WHERE `spell_id` = 90506 AND `ScriptName` = 'spell_archaeology_survey';
 INSERT INTO `spell_script_names` (`spell_id`, `ScriptName`) VALUES (90506, 'spell_archaeology_survey');
+
+-- A Weapon in Pieces: offered at 50 Archaeology (the module checks the skill), turned in at once.
+DELETE FROM `creature_queststarter` WHERE `quest` BETWEEN 9503500 AND 9503519;
+DELETE FROM `creature_questender` WHERE `quest` BETWEEN 9503500 AND 9503519;
+DELETE FROM `quest_offer_reward` WHERE `ID` BETWEEN 9503500 AND 9503519;
+DELETE FROM `quest_request_items` WHERE `ID` BETWEEN 9503500 AND 9503519;
+DELETE FROM `quest_template` WHERE `ID` BETWEEN 9503500 AND 9503519;
+INSERT INTO `quest_template` (`ID`, `QuestType`, `QuestLevel`, `MinLevel`, `QuestSortID`, `Flags`, `LogTitle`, `LogDescription`, `QuestDescription`, `AreaDescription`, `QuestCompletionLog`, `VerifiedBuild`) VALUES
+(9503500, 2, -1, 20, 0, 0, 'A Weapon in Pieces', 'Bring the odd fragments from your digs to Harrison Jones.',
+ 'You keep turning up the same odd pieces at every dig, $n. A sliver of hilt here, a curl of old steel there, and none of it from any one people.$B$BSomebody, long ago, made a weapon out of all of history, and it broke. Bring me what you have found and we will put it back together. It won''t look like much at first. The more you dig, the more of it wakes up.',
+ '', 'Return to Harrison Jones.', 0);
+INSERT INTO `quest_offer_reward` (`ID`, `RewardText`, `VerifiedBuild`) VALUES
+(9503500, 'Ah, you kept them. Good. Hold still while I fit these together...', 0);
+INSERT INTO `creature_queststarter` (`id`, `quest`) VALUES (9503500, 9503500);
+INSERT INTO `creature_questender` (`id`, `quest`) VALUES (9503500, 9503500);

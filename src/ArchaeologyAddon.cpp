@@ -12,6 +12,7 @@
  *                     V:RED|YELLOW|GREEN:<angle> | V:FOUND | V:NONE   survey result
  *                     F:<race>:<gained>:<total>                       fragments looted
  *                     X:<project>:<item>:<rare>                       project solved
+ *                     L:<rank>:<ranks>:<power>:<next cost>:<item level>:<quality>:<form>:<note>   the relic
  *
  * Released under the MIT License.
  */
@@ -22,7 +23,9 @@
 #include "Creature.h"
 #include "DatabaseEnv.h"
 #include "GameTime.h"
+#include "Item.h"
 #include "Player.h"
+#include "QuestDef.h"
 #include "ScriptMgr.h"
 #include "ScriptedGossip.h"
 #include "Tokenize.h"
@@ -221,7 +224,8 @@ class ArchaeologyPlayerScript : public PlayerScript
 public:
     ArchaeologyPlayerScript() : PlayerScript("ArchaeologyPlayerScript", {
         PLAYERHOOK_ON_LOGIN, PLAYERHOOK_ON_LOGOUT, PLAYERHOOK_ON_DELETE, PLAYERHOOK_ON_LEVEL_CHANGED,
-        PLAYERHOOK_CAN_PLAYER_USE_PRIVATE_CHAT }) { }
+        PLAYERHOOK_CAN_PLAYER_USE_PRIVATE_CHAT, PLAYERHOOK_ON_UPDATE, PLAYERHOOK_ON_MAP_CHANGED, PLAYERHOOK_ON_EQUIP,
+        PLAYERHOOK_ON_BEFORE_QUEST_COMPLETE }) { }
 
     void OnPlayerLogin(Player* player) override
     {
@@ -233,6 +237,9 @@ public:
     {
         lastRequest.erase(player->GetGUID().GetCounter());
         ForgetFinds(player);
+        ForgetRelic(player);
+        if (CharState* s = GetState(player); s && (s->relic.rank || s->relic.earned))
+            SaveRelic(player);
         UnloadCharacter(player);
     }
 
@@ -243,16 +250,41 @@ public:
         CharacterDatabase.Execute("DELETE FROM `mod_archaeology_char_site` WHERE `guid` = {}", low);
         CharacterDatabase.Execute("DELETE FROM `mod_archaeology_char_race` WHERE `guid` = {}", low);
         CharacterDatabase.Execute("DELETE FROM `mod_archaeology_char_history` WHERE `guid` = {}", low);
+        CharacterDatabase.Execute("DELETE FROM `mod_archaeology_char_relic` WHERE `guid` = {}", low);
     }
 
-    // Higher levels open more dig sites.
+    // Higher levels open more dig sites, and let the relic grow.
     void OnPlayerLevelChanged(Player* player, uint8 /*oldLevel*/) override
     {
         if (IsLearned(player))
         {
             RollSites(player);
             SendSites(player);
+            QueueRelic(player);
         }
+    }
+
+    // Progression state rises in raids; look again on the way out.
+    void OnPlayerMapChanged(Player* player) override
+    {
+        QueueRelic(player);
+    }
+
+    // A relic taken out of the bank may be an older step.
+    void OnPlayerEquip(Player* player, Item* item, uint8 /*bag*/, uint8 /*slot*/, bool /*update*/) override
+    {
+        if (item && IsRelicItem(item->GetEntry()))
+            QueueRelic(player);
+    }
+
+    void OnPlayerUpdate(Player* player, uint32 /*diff*/) override
+    {
+        UpdateQueuedRelic(player);
+    }
+
+    bool OnPlayerBeforeQuestComplete(Player* player, uint32 questId) override
+    {
+        return questId != RELIC_QUEST || CanTakeRelicQuest(player);
     }
 
     // CMSG_MESSAGECHAT runs on the world thread.
@@ -274,6 +306,7 @@ public:
                 SendState(player);
                 SendRaces(player);
                 SendSites(player);
+                SendRelic(player);
             }
         }
         else if (command == "SITES")
@@ -330,13 +363,34 @@ class npc_archaeology_trainer : public CreatureScript
 public:
     npc_archaeology_trainer() : CreatureScript("npc_archaeology_trainer") { }
 
-    enum Actions : uint32 { ACTION_TRAIN = 1, ACTION_STATUS = 2 };
+    enum Actions : uint32 { ACTION_TRAIN = 1, ACTION_STATUS = 2 };   // 10-13: the relic's, ArchaeologyRelic.cpp
+
+    // A Weapon in Pieces waits for skill 50, which the quest system can't see.
+    static bool OffersRelicQuest(Player* player)
+    {
+        return player->GetQuestStatus(RELIC_QUEST) != QUEST_STATUS_NONE || CanTakeRelicQuest(player);
+    }
+
+    uint32 GetDialogStatus(Player* player, Creature* /*creature*/) override
+    {
+        return OffersRelicQuest(player) ? DIALOG_STATUS_SCRIPTED_NO_STATUS : DIALOG_STATUS_NONE;
+    }
+
+    bool OnQuestReward(Player* player, Creature* creature, Quest const* quest, uint32 /*opt*/) override
+    {
+        if (quest->GetQuestId() != RELIC_QUEST)
+            return false;
+        RelicQuestRewarded(player, creature);
+        return true;
+    }
 
     bool OnGossipHello(Player* player, Creature* creature) override
     {
         ClearGossipMenuFor(player);
         if (GetConfig().enabled && GetState(player))
         {
+            if (OffersRelicQuest(player))
+                player->PrepareQuestMenu(creature->GetGUID());
             if (Rank const* rank = NextRank(player))
             {
                 if (CanTrain(player, *rank))
@@ -348,13 +402,16 @@ public:
             }
             if (IsLearned(player))
                 AddGossipItemFor(player, GOSSIP_ICON_CHAT, "Where are my dig sites?", GOSSIP_SENDER_MAIN, ACTION_STATUS);
+            AddRelicGossip(player);
         }
         SendGossipMenuFor(player, TRAINER_TEXT, creature->GetGUID());
         return true;
     }
 
-    bool OnGossipSelect(Player* player, Creature* creature, uint32 /*sender*/, uint32 action) override
+    bool OnGossipSelect(Player* player, Creature* creature, uint32 sender, uint32 action) override
     {
+        if (RelicGossipSelect(player, creature, sender, action))
+            return true;
         CloseGossipMenuFor(player);
         if (action == ACTION_TRAIN)
         {
@@ -379,8 +436,14 @@ public:
 
     ChatCommandTable GetCommands() const override
     {
+        static ChatCommandTable relicCommands =
+        {
+            { "",      HandleRelic,      SEC_PLAYER,     Console::No },
+            { "power", HandleRelicPower, SEC_GAMEMASTER, Console::No },
+        };
         static ChatCommandTable subCommands =
         {
+            { "relic",  relicCommands },
             { "",       HandleStatus, SEC_PLAYER,        Console::No },
             { "survey", HandleSurvey, SEC_PLAYER,        Console::No },
             { "solve",  HandleSolve,  SEC_PLAYER,        Console::No },
@@ -448,6 +511,27 @@ public:
         RollSites(target);
         SendState(target);
         handler->PSendSysMessage("{} now has Archaeology {}/{}.", target->GetName(), s->skill, s->maxSkill);
+        return true;
+    }
+
+    static bool HandleRelic(ChatHandler* handler)
+    {
+        handler->SendSysMessage(RelicStatusText(handler->GetPlayer()));
+        return true;
+    }
+
+    // .arch relic power <amount>: GM gives the selected player Relic Power.
+    static bool HandleRelicPower(ChatHandler* handler, uint32 amount)
+    {
+        Player* target = handler->getSelectedPlayerOrSelf();
+        if (!target || !IsLearned(target))
+        {
+            handler->SendErrorMessage("That character doesn't know Archaeology.");
+            return false;
+        }
+        AddRelicPower(target, amount);
+        QueueRelic(target);
+        handler->PSendSysMessage("{} gets {} Relic Power.", target->GetName(), amount);
         return true;
     }
 

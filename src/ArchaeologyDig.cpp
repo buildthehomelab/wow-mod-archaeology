@@ -217,6 +217,7 @@ namespace Archaeology
 
         if (state->skill < cfg.skillPerFindUntil)
             AddSkill(player, 1);
+        AddRelicPower(player, cfg.powerPerFind);
 
         std::vector<ActiveSite>& held = state->sites[find.continent];
         for (auto a = held.begin(); a != held.end(); ++a)
@@ -287,6 +288,7 @@ namespace Archaeology
         SendAddon(player, Acore::StringFormat("X:{}:{}:{}", project->id, project->item, project->rare ? 1 : 0));
 
         AddSkill(player, project->rare ? cfg.skillPerRare : cfg.skillPerCommon);
+        AddRelicPower(player, (project->rare ? cfg.powerPerRare : cfg.powerPerCommon) + (times == 1 ? cfg.powerFirstSolve : 0));
         PickProject(player, raceId);
         SaveRace(player, raceId);
         SendRaces(player);
