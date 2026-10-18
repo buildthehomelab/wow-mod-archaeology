@@ -1,12 +1,12 @@
 # mod-archaeology
 
-Cataclysm-style Archaeology for AzerothCore (3.3.5a). Characters learn Archaeology from a trainer, get dig sites on each continent, survey for finds, collect race fragments and keystones, and solve artifacts.
+Cataclysm-style Archaeology for AzerothCore (3.3.5a). Characters learn Archaeology from a trainer, get dig sites on each continent, survey for finds, collect race fragments and keystones, and solve artifacts. Archaeologists also piece together the Unearthed Relic, a weapon of their own that grows as they dig.
 
 The server owns all of it: skill, dig sites, fragments, the survey and the solve roll. Progress is per character, so every character levels its own Archaeology.
 
 ## Status
 
-This is the server side of the first build phase.
+The dig loop is done; the relic's ranks, forms and item ladder are in, its traits are not yet.
 
 | Piece | State |
 | --- | --- |
@@ -15,6 +15,8 @@ This is the server side of the first build phase.
 | ArchaeologyUI addon (map dig sites, research window, survey button) | First version in `addon/ArchaeologyUI`, not yet tried in the game client |
 | Client patch (skill line, telescope model, item icons) | Built by `tools/build_patch.py`; Survey and the telescope are used, the rank spells not yet (see [Client patch](#client-patch)) |
 | Rare rewards as mounts, pets and toys | Rares are placeholder items for now |
+| Unearthed Relic: ranks, forms, item ladder, quest | Done; not yet tried in the game client |
+| Relic traits, capstone raid quests, relic achievements and looks | Not started |
 
 Everything also works without the addon, through `.arch` chat commands.
 
@@ -40,6 +42,8 @@ Everything also works without the addon, through `.arch` chat commands.
 5. After 3 finds the site is depleted and a new one is revealed.
 6. `.arch solve <race> [keystones]` solves the current project for that race when you have enough fragments. Each keystone counts as 12 fragments.
 
+7. At 50 skill, the trainer has a quest, *A Weapon in Pieces*. Turn it in and choose your relic's form (see [The Unearthed Relic](#the-unearthed-relic)).
+
 Outland races open at skill 300, Northrend races at 375. With mod-individual-progression and `Archaeology.IndividualProgression.Enable = 1`, those continents also wait until the character reaches that era.
 
 ## Commands
@@ -49,14 +53,18 @@ Outland races open at skill 300, Northrend races at 375. With mod-individual-pro
 | `.arch` | Player | Skill, fragments, current projects and dig sites |
 | `.arch survey` | Player | Survey where you stand |
 | `.arch solve <race> [keystones]` | Player | Solve that race's current project |
+| `.arch relic` | Player | Your relic's rank, Relic Power and what holds it back |
 | `.arch skill <value>` | GM | Set the selected player's skill (and matching rank) |
+| `.arch relic power <amount>` | GM | Give the selected player Relic Power |
 | `.arch reload` | Admin | Reload dig sites and projects from the database |
 
 ## IDs
 
 | What | Range |
 | --- | --- |
-| Trainer creature, npc_text | 9503500 |
+| Trainer creature (also the relic quest giver), npc_text | 9503500, npc_text 9503500-9503501 |
+| Quest *A Weapon in Pieces* | 9503500 (9503500-9503519 reserved) |
+| Relic items (item_template, Item.dbc) | 9505000-9505999: 9505000 + step x 30 + kind |
 | Survey telescopes + banner, finds (gameobject_template) | 9503500-9503503, 9503510-9503517 |
 | Keystones and artifacts (item_template, Item.dbc) | 9504010-9504499 |
 | Item displays (ItemDisplayInfo.dbc) | 950410-950899: 950400 + (item - 9504000) |
@@ -67,6 +75,35 @@ Outland races open at skill 300, Northrend races at 375. With mod-individual-pro
 
 Cataclysm's item ids clash with 3.3.5, so every artifact gets a new id. `mod_archaeology_item_source` records which Cataclysm item each one came from.
 
+## The Unearthed Relic
+
+One weapon per character, pieced together from its finds. It never leaves the character: it is soulbound, can't be sold, mailed or disenchanted, and alts start their own from nothing.
+
+**Getting it.** At 50 Archaeology (`Archaeology.Relic.Skill`), the trainer gives *A Weapon in Pieces*. Turning it in gives the relic at rank 1 and asks for its form. The trainer also tells you about it, reshapes it (the first time free, then `FormChange.Cost` + `CostPerRank` x rank), and gives it back if you lose it.
+
+**Forms.** 21, by class: two-handed sword, axe or mace (Strength); pairs of swords, axes, fist weapons or daggers for dual wield (Agility or Strength); a pair of two-handers with Titan's Grip; staff (Intellect or Agility); two-handed mace (Agility); one-handed mace (Intellect, Spirit); bow or gun; sword or mace and shield, two-handed sword or axe (tank). A pair is two items sharing one rank: a main hand and off hand (or shield), each with a one-hander's stats. Pairs need Dual Wield or Titan's Grip, as the character has them when it chooses.
+
+**Ranks.** Relic Power comes only from archaeology: per find, per common and rare solve, and extra for a project solved for the first time (`Archaeology.Relic.Power*`). It is earned from the first find, so digging before the quest counts. Power buys ranks one after the other, at each rank's cost (`mod_archaeology_relic_step.cost` x `CostRate`); the last ranks of each era cost the most. There are 29:
+
+| Ranks | Item level | Quality | Opens at |
+| --- | --- | --- | --- |
+| 1-9 | 25-63, with required level 20-58 | Uncommon, then Rare | progression state 0 |
+| 10-16 | 66-92 | Epic | states 1-7 (Molten Core to Naxxramas) |
+| 17-21 | 115-164 | Epic; rank 21 Legendary | states 8-12 (Burning Crusade) |
+| 22-28 | 187-277 | Epic | states 13-18 (Wrath of the Lich King) |
+| 29 | 277 | Artifact (awakened) | state 18 |
+
+**What holds it back.**
+
+- **Progression.** With mod-individual-progression and `Archaeology.IndividualProgression.Enable = 1`, a rank only opens at its progression state. Without it, every character counts as `Archaeology.Relic.StateWithoutProgression` (18: no cap).
+- **Level.** The item a character holds is the highest rank its level can use, so a low-level character banks ranks and its relic catches up as it levels.
+- **The last rank of an era** (16, 21, 28) needs every rare of that era's races solved: Dwarf, Night Elf, Troll and Fossil; Draenei and Orc; Nerubian and Vrykul. `Archaeology.Relic.CapstoneQuest.*` can add a quest on top.
+- **Awakening** (29) needs every project of every race solved, and the top skill (`AwakenNeedsMaxSkill`).
+
+Ranks are never lost. When rank, level or progression changes what the relic should be, the module swaps the item for that step in the same place (equipped or in a bag), out of combat. Its enchant, temporary enchant (poisons, oils) and the gems of sockets the new item also has carry over, as does a transmogrified look (stored per slot). A relic in the bank is swapped when it is equipped. Sockets start at rank 17: one on one-handers, shields and ranged weapons, two on two-handers, and a third from rank 26.
+
+**The ladder** is generated by `tools/build_relic.py` into `data/sql/db-world/mod_archaeology_world_relic.sql`: the steps, the forms, which item each form shows at each step, and the 812 item_template + item_dbc rows. Stats come from a budget per item level fitted to 3.3.5's best raid weapons of each tier, so at the top of a tier the relic matches that tier's best item. The items use weapon models the client already has; `tools/build_patch.py` adds their Item.dbc rows to the client patch, which the client needs to draw them. Change the tables in the script and run it again rather than editing the SQL.
+
 ## ArchaeologyUI addon
 
 `addon/ArchaeologyUI` is the client side, for the 3.3.5a client (Interface 30300). Copy the folder into `World of Warcraft/Interface/AddOns/`.
@@ -76,6 +113,7 @@ Cataclysm's item ids clash with 3.3.5, so every artifact gets a new id. `mod_arc
 - **Survey button:** shows while you stand in one of your dig sites. Click it (or bind a key under Key Bindings, ArchaeologyUI) to survey. The border turns red, yellow or green, and an arrow above the button points toward the find as you turn. Shift-drag moves the button; right-click opens the research window.
 - **Research window** (`/arch`): a tab per race you can research, with the current project's name, lore and artifact, your fragments against its cost, a socket per keystone the project takes (click to put one in or take it out), and Solve.
 - **In DragonUI's professions window:** with DragonUI 2.12 or later (its professions window on), the research window is a page of that window instead, with an Archaeology side tab after your profession tabs once you know Archaeology: races in the list column, the project on the recipe card, your skill on the rank bar. `/arch` and everything else that opens the research window opens that page. Retail Professions also lists Archaeology in its professions book and Training column.
+- **Relic line:** the Unearthed Relic's rank, item level and Relic Power toward the next rank, and what holds it back, along the bottom of the research window (under the rank bar on the DragonUI page).
 - **Fragments bar:** slides in at the top when you loot fragments, showing progress toward that race's project. Click it to open that race in the research window.
 
 Slash commands: `/arch` (window), `/arch survey`, `/arch reset` (survey button back to its default spot), `/arch refresh` (ask the server again).
@@ -96,6 +134,7 @@ Addon whispers to yourself in `LANG_ADDON`, `ARCH\t<COMMAND>[:...]`.
   - `P:<id>:<race>:<rare>:<cost>:<sockets>:<item>:<name>`, `D:<id>:<text>` chunks, `DEND:<id>`
   - `V:RED|YELLOW|GREEN:<angle>`, `V:FOUND`, `V:NONE` (survey result)
   - `F:<race>:<gained>:<total>` (fragments looted), `X:<project>:<item>:<rare>` (solved)
+  - `L:<rank>:<ranks>:<power>:<next cost>:<item level>:<quality>:<form>:<note>` (the relic; rank 0 = not yet)
 
 ## Client patch
 
@@ -104,6 +143,7 @@ The 3.3.5 client has no Archaeology. `tools/build_patch.py` adds what it needs t
 - SkillLine 794 "Archaeology" (a secondary skill, like Cooking) and a SkillRaceClassInfo row, so `Archaeology.Skill.SkillLine = 794` can show the skill in the Skills tab. Set it only once players have the patch.
 - Spells 90500-90505 (Apprentice to Grand Master, each a Skill effect on 794 and a Dummy cast) and 90506 Survey (1 s cast, Dummy), with SkillLineAbility rows. Survey is learned with the skill.
 - Item.dbc and ItemDisplayInfo.dbc rows with the Cataclysm icon of every keystone and artifact. Without them the items show a question mark. Icons the client lacks are added to the patch.
+- Item.dbc rows for the relic's 812 items (9505000-9505999), from `mod_archaeology_world_relic.sql`. They use models the client has, so they need no display rows; the server already has the same rows in that file.
 - The survey telescope: GameObjectDisplayInfo 10101-10103 (green, yellow, red) and Cataclysm's three models, converted to the 3.3.5 format by [wow-mod-retail-creatures](https://github.com/buildthehomelab/wow-mod-retail-creatures) (clone it next to this repo, or set `RETAIL_CREATURES`).
 
 A patch MPQ replaces whole files and the highest patch wins, so the tool edits the copies your realm already ships:

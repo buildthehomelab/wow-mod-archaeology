@@ -132,3 +132,63 @@ Archaeology.Telescope.Yellow = 9503501
 Archaeology.Telescope.Red = 9503502
 Archaeology.Telescope.Seconds = 6
 Archaeology.Find.Seconds = 180
+
+#
+#    Archaeology.Relic.Enable
+#        Description: The Unearthed Relic: at Archaeology.Relic.Skill an archaeology trainer gives
+#                     "A Weapon in Pieces", and the character chooses a form for a weapon (or a pair)
+#                     that ranks up with Relic Power from archaeology.
+#    Archaeology.Relic.Skill
+#        Description: Archaeology skill that opens the relic quest.
+#        Default:     1, 50
+
+Archaeology.Relic.Enable = 1
+Archaeology.Relic.Skill = 50
+
+#
+#    Archaeology.Relic.PowerPerFind
+#    Archaeology.Relic.PowerPerCommon
+#    Archaeology.Relic.PowerPerRare
+#    Archaeology.Relic.PowerFirstSolve
+#        Description: Relic Power per find dug up, per common and rare project solved, and extra for
+#                     a project solved for the first time. Earned from the first find on, so digging
+#                     before the relic quest still counts.
+#    Archaeology.Relic.CostRate
+#        Description: Multiplies every rank's cost (mod_archaeology_relic_step.cost).
+#        Default:     10, 30, 300, 100, 1.0
+
+Archaeology.Relic.PowerPerFind = 10
+Archaeology.Relic.PowerPerCommon = 30
+Archaeology.Relic.PowerPerRare = 300
+Archaeology.Relic.PowerFirstSolve = 100
+Archaeology.Relic.CostRate = 1.0
+
+#
+#    Archaeology.Relic.StateWithoutProgression
+#        Description: Without Archaeology.IndividualProgression.Enable, the progression state the
+#                     relic assumes for every character (18 = no cap; only rank and level count).
+#    Archaeology.Relic.CapstoneQuest.Vanilla
+#    Archaeology.Relic.CapstoneQuest.Outland
+#    Archaeology.Relic.CapstoneQuest.Northrend
+#        Description: Quest a character must have done before the last rank of each era, on top of
+#                     solving every rare of that era's races. 0 = no quest needed.
+#    Archaeology.Relic.AwakenNeedsMaxSkill
+#        Description: Awakening (the last rank, Artifact quality) also needs Archaeology.Skill.Max,
+#                     besides every project of every race solved.
+#        Default:     18, 0, 0, 0, 1
+
+Archaeology.Relic.StateWithoutProgression = 18
+Archaeology.Relic.CapstoneQuest.Vanilla = 0
+Archaeology.Relic.CapstoneQuest.Outland = 0
+Archaeology.Relic.CapstoneQuest.Northrend = 0
+Archaeology.Relic.AwakenNeedsMaxSkill = 1
+
+#
+#    Archaeology.Relic.FormChange.Cost
+#    Archaeology.Relic.FormChange.CostPerRank
+#        Description: Copper to reshape the relic at the trainer: Cost + CostPerRank x rank. The first
+#                     change is free.
+#        Default:     100000 (10 gold), 20000 (2 gold)
+
+Archaeology.Relic.FormChange.Cost = 100000
+Archaeology.Relic.FormChange.CostPerRank = 20000

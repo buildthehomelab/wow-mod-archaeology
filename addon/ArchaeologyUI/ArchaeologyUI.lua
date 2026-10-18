@@ -213,6 +213,15 @@ local function onMessage(message)
             end
             A.Fire("FRAGMENTS", race, tonumber(gained), total)
         end
+    elseif command == "L" then
+        local rank, ranks, power, cost, ilvl, quality, form, note = rest:match("^(%d+):(%d+):(%d+):(%d+):(%d+):(%d+):([^:]*):(.*)$")
+        if rank then
+            A.relic = {
+                rank = tonumber(rank), ranks = tonumber(ranks), power = tonumber(power), cost = tonumber(cost),
+                itemLevel = tonumber(ilvl), quality = tonumber(quality), form = form, note = note,
+            }
+            A.Fire("RELIC")
+        end
     elseif command == "X" then
         local project, item, rare = rest:match("^(%d+):(%d+):(%d+)$")
         if project then

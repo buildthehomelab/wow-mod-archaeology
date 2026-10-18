@@ -27,6 +27,9 @@ What the client gets:
   mod_archaeology_item_source, with the Cataclysm item's icon (Item.csv IconFileDataID and the
   listfile). An item's display is 950400 + (item - 9504000). Icons the client lacks are
   downloaded into --cache and added under Interface\\Icons.
+- Item.dbc rows for the Unearthed Relic's ladder, 9505000-9505999, as tools/build_relic.py wrote
+  them in data/sql/db-world/mod_archaeology_world_relic.sql (which gives the server the same
+  rows). They use weapon models the client already has, so no display rows are added.
 - GameObjectDisplayInfo.dbc 10101-10103 (Cataclysm's ids): the survey telescope, green, yellow
   and red, and its three models converted to the 3.3.5 format with wow-mod-retail-creatures'
   converter (RETAIL_CREATURES, or a mod-retail-creatures / wow-mod-retail-creatures checkout
@@ -56,6 +59,8 @@ import tempfile
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 CATA = os.path.join(ROOT, "tools", "cata-data")
 WORLD_DATA = os.path.join(ROOT, "data", "sql", "db-world", "mod_archaeology_world_data.sql")
+RELIC_DATA = os.path.join(ROOT, "data", "sql", "db-world", "mod_archaeology_world_relic.sql")
+RELIC_FIRST, RELIC_LAST = 9505000, 9505999
 
 SKILL = 794
 SKILL_NAME = "Archaeology"
@@ -387,6 +392,26 @@ def module_items():
     return items
 
 
+def relic_items():
+    """Item.dbc rows of the relic ladder, from the item_dbc block tools/build_relic.py wrote."""
+    text = open(RELIC_DATA, encoding="utf-8").read()
+    block = text[text.index("INSERT INTO `item_dbc`"):]
+    rows = [[int(v) for v in m.groups()] for m in
+            re.finditer(r"^\((\d+), (\d+), (\d+), (-?\d+), (\d+), (\d+), (\d+), (\d+)\)", block, re.M)]
+    for row in rows:
+        if not RELIC_FIRST <= row[0] <= RELIC_LAST:
+            sys.exit("relic item %d is outside %d-%d" % (row[0], RELIC_FIRST, RELIC_LAST))
+    if not rows:
+        sys.exit("no relic items in " + RELIC_DATA)
+    return rows
+
+
+def add_relic(dbc, rows):
+    for row in rows:
+        dbc["Item"].put([v & 0xFFFFFFFF for v in row])
+    print("Item.dbc: %d relic items" % len(rows))
+
+
 def icon_paths(fdids, cache, retail):
     """{file data id: listfile path} from the filtered listfile, else the full one (downloaded)."""
     paths = {}
@@ -646,7 +671,11 @@ def write_sql(path, dbc, items):
         t = dbc.get(table)
         if not t or not t.ours:
             continue
-        rows = sorted({r[0]: r for r in t.ours}.values(), key=lambda r: r[0])
+        # The relic's item_dbc rows are in mod_archaeology_world_relic.sql already.
+        rows = sorted({r[0]: r for r in t.ours if table != "Item" or not RELIC_FIRST <= r[0] <= RELIC_LAST}.values(),
+                      key=lambda r: r[0])
+        if not rows:
+            continue
         out.append("DELETE FROM `%s` WHERE %s;" % (sql_table, id_list(r[0] for r in rows)))
         out.append("INSERT INTO `%s` VALUES\n%s;\n" % (sql_table, ",\n".join(sql_values(table, t, r) for r in rows)))
     if dbc["Item"].ours:
@@ -711,6 +740,7 @@ def main():
         files = unpacked[0]
         files["Interface\\Icons\\%s.blp" % ICON] = retail.fetch.casc_path(args.cache, ICON_FDID)
         add_items(dbc, items, client, files, args.cache, retail)
+        add_relic(dbc, relic_items())
         if not args.no_models:
             add_telescope(dbc, client, files, args.cache, retail, work, args.max_texture)
 

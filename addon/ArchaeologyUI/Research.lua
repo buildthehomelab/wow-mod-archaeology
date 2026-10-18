@@ -79,6 +79,12 @@ title:SetText("Archaeology")
 local skillText = window:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
 skillText:SetPoint("TOP", title, "BOTTOM", 0, -4)
 
+-- The Unearthed Relic, one line along the bottom.
+local relicText = window:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+relicText:SetPoint("BOTTOMLEFT", 20, 8)
+relicText:SetPoint("BOTTOMRIGHT", -20, 8)
+relicText:SetJustifyH("LEFT")
+
 local empty = window:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
 empty:SetPoint("CENTER")
 empty:SetWidth(WIDTH - 60)
@@ -87,7 +93,7 @@ R.empty = empty
 -- Everything below the title belongs to the selected race.
 local page = CreateFrame("Frame", nil, window)
 page:SetPoint("TOPLEFT", 20, -56)
-page:SetPoint("BOTTOMRIGHT", -20, 18)
+page:SetPoint("BOTTOMRIGHT", -20, 38)
 R.page = page
 
 local raceIcon = page:CreateTexture(nil, "ARTWORK")
@@ -350,8 +356,30 @@ local function drawRace(race)
     end
 end
 
+-- The relic line: "Unearthed Relic rank 7/29, item level 58 - Relic Power 120/550", or the note
+-- the server sent (how to get it, what holds it back).
+function A.RelicLine()
+    local r = A.relic
+    if not r then
+        return ""
+    end
+    if r.rank == 0 then
+        return string.format("|cffe6cc80Unearthed Relic|r  Relic Power %d. %s", r.power, r.note)
+    end
+    local color = ITEM_QUALITY_COLORS and ITEM_QUALITY_COLORS[r.quality]
+    local name = (color and color.hex or "|cffe6cc80") .. "Unearthed Relic|r"
+    local line = string.format("%s rank %d/%d, item level %d", name, r.rank, r.ranks, r.itemLevel)
+    if r.cost > 0 then
+        line = line .. string.format("  -  Relic Power %d/%d", r.power, r.cost)
+    end
+    return r.note ~= "" and (line .. "\n" .. r.note) or line
+end
+
 -- How our own window shows the skill and the races; Hosted.lua swaps these for its own.
 R.shown = function() return window:IsShown() end
+R.drawRelic = function(text)
+    relicText:SetText(text or "")
+end
 R.drawSkill = function(skill, maxSkill)
     skillText:SetText(skill and string.format("Skill %d / %d", skill, maxSkill) or "")
 end
@@ -384,6 +412,7 @@ refresh = function()
         return
     end
     local races = A.UnlockedRaces()
+    R.drawRelic(A.skill > 0 and A.RelicLine() or nil)
     if A.skill == 0 or #races == 0 then
         R.drawSkill(nil)
         R.drawRaces({}, nil)
@@ -457,3 +486,4 @@ A.On("PROJECT", function(id)
     end
 end)
 A.On("FRAGMENTS", refresh)
+A.On("RELIC", refresh)

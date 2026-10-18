@@ -115,6 +115,12 @@ local function build(H, P, D, parent)
     bar.rank = Art.RankText(top)
     bar.rank:SetCenter(bar, "TOPLEFT", 5 + BAR_FILL_W / 2, -12)
 
+    -- The relic line, under the rank bar.
+    holder.relic = holder:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+    holder.relic:SetPoint("TOPLEFT", bar, "BOTTOMLEFT", 6, -2)
+    holder.relic:SetWidth(BAR_W)
+    holder.relic:SetJustifyH("LEFT")
+
     -- The races, in the list column.
     local list = CreateFrame("Frame", nil, holder)
     list:SetPoint("TOPLEFT", holder, "TOPLEFT", LIST_X, LIST_Y)
@@ -162,7 +168,7 @@ local function start()
     if not H then return end
     -- Our own window's, for when DragonUI's window won't open (its professions module turned
     -- off, or a replacement such as Skillet loaded since).
-    local own = { shown = R.shown, drawSkill = R.drawSkill, drawRaces = R.drawRaces, toggle = R.toggle }
+    local own = { shown = R.shown, drawSkill = R.drawSkill, drawRaces = R.drawRaces, drawRelic = R.drawRelic, toggle = R.toggle }
     local fallback = false
 
     R.shown = function()
@@ -179,6 +185,12 @@ local function start()
         bar:Show()
         P.Fill.Update(bar.fx, nil, maxSkill > 0 and math.min(skill / maxSkill, 1) or 0, maxSkill > 0 and skill >= maxSkill)
         bar.rank:Set(string.format("%s %d", TITLE, skill), maxSkill)
+    end
+    R.drawRelic = function(text)
+        if fallback then return own.drawRelic(text) end
+        if not holder then return end
+        -- One line fits between the rank bar and the list.
+        holder.relic:SetText(text and text:gsub("\n", "  ") or "")
     end
     R.drawRaces = function(races, current)
         if fallback then return own.drawRaces(races, current) end

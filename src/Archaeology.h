@@ -17,8 +17,9 @@
 #include <unordered_map>
 #include <vector>
 
-class Player;
+class Creature;
 class GameObject;
+class Player;
 
 namespace Archaeology
 {
@@ -58,6 +59,20 @@ namespace Archaeology
         std::array<uint32, 3> telescopeEntry = { 9503502, 9503501, 9503500 };   // by SurveyBand: red, yellow, green
         uint32 telescopeSeconds = 6;
         uint32 findSeconds = 180;
+
+        // The Unearthed Relic
+        bool relicEnabled = true;
+        uint32 relicSkill = 50;              // skill that opens "A Weapon in Pieces"
+        uint32 powerPerFind = 10;
+        uint32 powerPerCommon = 30;
+        uint32 powerPerRare = 300;
+        uint32 powerFirstSolve = 100;
+        float relicCostRate = 1.0f;
+        uint32 relicStateWithoutIp = 18;     // progression state the relic assumes without individual progression
+        std::array<uint32, 3> capstoneQuest = { 0, 0, 0 };   // by era; 0 = none needed
+        bool awakenNeedsMaxSkill = true;
+        uint32 formChangeBase = 100000;      // copper
+        uint32 formChangePerRank = 20000;
     };
 
     struct Race
@@ -113,6 +128,42 @@ namespace Archaeology
         uint32 project = 0;          // current project id, 0 = none rolled yet
     };
 
+    // The Unearthed Relic. The real state is here (mod_archaeology_char_relic); the item a player
+    // holds is only a projection of it, picked from the ladder in mod_archaeology_relic_*.
+    struct RelicState
+    {
+        uint8 form = 0;              // mod_archaeology_relic_form id, 0 = not chosen yet
+        uint8 rank = 0;              // 0 = no relic yet; rank r can show ladder step r - 1
+        uint32 power = 0;            // Relic Power not spent on ranks yet
+        uint32 earned = 0;           // all Relic Power ever earned
+        uint32 traits = 0;           // awake trait bits (traits come in a later phase)
+        uint32 formChanges = 0;
+        ObjectGuid::LowType mainItem = 0;   // the relic's item guid
+        ObjectGuid::LowType offItem = 0;    // its off-hand half or shield
+    };
+
+    struct RelicStep
+    {
+        uint8 era = 0;               // 0 vanilla, 1 Burning Crusade, 2 Wrath of the Lich King
+        uint8 level = 0;             // required level
+        uint32 itemLevel = 0;
+        uint8 quality = 0;
+        uint32 state = 0;            // progression state that opens this rank
+        uint32 cost = 0;             // Relic Power to reach this rank
+        uint8 gate = 0;              // 1 last rank of its era, 2 awakened
+    };
+
+    enum RelicNeed : uint8 { RELIC_NEED_NONE, RELIC_NEED_DUAL_WIELD, RELIC_NEED_TITANS_GRIP };
+
+    struct RelicForm
+    {
+        uint8 id = 0;
+        std::string name;
+        uint32 classes = 0;
+        uint8 need = RELIC_NEED_NONE;
+        std::vector<std::pair<uint32, uint32>> items;   // by step: main item, off item (0 = none)
+    };
+
     struct CharState
     {
         uint32 skill = 0;            // 0 = not learned
@@ -121,6 +172,7 @@ namespace Archaeology
         std::unordered_map<uint8, RaceProgress> races;
         std::unordered_map<uint32, uint32> solved;   // project id -> times solved
         uint32 lastSurveyMs = 0;
+        RelicState relic;
     };
 
     Config const& GetConfig();
@@ -131,6 +183,7 @@ namespace Archaeology
     std::vector<Race> const& AllRaces();
     Site const* GetSite(uint32 id);
     Project const* GetProject(uint32 id);
+    std::vector<uint32> const& ProjectsOfRace(uint8 race);
 
     // Character state: loaded on login, written through on every change, dropped on logout.
     CharState* GetState(Player* player);
@@ -163,6 +216,24 @@ namespace Archaeology
     void SendRaces(Player* player);
     void SendProject(Player* player, uint32 projectId);
     void Notify(Player* player, std::string const& text);
+
+    // The Unearthed Relic (ArchaeologyRelic.cpp).
+    constexpr uint32 RELIC_QUEST = 9503500;
+    void LoadRelicData();
+    void LoadRelic(Player* player, CharState& state);
+    void SaveRelic(Player* player);
+    void AddRelicPower(Player* player, uint32 amount);
+    void QueueRelic(Player* player);      // re-check rank and item when it is safe to swap
+    void UpdateQueuedRelic(Player* player);
+    void ForgetRelic(Player* player);
+    bool IsRelicItem(uint32 entry);
+    bool CanTakeRelicQuest(Player* player);
+    void SendRelic(Player* player);
+    std::string RelicStatusText(Player* player);
+    // Trainer: gossip options, their actions, and the relic quest's reward.
+    void AddRelicGossip(Player* player);
+    bool RelicGossipSelect(Player* player, Creature* creature, uint32 sender, uint32 action);
+    void RelicQuestRewarded(Player* player, Creature* creature);
 }
 
 #endif

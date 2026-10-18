@@ -61,6 +61,20 @@ namespace Archaeology
         c.telescopeEntry[BAND_GREEN] = sConfigMgr->GetOption<uint32>("Archaeology.Telescope.Green", 9503500);
         c.telescopeSeconds = sConfigMgr->GetOption<uint32>("Archaeology.Telescope.Seconds", 6);
         c.findSeconds = sConfigMgr->GetOption<uint32>("Archaeology.Find.Seconds", 180);
+        c.relicEnabled = sConfigMgr->GetOption<bool>("Archaeology.Relic.Enable", true);
+        c.relicSkill = sConfigMgr->GetOption<uint32>("Archaeology.Relic.Skill", 50);
+        c.powerPerFind = sConfigMgr->GetOption<uint32>("Archaeology.Relic.PowerPerFind", 10);
+        c.powerPerCommon = sConfigMgr->GetOption<uint32>("Archaeology.Relic.PowerPerCommon", 30);
+        c.powerPerRare = sConfigMgr->GetOption<uint32>("Archaeology.Relic.PowerPerRare", 300);
+        c.powerFirstSolve = sConfigMgr->GetOption<uint32>("Archaeology.Relic.PowerFirstSolve", 100);
+        c.relicCostRate = std::max(sConfigMgr->GetOption<float>("Archaeology.Relic.CostRate", 1.0f), 0.0f);
+        c.relicStateWithoutIp = sConfigMgr->GetOption<uint32>("Archaeology.Relic.StateWithoutProgression", 18);
+        c.capstoneQuest[0] = sConfigMgr->GetOption<uint32>("Archaeology.Relic.CapstoneQuest.Vanilla", 0);
+        c.capstoneQuest[1] = sConfigMgr->GetOption<uint32>("Archaeology.Relic.CapstoneQuest.Outland", 0);
+        c.capstoneQuest[2] = sConfigMgr->GetOption<uint32>("Archaeology.Relic.CapstoneQuest.Northrend", 0);
+        c.awakenNeedsMaxSkill = sConfigMgr->GetOption<bool>("Archaeology.Relic.AwakenNeedsMaxSkill", true);
+        c.formChangeBase = sConfigMgr->GetOption<uint32>("Archaeology.Relic.FormChange.Cost", 100000);
+        c.formChangePerRank = sConfigMgr->GetOption<uint32>("Archaeology.Relic.FormChange.CostPerRank", 20000);
         config = c;
     }
 
@@ -164,6 +178,7 @@ namespace Archaeology
         }
 
         LOG_INFO("module", "mod-archaeology: {} races, {} dig sites, {} projects", races.size(), sites.size(), projects.size());
+        LoadRelicData();
     }
 
     Race const* GetRace(uint8 id)
@@ -186,6 +201,13 @@ namespace Archaeology
     {
         auto itr = projects.find(id);
         return itr != projects.end() ? &itr->second : nullptr;
+    }
+
+    std::vector<uint32> const& ProjectsOfRace(uint8 race)
+    {
+        static std::vector<uint32> const none;
+        auto itr = projectsByRace.find(race);
+        return itr != projectsByRace.end() ? itr->second : none;
     }
 
     CharState* GetState(Player* player)
@@ -238,6 +260,8 @@ namespace Archaeology
                 s.solved[f[0].Get<uint32>()] = f[1].Get<uint32>();
             } while (result->NextRow());
         }
+
+        LoadRelic(player, s);
 
         if (s.skill)
         {
