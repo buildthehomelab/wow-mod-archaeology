@@ -369,6 +369,7 @@ namespace Archaeology
         }
         if (config.skillLine && sSkillLineStore.LookupEntry(config.skillLine))
             player->SetSkill(config.skillLine, std::max<uint32>(s->maxSkill / 75, 1), s->skill, s->maxSkill);
+        RelicSkillChanged(player);
     }
 
     uint32 IpState(Player* player)

@@ -228,6 +228,7 @@ namespace Archaeology
     void ForgetRelic(Player* player);
     bool IsRelicItem(uint32 entry);
     bool CanTakeRelicQuest(Player* player);
+    void RelicSkillChanged(Player* player);
     void SendRelic(Player* player);
     std::string RelicStatusText(Player* player);
     // Trainer: gossip options, their actions, and the relic quest's reward.

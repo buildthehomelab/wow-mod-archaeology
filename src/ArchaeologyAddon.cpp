@@ -238,6 +238,8 @@ public:
         lastRequest.erase(player->GetGUID().GetCounter());
         ForgetFinds(player);
         ForgetRelic(player);
+        if (CharState* s = GetState(player); s && (s->relic.rank || s->relic.earned))
+            SaveRelic(player);
         UnloadCharacter(player);
     }
 

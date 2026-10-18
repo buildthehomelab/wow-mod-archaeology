@@ -21,6 +21,9 @@
 #include "QuestDef.h"
 #include "ScriptedGossip.h"
 #include <algorithm>
+#include <atomic>
+#include <functional>
+#include <mutex>
 #include <unordered_set>
 
 namespace
@@ -36,7 +39,10 @@ namespace
     std::vector<RelicForm> forms;
     std::unordered_set<uint32> mainItems;
     std::unordered_set<uint32> offItems;
+    // Characters whose relic needs a look. Player updates run on several map threads at once.
+    std::mutex queueLock;
     std::unordered_set<ObjectGuid> queued;
+    std::atomic<uint32> queuedCount { 0 };
 
     RelicForm* GetForm(uint8 id)
     {
@@ -125,15 +131,20 @@ namespace
         return 0;
     }
 
-    bool CanUseForm(Player* player, RelicForm const& form)
+    // The class, Dual Wield or Titan's Grip, and the weapon skills to use both halves.
+    bool CanUseForm(Player* player, RelicForm const& form, uint32 step)
     {
-        if (!(form.classes & player->getClassMask()))
+        if (!(form.classes & player->getClassMask()) || form.items.size() != steps.size() || step >= steps.size())
             return false;
         if (form.need == RELIC_NEED_DUAL_WIELD && !player->CanDualWield())
             return false;
         if (form.need == RELIC_NEED_TITANS_GRIP && !player->CanTitanGrip())
             return false;
-        return form.items.size() == steps.size();
+        for (uint32 entry : { form.items[step].first, form.items[step].second })
+            if (ItemTemplate const* proto = entry ? sObjectMgr->GetItemTemplate(entry) : nullptr)
+                if (player->CanUseItem(proto) != EQUIP_ERR_OK)
+                    return false;
+        return true;
     }
 
     uint32 FormChangeCost(RelicState const& r)
@@ -211,15 +222,37 @@ namespace
         return keep;
     }
 
-    // Replace a relic item with another step's or form's, in the same place, keeping its enchant,
-    // temporary enchant (poisons, oils) and the gems of sockets the new item also has.
+    // Replace a relic item with another step's or form's, in the same place (or in the bags when it
+    // can't go back in that slot), keeping the gems of sockets the new item also has. The enchant
+    // and temporary enchant (poisons, oils) stay only on the same kind of weapon: a staff enchant
+    // can't move to a one-hander. Returns nullptr, with the old item untouched, when the new one has
+    // nowhere to go.
     Item* Replace(Player* player, Item* old, uint32 entry)
     {
         ItemTemplate const* proto = sObjectMgr->GetItemTemplate(entry);
-        if (!proto)
-            return old;
+        ItemTemplate const* oldProto = old->GetTemplate();
+        if (!proto || !oldProto)
+            return nullptr;
         uint8 bag = old->GetBagSlot(), slot = old->GetSlot();
         bool equipped = old->IsEquipped();
+
+        // Find the new item's place before anything changes. Until it gets enchants or a place it
+        // is in no update queue, so it can simply be deleted.
+        Item* item = Item::CreateItem(entry, 1, player);
+        if (!item)
+            return nullptr;
+        uint16 equipDest = 0;
+        ItemPosCountVec dest;
+        bool toSlot = equipped && player->CanEquipItem(slot, equipDest, item, true) == EQUIP_ERR_OK;
+        if (!toSlot && (equipped || player->CanStoreItem(bag, slot, dest, item, true) != EQUIP_ERR_OK) &&
+            player->CanStoreItem(NULL_BAG, NULL_SLOT, dest, item, false) != EQUIP_ERR_OK)
+        {
+            delete item;
+            return nullptr;
+        }
+
+        bool sameKind = proto->InventoryType == oldProto->InventoryType && proto->Class == oldProto->Class &&
+            proto->SubClass == oldProto->SubClass;
         struct Enchant { uint32 id, duration, charges; };
         std::array<Enchant, MAX_INSPECTED_ENCHANTMENT_SLOT> enchants;
         for (uint8 e = 0; e < MAX_INSPECTED_ENCHANTMENT_SLOT; ++e)
@@ -229,15 +262,13 @@ namespace
         uint32 durability = old->GetUInt32Value(ITEM_FIELD_DURABILITY);
 
         player->DestroyItem(bag, slot, true);
-        Item* item = Item::CreateItem(entry, 1, player);
-        if (!item)
-            return nullptr;
         item->SetBinding(true);
         for (uint8 e = 0; e < MAX_INSPECTED_ENCHANTMENT_SLOT; ++e)
         {
             if (!enchants[e].id || e == BONUS_ENCHANTMENT_SLOT)
                 continue;
-            if (e >= SOCK_ENCHANTMENT_SLOT && e <= SOCK_ENCHANTMENT_SLOT_3 && !proto->Socket[e - SOCK_ENCHANTMENT_SLOT].Color)
+            bool socket = e >= SOCK_ENCHANTMENT_SLOT && e <= SOCK_ENCHANTMENT_SLOT_3;
+            if (socket ? !proto->Socket[e - SOCK_ENCHANTMENT_SLOT].Color : !sameKind)
                 continue;
             item->SetEnchantment(EnchantmentSlot(e), enchants[e].id, enchants[e].duration, enchants[e].charges);
         }
@@ -245,18 +276,7 @@ namespace
             item->SetEnchantment(BONUS_ENCHANTMENT_SLOT, proto->socketBonus, 0, 0);
         if (maxDurability && proto->MaxDurability)
             item->SetUInt32Value(ITEM_FIELD_DURABILITY, uint32(uint64(proto->MaxDurability) * durability / maxDurability));
-
-        // Back where it was; an item that can't go in that slot (a main-hand weapon where a Titan's
-        // Grip two-hander sat in the off hand) goes in the bags instead.
-        uint16 equipDest = 0;
-        if (equipped && player->CanEquipItem(slot, equipDest, item, false) == EQUIP_ERR_OK)
-            return player->EquipItem(equipDest, item, true);
-        ItemPosCountVec dest;
-        if ((!equipped && player->CanStoreItem(bag, slot, dest, item, false) == EQUIP_ERR_OK) ||
-            player->CanStoreItem(NULL_BAG, NULL_SLOT, dest, item, false) == EQUIP_ERR_OK)
-            return player->StoreItem(dest, item, true);
-        delete item;
-        return nullptr;
+        return toSlot ? player->EquipItem(equipDest, item, true) : player->StoreItem(dest, item, true);
     }
 
     Item* GiveNew(Player* player, uint32 entry)
@@ -274,14 +294,18 @@ namespace
     }
 
     // Bring the items in line with the relic: right step, right form, no strays. With `give`, also
-    // hand out halves the character has lost (the trainer's restore, or a new relic).
-    void Sync(Player* player, CharState& s, bool give)
+    // hand out halves the character has lost (the trainer's restore, or a new relic). False when a
+    // half couldn't change or be handed out for lack of room; what did change is kept. `settle`, if
+    // given, runs after the swap and before the save (with whether anything changed and whether
+    // anything failed), and the relic row is then saved even if no item changed.
+    using Settle = std::function<void(bool changed, bool failed)>;
+    bool Sync(Player* player, CharState& s, bool give, Settle const& settle = nullptr)
     {
         RelicState& r = s.relic;
         TryRankUp(player, s);
         RelicForm const* form = GetForm(r.form);
-        if (!r.rank || !form || form->items.size() != steps.size())
-            return;
+        if (!r.rank || !form || steps.empty() || form->items.size() != steps.size())
+            return true;
         auto [wantMain, wantOff] = form->items[ShownStep(player, r)];
 
         std::vector<Held> found = FindRelics(player);
@@ -289,7 +313,7 @@ namespace
         Held const* off = Keep(player, found, true, r.offItem);
         Item* mainItem = main ? main->item : nullptr;
         Item* offItem = off ? off->item : nullptr;
-        bool changed = false;
+        bool changed = false, failed = false;
 
         // The off hand first, so a two-hander can take the main hand.
         if (offItem && !wantOff)
@@ -301,28 +325,43 @@ namespace
         }
         else if (offItem && offItem->GetEntry() != wantOff && !off->bank)
         {
-            offItem = Replace(player, offItem, wantOff);
-            changed = true;
+            if (Item* item = Replace(player, offItem, wantOff))
+            {
+                offItem = item;
+                changed = true;
+            }
+            else
+                failed = true;
         }
         if (mainItem && mainItem->GetEntry() != wantMain && !main->bank)
         {
-            mainItem = Replace(player, mainItem, wantMain);
-            changed = true;
+            if (Item* item = Replace(player, mainItem, wantMain))
+            {
+                mainItem = item;
+                changed = true;
+            }
+            else
+                failed = true;
         }
         if (give && !mainItem && (mainItem = GiveNew(player, wantMain)))
             changed = true;
         if (give && wantOff && !offItem && (offItem = GiveNew(player, wantOff)))
             changed = true;
         if (give && (!mainItem || (wantOff && !offItem)))
-            Notify(player, "Make room in your bags for your relic, then ask again.");
+            failed = true;
+        if (failed)
+            Notify(player, "Your relic can't take its new shape: make room in your bags. It tries again when you next level, change zones or log in, or ask an archaeology trainer.");
 
         if (mainItem)
             r.mainItem = mainItem->GetGUID().GetCounter();
         if (offItem)
             r.offItem = offItem->GetGUID().GetCounter();
-        if (!changed)
-            return;
-        player->AutoUnequipOffhandIfNeed();
+        if (settle)
+            settle(changed, failed);
+        else if (!changed)
+            return !failed;
+        if (changed)
+            player->AutoUnequipOffhandIfNeed();
         // Save the swap and the relic row together, so a crash can't leave the row pointing at
         // items the character never had.
         CharacterDatabaseTransaction trans = CharacterDatabase.BeginTransaction();
@@ -332,6 +371,7 @@ namespace
             r.form, r.rank, r.power, r.earned, r.traits, r.formChanges, r.mainItem, r.offItem);
         CharacterDatabase.CommitTransaction(trans);
         SendRelic(player);
+        return !failed;
     }
 
     bool HasMissingHalf(Player* player, RelicState const& r)
@@ -351,9 +391,10 @@ namespace
         RelicState const& r = s->relic;
         ClearGossipMenuFor(player);
         uint32 cost = r.form ? FormChangeCost(r) : 0;
+        uint32 step = ShownStep(player, r);
         for (RelicForm const& form : forms)
         {
-            if (form.id == r.form || !CanUseForm(player, form))
+            if (form.id == r.form || !CanUseForm(player, form, step))
                 continue;
             if (cost)
                 AddGossipItemFor(player, GOSSIP_ICON_BATTLE, form.name, SENDER_FORM, form.id,
@@ -440,7 +481,9 @@ namespace Archaeology
             Field* f = result->Fetch();
             RelicState& r = s.relic;
             r.form = f[0].Get<uint8>();
-            r.rank = std::min<uint32>(f[1].Get<uint8>(), RankCount());
+            r.rank = f[1].Get<uint8>();
+            if (!steps.empty())
+                r.rank = std::min<uint32>(r.rank, RankCount());
             r.power = f[2].Get<uint32>();
             r.earned = f[3].Get<uint32>();
             r.traits = f[4].Get<uint32>();
@@ -469,8 +512,8 @@ namespace Archaeology
         CharState* s = GetState(player);
         if (!GetConfig().relicEnabled || !s || !s->skill || !amount)
             return;
-        s->relic.power += amount;
-        s->relic.earned += amount;
+        s->relic.power = uint32(std::min<uint64>(uint64(s->relic.power) + amount, UINT32_MAX));
+        s->relic.earned = uint32(std::min<uint64>(uint64(s->relic.earned) + amount, UINT32_MAX));
         if (TryRankUp(player, *s))
             QueueRelic(player);
         SaveRelic(player);
@@ -480,25 +523,43 @@ namespace Archaeology
     void QueueRelic(Player* player)
     {
         CharState* s = GetState(player);
-        if (GetConfig().relicEnabled && s && s->relic.rank)
-            queued.insert(player->GetGUID());
+        if (!GetConfig().relicEnabled || !s || !s->relic.rank)
+            return;
+        std::lock_guard<std::mutex> lock(queueLock);
+        if (queued.insert(player->GetGUID()).second)
+            ++queuedCount;
     }
 
     // From the player update: swap items only while nothing else is going on.
     void UpdateQueuedRelic(Player* player)
     {
-        if (queued.empty() || !queued.count(player->GetGUID()))
+        if (!queuedCount.load(std::memory_order_relaxed))
             return;
-        if (!player->IsInWorld() || !player->IsAlive() || player->IsInCombat() || player->IsBeingTeleported())
+        if (!player->IsInWorld() || !player->IsAlive() || player->IsInCombat() || player->IsBeingTeleported() ||
+            player->IsNonMeleeSpellCast(false) || player->HasUnitState(UNIT_STATE_CONTROLLED))
             return;
-        queued.erase(player->GetGUID());
+        {
+            std::lock_guard<std::mutex> lock(queueLock);
+            if (!queued.erase(player->GetGUID()))
+                return;
+            --queuedCount;
+        }
         if (CharState* s = GetState(player))
             Sync(player, *s, false);
     }
 
     void ForgetRelic(Player* player)
     {
-        queued.erase(player->GetGUID());
+        std::lock_guard<std::mutex> lock(queueLock);
+        if (queued.erase(player->GetGUID()))
+            --queuedCount;
+    }
+
+    // A relic quest taken before the skill was there completes once it is.
+    void RelicSkillChanged(Player* player)
+    {
+        if (player->GetQuestStatus(RELIC_QUEST) == QUEST_STATUS_INCOMPLETE && CanTakeRelicQuest(player))
+            player->CompleteQuest(RELIC_QUEST);
     }
 
     bool IsRelicItem(uint32 entry)
@@ -515,7 +576,7 @@ namespace Archaeology
     void SendRelic(Player* player)
     {
         CharState* s = GetState(player);
-        if (!s || !s->skill || !GetConfig().relicEnabled)
+        if (!s || !s->skill || !GetConfig().relicEnabled || steps.empty())
             return;
         RelicState const& r = s->relic;
         RelicForm const* form = GetForm(r.form);
@@ -613,12 +674,8 @@ namespace Archaeology
                     return true;
                 case 13:
                     CloseGossipMenuFor(player);
-                    if (HasMissingHalf(player, r))
-                    {
-                        Sync(player, *s, true);
-                        if (!HasMissingHalf(player, r))
-                            creature->Whisper("Dug out of a forgotten corner of my pack. Try to hold on to it this time.", LANG_UNIVERSAL, player);
-                    }
+                    if (HasMissingHalf(player, r) && Sync(player, *s, true))
+                        creature->Whisper("Dug out of a forgotten corner of my pack. Try to hold on to it this time.", LANG_UNIVERSAL, player);
                     return true;
                 default:
                     return false;
@@ -629,23 +686,46 @@ namespace Archaeology
 
         CloseGossipMenuFor(player);
         RelicForm const* form = GetForm(uint8(action));
-        if (!form || form->id == r.form || !CanUseForm(player, *form))
+        if (!form || form->id == r.form || !CanUseForm(player, *form, ShownStep(player, r)))
             return true;
         bool first = !r.form;
+        uint32 cost = first ? 0 : FormChangeCost(r);
+        if (!player->HasEnoughMoney(cost))
+        {
+            player->SendBuyError(BUY_ERR_NOT_ENOUGHT_MONEY, creature, 0, 0);
+            return true;
+        }
+        // Room for both halves, so neither has to stay in its old shape.
+        if (player->GetFreeInventorySpace() < 2)
+        {
+            Notify(player, "Make room for two items in your bags first.");
+            return true;
+        }
+        // Paid before the swap and settled before the save, so gold, items and the relic row go in
+        // one transaction. If nothing could change, the old form and the gold come back; if one half
+        // changed, the reshape is paid for and the next swap (or a restore) finishes it.
+        uint8 oldForm = r.form;
         if (!first)
         {
-            uint32 cost = FormChangeCost(r);
-            if (!player->HasEnoughMoney(cost))
-            {
-                player->SendBuyError(BUY_ERR_NOT_ENOUGHT_MONEY, creature, 0, 0);
-                return true;
-            }
             player->ModifyMoney(-int32(cost));
             ++r.formChanges;
         }
         r.form = form->id;
-        SaveRelic(player);
-        Sync(player, *s, true);   // a new relic, or the off-hand half a pair needs
+        bool done = Sync(player, *s, true, [&](bool changed, bool /*failed*/)   // a new relic, or the half a pair needs
+        {
+            if (changed || first)
+                return;
+            r.form = oldForm;
+            player->ModifyMoney(int32(cost));
+            --r.formChanges;
+        });
+        if (!done)
+            return true;
+        if (r.form != form->id)
+        {
+            Notify(player, "Take your relic out of the bank first.");
+            return true;
+        }
         creature->Whisper(first ? "There. It's barely holding together, but it's yours, and it will grow with every find."
             : "Same history, new shape. Its rank and power are untouched.", LANG_UNIVERSAL, player);
         SendRelic(player);
@@ -654,8 +734,9 @@ namespace Archaeology
 
     void RelicQuestRewarded(Player* player, Creature* creature)
     {
+        // The quest is used up either way, so the relic is kept even while it is turned off.
         CharState* s = GetState(player);
-        if (!s || !GetConfig().relicEnabled || steps.empty())
+        if (!s)
             return;
         if (!s->relic.rank)
         {
@@ -664,7 +745,7 @@ namespace Archaeology
             SaveRelic(player);
         }
         SendRelic(player);
-        if (!s->relic.form)
+        if (!s->relic.form && GetConfig().relicEnabled && !steps.empty())
             SendFormMenu(player, creature);
     }
 }
