@@ -14,7 +14,8 @@
 --                    X:<project>:<item>:<rare>                    project solved
 --
 -- Other files hook in with ArchaeologyUI.On(event, fn). Events: STATE, RACES, SITES, PROJECT (id),
--- SURVEY (band, angle), FRAGMENTS (race, gained, total), SOLVED (project, item, rare), POSITION.
+-- SURVEY (band, angle), FRAGMENTS (race, gained, total), SOLVED (project, item, rare), POSITION,
+-- RELIC, LOGIN (A.db is ready), MINIMAP (shown).
 
 local PREFIX = "ARCH"
 local POSITION_INTERVAL = 0.1
@@ -344,6 +345,7 @@ end)
 BINDING_HEADER_ARCHAEOLOGYUI = "ArchaeologyUI"
 BINDING_NAME_ARCHAEOLOGYUI_SURVEY = "Survey"
 BINDING_NAME_ARCHAEOLOGYUI_TOGGLE = "Toggle Archaeology window"
+BINDING_NAME_ARCHAEOLOGYUI_MINIMAP = "Toggle dig sites on the minimap"
 
 SLASH_ARCHAEOLOGYUI1 = "/archaeology"
 SLASH_ARCHAEOLOGYUI2 = "/arch"
@@ -357,6 +359,12 @@ SlashCmdList.ARCHAEOLOGYUI = function(msg)
         end
     elseif msg == "refresh" then
         A.Send("HELLO")
+    elseif msg == "minimap" then
+        A.ToggleMinimap()
+    elseif msg == "options" then
+        if A.OpenOptions then
+            A.OpenOptions()
+        end
     elseif A.ToggleWindow then
         A.ToggleWindow()
     end
