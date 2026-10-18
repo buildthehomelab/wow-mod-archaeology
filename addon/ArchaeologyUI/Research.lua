@@ -12,8 +12,12 @@
 local A = ArchaeologyUI
 local WIDTH, HEIGHT = 400, 470
 local MAX_SOCKETS = 4
-local EMPTY_SOCKET = "Interface\\ItemSocketingFrame\\UI-EmptySocket-Prismatic"
+-- The stock socketing window's art (3.3.5 has no UI-EmptySocket-Prismatic: that drew nothing).
+local SOCKET_ART = "Interface\\ItemSocketingFrame\\UI-ItemSockets"
 local KEYSTONE = "Interface\\Icons\\INV_Misc_Rune_01"
+-- Each race's keystone item (mod_archaeology_race.keystone_item); Fossil has none.
+local KEYSTONES = { [1] = 9504010, [4] = 9504011, [8] = 9504012, [2] = 9504014, [6] = 9504015,
+    [5] = 9504016, [27] = 9504017 }
 local RACE_ICONS = {
     [1] = "Interface\\Icons\\Achievement_Character_Dwarf_Male",
     [2] = "Interface\\Icons\\Achievement_Character_Draenei_Male",
@@ -27,6 +31,12 @@ local RACE_ICONS = {
 
 function A.RaceIcon(id)
     return RACE_ICONS[id] or A.SHOVEL
+end
+
+-- The race's keystone icon (Troll Tablet, Highborne Scroll...) from the realm's client patch.
+function A.KeystoneIcon(id)
+    local item = KEYSTONES[id]
+    return item and GetItemIcon(item) or KEYSTONE
 end
 
 -- The skill's icon: Trade_Archaeology from the realm's client patch (it names rank 1, spell
@@ -141,7 +151,7 @@ lore:SetJustifyH("LEFT")
 lore:SetJustifyV("TOP")
 
 -- The lore takes whatever height the page has over the rest, and the scroll frame's width.
-local REST_HEIGHT = 236
+local REST_HEIGHT = 248
 page:SetScript("OnSizeChanged", function(self, width, height)
     loreBox:SetHeight(math.max(100, (height or self:GetHeight()) - REST_HEIGHT))
 end)
@@ -182,9 +192,18 @@ local refresh
 for i = 1, MAX_SOCKETS do
     local s = CreateFrame("Button", nil, page)
     s:SetSize(32, 32)
-    s:SetPoint("TOPLEFT", socketLabel, "BOTTOMLEFT", (i - 1) * 40, -6)
+    s:SetPoint("TOPLEFT", socketLabel, "BOTTOMLEFT", 8 + (i - 1) * 52, -12)
+    -- The stock prismatic socket (GEM_TYPE_INFO.Socket in Blizzard_ItemSocketingUI), scaled to
+    -- the icon: the hole shows while the socket is empty.
+    s.ring = s:CreateTexture(nil, "BORDER")
+    s.ring:SetTexture(SOCKET_ART)
+    s.ring:SetTexCoord(0.171875, 0.3984375, 0.40234375, 0.609375)
+    s.ring:SetSize(48, 44)
+    s.ring:SetPoint("CENTER")
     s.icon = s:CreateTexture(nil, "ARTWORK")
-    s.icon:SetAllPoints()
+    s.icon:SetSize(28, 28)
+    s.icon:SetPoint("CENTER")
+    s.icon:SetTexCoord(0.07, 0.93, 0.07, 0.93)
     s:SetHighlightTexture("Interface\\Buttons\\ButtonHilight-Square", "ADD")
     s:SetScript("OnClick", function()
         local race = A.races[selected]
@@ -200,9 +219,19 @@ for i = 1, MAX_SOCKETS do
         refresh()
     end)
     s:SetScript("OnEnter", function(self)
+        local race = A.races[selected]
+        local item = race and KEYSTONES[race.id]
         GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
-        GameTooltip:SetText("Keystone socket")
+        GameTooltip:SetText(item and GetItemInfo(item) or "Keystone socket")
         GameTooltip:AddLine(string.format("A keystone counts as %d fragments.", A.KEYSTONE_VALUE), 1, 1, 1, true)
+        if race then
+            GameTooltip:AddLine(string.format("You have %d.", race.keystones), 1, 1, 1)
+            if i <= (used[race.id] or 0) then
+                GameTooltip:AddLine("Click to take it out.", 0, 1, 0)
+            elseif race.keystones > (used[race.id] or 0) then
+                GameTooltip:AddLine("Click to put one in.", 0, 1, 0)
+            end
+        end
         GameTooltip:Show()
     end)
     s:SetScript("OnLeave", function() GameTooltip:Hide() end)
@@ -281,10 +310,27 @@ local function drawRace(race)
     end
     barText:SetText(cost > 0 and string.format("%d / %d", have, cost) or "")
 
-    socketLabel:SetText(race.sockets > 0 and "Keystones" or "")
+    if race.sockets > 0 then
+        socketLabel:SetText("Keystones")
+    else
+        socketLabel:SetText(race.project > 0 and KEYSTONES[race.id] and "This artifact takes no keystones." or "")
+    end
     for i, s in ipairs(sockets) do
         if i <= race.sockets then
-            s.icon:SetTexture(i <= n and KEYSTONE or EMPTY_SOCKET)
+            -- In: the keystone. Empty: the socket's hole, with the keystone faded in while you
+            -- have one to put there.
+            s.icon:SetTexture(A.KeystoneIcon(race.id))
+            if i <= n then
+                s.icon:SetDesaturated(nil)
+                s.icon:SetAlpha(1)
+                s.icon:Show()
+            elseif i <= race.keystones then
+                s.icon:SetDesaturated(1)
+                s.icon:SetAlpha(0.45)
+                s.icon:Show()
+            else
+                s.icon:Hide()
+            end
             s:Show()
         else
             s:Hide()
