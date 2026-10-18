@@ -1,6 +1,9 @@
 -- Minimap: a shovel pin for each dig site on the map you are on. A site in range sits where it
 -- is; one farther away waits on the minimap's edge, a little faded, pointing the way.
 --
+-- The pins can be turned off: /arch minimap, the Interface Options page, a key binding, or
+-- right-clicking a pin. A.db.hideMinimap remembers it.
+--
 -- Our own pin math (no Astrolabe): the minimap shows a fixed number of yards across at each zoom
 -- level, a different set indoors, and turns with the player when "Rotate Minimap" is on.
 
@@ -31,6 +34,7 @@ local function pinTooltip(self)
     if self.distance then
         GameTooltip:AddLine(math.floor(self.distance) .. " yards", 0.8, 0.8, 0.8)
     end
+    GameTooltip:AddLine("Right-click to hide dig sites on the minimap", 0.5, 0.5, 0.5)
     GameTooltip:Show()
 end
 
@@ -46,6 +50,12 @@ local function pin(i)
         p:EnableMouse(true)
         p:SetScript("OnEnter", pinTooltip)
         p:SetScript("OnLeave", function() GameTooltip:Hide() end)
+        p:SetScript("OnMouseUp", function(self, mouse)
+            if mouse == "RightButton" then
+                GameTooltip:Hide()
+                A.SetMinimapShown(false, true)
+            end
+        end)
         pins[i] = p
     end
     return p
@@ -80,6 +90,9 @@ end
 
 local function update()
     local pos = A.position
+    if not holder:IsShown() then
+        return
+    end
     if not pos.valid then
         hideAll(1)
         return
@@ -137,3 +150,33 @@ holder:SetScript("OnEvent", function()
     checkIndoors()
 end)
 A.On("SITES", update)
+
+function A.MinimapShown()
+    return not (A.db and A.db.hideMinimap)
+end
+
+-- Shows or hides the pins and remembers it; say = tell the player in chat how to undo it.
+function A.SetMinimapShown(on, say)
+    if A.db then
+        A.db.hideMinimap = not on or nil
+    end
+    if on then
+        holder:Show()
+        update()
+    else
+        holder:Hide()
+    end
+    if say then
+        DEFAULT_CHAT_FRAME:AddMessage(on and "ArchaeologyUI: dig sites shown on the minimap."
+            or "ArchaeologyUI: dig sites hidden on the minimap. /arch minimap shows them again.")
+    end
+    A.Fire("MINIMAP", on)
+end
+
+function A.ToggleMinimap()
+    A.SetMinimapShown(not A.MinimapShown(), true)
+end
+
+A.On("LOGIN", function()
+    A.SetMinimapShown(A.MinimapShown())
+end)

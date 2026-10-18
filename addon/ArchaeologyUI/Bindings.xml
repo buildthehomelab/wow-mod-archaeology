@@ -5,4 +5,7 @@
 	<Binding name="ARCHAEOLOGYUI_TOGGLE">
 		ArchaeologyUI.ToggleWindow()
 	</Binding>
+	<Binding name="ARCHAEOLOGYUI_MINIMAP">
+		ArchaeologyUI.ToggleMinimap()
+	</Binding>
 </Bindings>

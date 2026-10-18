@@ -344,6 +344,7 @@ end)
 BINDING_HEADER_ARCHAEOLOGYUI = "ArchaeologyUI"
 BINDING_NAME_ARCHAEOLOGYUI_SURVEY = "Survey"
 BINDING_NAME_ARCHAEOLOGYUI_TOGGLE = "Toggle Archaeology window"
+BINDING_NAME_ARCHAEOLOGYUI_MINIMAP = "Toggle dig sites on the minimap"
 
 SLASH_ARCHAEOLOGYUI1 = "/archaeology"
 SLASH_ARCHAEOLOGYUI2 = "/arch"
@@ -357,6 +358,12 @@ SlashCmdList.ARCHAEOLOGYUI = function(msg)
         end
     elseif msg == "refresh" then
         A.Send("HELLO")
+    elseif msg == "minimap" then
+        A.ToggleMinimap()
+    elseif msg == "options" then
+        if A.OpenOptions then
+            A.OpenOptions()
+        end
     elseif A.ToggleWindow then
         A.ToggleWindow()
     end

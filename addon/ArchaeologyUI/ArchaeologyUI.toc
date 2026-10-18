@@ -2,7 +2,7 @@
 ## Title: ArchaeologyUI
 ## Notes: Archaeology dig sites on your maps, a survey button and a research window. Needs mod-archaeology on the realm.
 ## Author: buildthehomelab
-## Version: 0.3.0
+## Version: 0.3.1
 ## OptionalDeps: DragonUI
 ## SavedVariables: ArchaeologyUIDB
 
@@ -13,3 +13,4 @@ Minimap.lua
 Survey.lua
 Research.lua
 Hosted.lua
+Options.lua
