@@ -273,7 +273,15 @@ class spell_archaeology_trait_proc : public AuraScript
         if (Spell const* cast = eventInfo.GetProcSpell(); cast && spell)
         {
             uint32 now = GameTime::GetGameTimeMS().count();
-            if (cast == _lastCast && spell->Id == _lastCastSpell && now - _lastCastTime < SAME_CAST_MS)
+            // A weapon spell (Auto Shot) can come round again within the second: then the window is
+            // shorter than its swing.
+            uint32 window = SAME_CAST_MS;
+            if (spell->DmgClass == SPELL_DAMAGE_CLASS_MELEE || spell->DmgClass == SPELL_DAMAGE_CLASS_RANGED)
+            {
+                WeaponAttackType attack = eventInfo.GetDamageInfo() ? eventInfo.GetDamageInfo()->GetAttackType() : BASE_ATTACK;
+                window = std::min(window, player->GetAttackTime(attack) * 9 / 10);
+            }
+            if (cast == _lastCast && spell->Id == _lastCastSpell && now - _lastCastTime < window)
                 return false;
             _lastCast = cast;
             _lastCastSpell = spell->Id;
@@ -471,7 +479,8 @@ class spell_archaeology_trait_mercy : public AuraScript
                 if (other->GetAmount() <= 0 || !(other->GetMiscValue() & dmgInfo.GetSchoolMask()))
                     continue;
                 float manaPerDamage = other->GetSpellInfo()->Effects[other->GetEffIndex()].CalcValueMultiplier(other->GetCaster());
-                uint64 byMana = manaPerDamage > 0.0f ? uint64(target->GetPower(POWER_MANA) / manaPerDamage) : uint64(other->GetAmount());
+                // Without a multiplier the core charges 1 mana a point.
+                uint64 byMana = uint64(target->GetPower(POWER_MANA) / (manaPerDamage > 0.0f ? manaPerDamage : 1.0f));
                 shields += std::min<uint64>(uint64(other->GetAmount()), byMana);
             }
         }
