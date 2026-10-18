@@ -9,7 +9,8 @@ A patch MPQ replaces whole files, and the highest patch wins, so every DBC this 
 to be the copy your realm already ships. Each DBC is edited in the first of --patch and
 --skill-patch that carries it; a DBC neither carries is taken from the client (--client, its
 newest archive that has it) and added to --patch. Every other file in those patches is copied
-unchanged, and each patch that changed is written to --out under its own file name.
+unchanged, and each patch that changed is written to --out under its own file name. --also-patch
+adds more of your realm's patches to look in (for Achievement.dbc, if a third patch carries it).
 
 What the client gets:
 
@@ -22,6 +23,12 @@ What the client gets:
   window; and 90506 Survey, 1 s cast, a Dummy on yourself (the module does the survey).
 - SkillLineAbility.dbc 90500-90506: those spells on the skill line. Survey is learned with the
   skill (AcquireMethod 1), the ranks replace each other.
+- Spell.dbc 90507-90521, the Unearthed Relic's traits: 90507-90514 the eight trait auras the
+  module puts on a character wearing the relic, 90515-90521 what they cast (fire damage, energize,
+  haste, absorb, heal, poison, Val'kyr's Mercy's cooldown). The numbers are the module's; these
+  rows give the names, icons and tooltips.
+- Achievement.dbc 9240-9245 and Achievement_Criteria.dbc 19240, the relic achievements under
+  Professions. Only "A Weapon in Pieces" has a criteria (the quest); the module grants the rest.
 - SpellIcon.dbc 90500 Trade_Archaeology, and Interface\\Icons\\Trade_Archaeology.blp.
 - Item.dbc and ItemDisplayInfo.dbc rows for every keystone and artifact in
   mod_archaeology_item_source, with the Cataclysm item's icon (Item.csv IconFileDataID and the
@@ -36,7 +43,8 @@ What the client gets:
   next to this one). --no-models leaves the telescope out.
 
 --sql writes the server's rows (skillline_dbc, skillraceclassinfo_dbc, skilllineability_dbc,
-spell_dbc, item_dbc, itemdisplayinfo_dbc, gameobjectdisplayinfo_dbc) from the same DBC rows, so
+spell_dbc, item_dbc, itemdisplayinfo_dbc, gameobjectdisplayinfo_dbc, achievement_dbc,
+achievement_criteria_dbc) from the same DBC rows, so
 client and server can't disagree, and sets the items' display id in item_template.
 
 Inputs from tools/cata-data/ (see the README): c_Item.csv, c_GODI.csv, listfile_archaeology.csv,
@@ -121,6 +129,103 @@ RANGE_SELF = 1
 GCD_CATEGORY, GCD = 133, 1500
 SURVEY_RECOVERY = 3000                      # Cataclysm's; matches Archaeology.Survey.CooldownMs
 
+F_ATTRIBUTES_EX3, F_ATTRIBUTES_EX4 = 7, 8
+F_PROC_FLAGS, F_PROC_CHANCE, F_DURATION, F_STACK = 34, 35, 40, 49
+F_AURA, F_AMPLITUDE, F_VISUAL = 95, 98, 131
+F_DMG_CLASS, F_DMG_MULTIPLIER, F_SCHOOL = 213, 216, 225
+SPELL_LANG_MASKS = (152, 169, 186, 203)
+CAST_INSTANT = 1
+RANGE_ANYWHERE = 13
+DURATION = {"10s": 1, "12s": 29, "10min": 6, "infinite": 21}   # SpellDuration.dbc
+EFFECT_SCHOOL_DAMAGE, EFFECT_HEAL, EFFECT_APPLY_AURA, EFFECT_ENERGIZE = 2, 10, 6, 30
+AURA_PERIODIC_DAMAGE, AURA_DUMMY, AURA_CASTING_SPEED, AURA_SCHOOL_ABSORB = 3, 4, 65, 69
+AURA_DAMAGE_PERCENT, AURA_MELEE_HASTE, AURA_RANGED_HASTE, AURA_PERIODIC_DUMMY = 79, 138, 140, 226
+TARGET_UNIT_TARGET_ENEMY, TARGET_UNIT_TARGET_ALLY = 6, 21
+ATTR0_AURA_IS_DEBUFF, ATTR0_NO_IMMUNITIES, ATTR0_NO_AURA_CANCEL = 0x04000000, 0x20000000, 0x80000000
+ATTR3_ALLOW_AURA_WHILE_DEAD = 0x00100000
+ATTR4_ALLOW_ENTERING_ARENA = 0x00200000
+SCHOOL_PHYSICAL, SCHOOL_HOLY, SCHOOL_FIRE, SCHOOL_NATURE, SCHOOL_ALL = 1, 2, 4, 8, 127
+DMG_CLASS_MAGIC = 1
+# Proc flags, the same as spell_proc in mod_archaeology_world_traits.sql (the server reads those).
+PROC_DONE_HARM, PROC_DONE_ALL, PROC_TAKEN_HARM = 69972, 87380, 139944
+
+TRAIT_TEXT = "Stronger with every rank of the Unearthed Relic, and twice as strong once every %s project is solved."
+# The relic's traits: aura spells first, then what they cast. effects: (effect, aura, target, misc, amplitude).
+# visual: a stock spell whose SpellVisual the row borrows, 0 for none.
+TRAIT_AURA = dict(attr0=ATTR0_NO_AURA_CANCEL, attr3=ATTR3_ALLOW_AURA_WHILE_DEAD, attr4=ATTR4_ALLOW_ENTERING_ARENA,
+                  duration="infinite", subtext="Relic trait")
+TRAITS = [
+    dict(id=90507, name="Thaurissan's Ember", icon="Spell_Fire_Incinerate", proc=PROC_DONE_HARM, race="Dwarf",
+         text="Your melee and ranged attacks and harmful spells sometimes burn the target for Fire damage.",
+         effects=[(EFFECT_APPLY_AURA, AURA_DUMMY, TARGET_UNIT_CASTER, 0, 0)], **TRAIT_AURA),
+    dict(id=90508, name="Highborne Focus", icon="Spell_Arcane_MindMastery", proc=PROC_DONE_ALL, race="Night Elf",
+         text="Your attacks, spells and heals sometimes restore mana, rage, energy or runic power.",
+         effects=[(EFFECT_APPLY_AURA, AURA_DUMMY, TARGET_UNIT_CASTER, 0, 0)], **TRAIT_AURA),
+    dict(id=90509, name="Zandalari Vigor", icon="Racial_Troll_Berserk", proc=PROC_DONE_ALL, race="Troll",
+         text="Your attacks, spells and heals sometimes grant a burst of haste.",
+         effects=[(EFFECT_APPLY_AURA, AURA_DUMMY, TARGET_UNIT_CASTER, 0, 0)], **TRAIT_AURA),
+    dict(id=90510, name="Amber Ward", icon="INV_Misc_Gem_Topaz_02", proc=PROC_TAKEN_HARM, race="Fossil",
+         text="When you are struck, you sometimes gain a shield that absorbs damage.",
+         effects=[(EFFECT_APPLY_AURA, AURA_DUMMY, TARGET_UNIT_CASTER, 0, 0)], **TRAIT_AURA),
+    dict(id=90511, name="Light of the Naaru", icon="Spell_Holy_SummonLightwell", proc=PROC_DONE_ALL, race="Draenei",
+         text="Your attacks, spells and heals sometimes heal you or the most wounded member of your group nearby.",
+         effects=[(EFFECT_APPLY_AURA, AURA_DUMMY, TARGET_UNIT_CASTER, 0, 0)], **TRAIT_AURA),
+    dict(id=90512, name="Blood of the Horde", icon="Ability_Racial_BloodRage", proc=0, race="Orc",
+         text="You deal more damage the lower your health falls.",
+         effects=[(EFFECT_APPLY_AURA, AURA_DAMAGE_PERCENT, TARGET_UNIT_CASTER, SCHOOL_ALL, 0),
+                  (EFFECT_APPLY_AURA, AURA_PERIODIC_DUMMY, TARGET_UNIT_CASTER, 0, 1000)], **TRAIT_AURA),
+    dict(id=90513, name="Ahn'kahar Venom", icon="Ability_Creature_Poison_05", proc=PROC_DONE_HARM, race="Nerubian",
+         text="Your melee and ranged attacks and harmful spells sometimes poison the target, stacking up to 5 times.",
+         effects=[(EFFECT_APPLY_AURA, AURA_DUMMY, TARGET_UNIT_CASTER, 0, 0)], **TRAIT_AURA),
+    dict(id=90514, name="Val'kyr's Mercy", icon="Spell_Holy_GuardianSpirit", proc=0, race="Vrykul",
+         text="A killing blow leaves you alive instead, once every 10 minutes.",
+         effects=[(EFFECT_APPLY_AURA, AURA_SCHOOL_ABSORB, TARGET_UNIT_CASTER, SCHOOL_ALL, 0),
+                  (EFFECT_APPLY_AURA, AURA_DUMMY, TARGET_UNIT_CASTER, 0, 0),
+                  (EFFECT_APPLY_AURA, AURA_DUMMY, TARGET_UNIT_CASTER, 0, 0)], **TRAIT_AURA),
+    dict(id=90515, name="Thaurissan's Ember", icon="Spell_Fire_Incinerate", visual=13897, school=SCHOOL_FIRE,
+         dmg_class=DMG_CLASS_MAGIC, range=RANGE_ANYWHERE, description="Burns the target for Fire damage.",
+         effects=[(EFFECT_SCHOOL_DAMAGE, 0, TARGET_UNIT_TARGET_ENEMY, 0, 0)]),
+    dict(id=90516, name="Highborne Focus", icon="Spell_Arcane_MindMastery", description="Restores power.",
+         effects=[(EFFECT_ENERGIZE, 0, TARGET_UNIT_CASTER, 0, 0)]),
+    dict(id=90517, name="Zandalari Vigor", icon="Racial_Troll_Berserk", visual=26297, duration="10s",
+         description="Increases melee, ranged and casting speed for 10 sec.", aura_text="Haste increased.",
+         effects=[(EFFECT_APPLY_AURA, AURA_MELEE_HASTE, TARGET_UNIT_CASTER, 0, 0),
+                  (EFFECT_APPLY_AURA, AURA_RANGED_HASTE, TARGET_UNIT_CASTER, 0, 0),
+                  (EFFECT_APPLY_AURA, AURA_CASTING_SPEED, TARGET_UNIT_CASTER, 0, 0)]),
+    dict(id=90518, name="Amber Ward", icon="INV_Misc_Gem_Topaz_02", visual=17, duration="10s",
+         description="Absorbs damage for 10 sec.", aura_text="Absorbs damage.",
+         effects=[(EFFECT_APPLY_AURA, AURA_SCHOOL_ABSORB, TARGET_UNIT_CASTER, SCHOOL_ALL, 0)]),
+    dict(id=90519, name="Light of the Naaru", icon="Spell_Holy_SummonLightwell", visual=2061, school=SCHOOL_HOLY,
+         dmg_class=DMG_CLASS_MAGIC, range=RANGE_ANYWHERE, description="Heals a friendly target.",
+         effects=[(EFFECT_HEAL, 0, TARGET_UNIT_TARGET_ALLY, 0, 0)]),
+    dict(id=90520, name="Ahn'kahar Venom", icon="Ability_Creature_Poison_05", visual=2818, school=SCHOOL_NATURE,
+         dmg_class=DMG_CLASS_MAGIC, range=RANGE_ANYWHERE, duration="12s", stack=5,
+         description="Nature damage every 3 sec for 12 sec. Stacks up to 5 times.", aura_text="Nature damage every 3 sec.",
+         effects=[(EFFECT_APPLY_AURA, AURA_PERIODIC_DAMAGE, TARGET_UNIT_TARGET_ENEMY, 0, 3000)]),
+    dict(id=90521, name="Val'kyr's Mercy", icon="Spell_Holy_GuardianSpirit", duration="10min",
+         # Not removable by immunities (Divine Shield, Ice Block) or by entering an arena, or the
+         # save would come back early.
+         attr0=ATTR0_AURA_IS_DEBUFF | ATTR0_NO_IMMUNITIES | ATTR0_NO_AURA_CANCEL, attr3=ATTR3_ALLOW_AURA_WHILE_DEAD,
+         attr4=ATTR4_ALLOW_ENTERING_ARENA,
+         description="Recently spared by Val'kyr's Mercy.", aura_text="Val'kyr's Mercy can't save you again yet.",
+         effects=[(EFFECT_APPLY_AURA, AURA_DUMMY, TARGET_UNIT_CASTER, 0, 0)]),
+]
+
+# Relic achievements, ids as the module's src/Archaeology.h. (id, title, description, points, icon)
+ACHIEVEMENT_CATEGORY = 169                  # Professions
+ACHIEVEMENT_TEMPLATE = 1563                 # Hail to the Chef: its language masks
+RELIC_QUEST = 9503500
+ACHIEVEMENTS = [
+    (9240, "A Weapon in Pieces", "Piece together the Unearthed Relic.", 10, "Trade_Archaeology"),
+    (9241, "Tempered by the Ages", "Raise the Unearthed Relic to the last rank of the old world.", 10,
+     "achievement_boss_kelthuzad_01"),
+    (9242, "Legend of the Outlands", "Raise the Unearthed Relic to Legendary quality.", 10, "Achievement_Boss_Kiljaedan"),
+    (9243, "Every Voice Awake", "Wake all eight traits of the Unearthed Relic.", 10, "INV_Misc_Rune_01"),
+    (9244, "Keeper of All Ages", "Solve every archaeology project of every race.", 25, "INV_Misc_Book_11"),
+    (9245, "Awakened", "Awaken the Unearthed Relic to Artifact quality.", 25, "achievement_boss_lichking"),
+]
+CRITERIA = [(19240, 9240, 27, RELIC_QUEST, 1, "A Weapon in Pieces")]   # (id, achievement, type, asset, count, text)
+
 # Other tables: field count, string fields, float fields, unsigned fields (AC's *_dbc columns)
 TABLES = {
     "SkillLine": (56, {*range(3, 19), *range(20, 36), *range(38, 54)}, set(), {19, 36, 54}),
@@ -130,11 +235,14 @@ TABLES = {
     "ItemDisplayInfo": (25, {1, 2, 3, 4, 5, 6, *range(15, 23)}, set(), set()),
     "GameObjectDisplayInfo": (19, {1}, set(range(12, 18)), set()),
     "SpellIcon": (2, {1}, set(), set()),
+    "Achievement": (62, {*range(4, 20), *range(21, 37), *range(43, 59)}, set(), {20, 37, 59}),
+    "Achievement_Criteria": (31, set(range(9, 25)), set(), {25}),
     "Spell": (SPELL_FIELDS, SPELL_STRINGS, SPELL_FLOATS, set(range(SPELL_FIELDS)) - SPELL_SIGNED),
 }
 SQL_TABLES = [("SkillLine", "skillline_dbc"), ("SkillRaceClassInfo", "skillraceclassinfo_dbc"),
               ("SkillLineAbility", "skilllineability_dbc"), ("Spell", "spell_dbc"), ("Item", "item_dbc"),
-              ("ItemDisplayInfo", "itemdisplayinfo_dbc"), ("GameObjectDisplayInfo", "gameobjectdisplayinfo_dbc")]
+              ("ItemDisplayInfo", "itemdisplayinfo_dbc"), ("GameObjectDisplayInfo", "gameobjectdisplayinfo_dbc"),
+              ("Achievement", "achievement_dbc"), ("Achievement_Criteria", "achievement_criteria_dbc")]
 
 
 # --- DBC ---------------------------------------------------------------------------------------
@@ -627,6 +735,90 @@ def add_telescope(dbc, client, files, cache, retail, work, max_texture):
               % (display, stem, info["sequences"], info["vertices"], info["batches"]))
 
 
+def icon_id(dbc, name):
+    icon = dbc["SpellIcon"].find_string(1, "Interface\\Icons\\" + name)
+    if icon is None:
+        sys.exit("SpellIcon.dbc has no %s" % name)
+    return icon
+
+
+def float_bits(value):
+    return struct.unpack("<I", struct.pack("<f", value))[0]
+
+
+def add_traits(dbc):
+    spells = dbc["Spell"]
+    template = spells.template(DUMMY_SPELL, "Dummy Spell")
+    for t in TRAITS:
+        row = [0] * SPELL_FIELDS
+        for field in SPELL_LANG_MASKS:
+            row[field] = template[field]
+        row[0] = t["id"]
+        row[F_ATTRIBUTES] = t.get("attr0", 0)
+        row[F_ATTRIBUTES_EX3] = t.get("attr3", 0)
+        row[F_ATTRIBUTES_EX4] = t.get("attr4", 0)
+        row[F_CAST_TIME] = CAST_INSTANT
+        row[F_PROC_FLAGS] = t.get("proc", 0)
+        row[F_PROC_CHANCE] = 100 if t.get("proc") else 0
+        row[F_DURATION] = DURATION[t["duration"]] if "duration" in t else 0
+        row[F_RANGE] = t.get("range", RANGE_SELF)
+        row[F_STACK] = t.get("stack", 0)
+        for i, (effect, aura, target, misc, amplitude) in enumerate(t["effects"]):
+            row[F_EFFECT + i] = effect
+            row[F_TARGET_A + i] = target
+            row[F_AURA + i] = aura
+            row[F_MISC + i] = misc
+            row[F_AMPLITUDE + i] = amplitude
+            row[F_DMG_MULTIPLIER + i] = float_bits(1.0)
+        if t.get("visual"):
+            row[F_VISUAL] = spells.template(t["visual"], "visual for " + t["name"])[F_VISUAL]
+        row[F_ICON] = icon_id(dbc, t["icon"])
+        row[F_NAME] = spells.add_string(t["name"])
+        row[F_SUBTEXT] = spells.add_string(t.get("subtext", ""))
+        if "race" in t:
+            text = t["text"] + " " + TRAIT_TEXT % t["race"]
+            row[F_DESCRIPTION] = spells.add_string(text)
+            row[F_AURA_TEXT] = spells.add_string(text)
+        else:
+            row[F_DESCRIPTION] = spells.add_string(t["description"])
+            row[F_AURA_TEXT] = spells.add_string(t.get("aura_text", ""))
+        row[F_DMG_CLASS] = t.get("dmg_class", 0)
+        row[F_SCHOOL] = t.get("school", SCHOOL_PHYSICAL)
+        spells.put(row, F_NAME, t["name"])
+    print("Spell.dbc %d-%d relic traits" % (TRAITS[0]["id"], TRAITS[-1]["id"]))
+
+
+def add_achievements(dbc):
+    table = dbc["Achievement"]
+    template = table.template(ACHIEVEMENT_TEMPLATE, "Hail to the Chef")
+    for order, (ach_id, title, description, points, icon) in enumerate(ACHIEVEMENTS, 1):
+        row = [0] * TABLES["Achievement"][0]
+        row[0] = ach_id
+        row[1] = row[2] = UNSET                 # either faction, any map
+        row[4] = table.add_string(title)
+        row[21] = table.add_string(description)
+        for field in (20, 37, 59):
+            row[field] = template[field]
+        row[38] = ACHIEVEMENT_CATEGORY
+        row[39] = points
+        row[40] = order
+        row[42] = icon_id(dbc, icon)
+        table.put(row, 4, title)
+    criteria = dbc["Achievement_Criteria"]
+    template = next((r for r in criteria.rows.values() if r[2] == 27), None)
+    if template is None:
+        sys.exit("Achievement_Criteria.dbc has no complete-quest criteria to copy")
+    for crit_id, ach_id, crit_type, asset, count, text in CRITERIA:
+        row = [0] * TABLES["Achievement_Criteria"][0]
+        row[0:5] = [crit_id, ach_id, crit_type, asset, count]
+        row[9] = criteria.add_string(text)
+        row[25] = template[25]
+        row[30] = 1
+        criteria.put(row, 1, ach_id)
+    print("Achievement.dbc %d-%d, Achievement_Criteria.dbc %d relic achievements"
+          % (ACHIEVEMENTS[0][0], ACHIEVEMENTS[-1][0], CRITERIA[0][0]))
+
+
 # --- SQL ---------------------------------------------------------------------------------------
 
 def sql_str(s):
@@ -695,6 +887,8 @@ def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--patch", required=True, help="your realm's spell/item patch (Spell.dbc, Item.dbc, ...)")
     ap.add_argument("--skill-patch", help="your realm's patch with SkillRaceClassInfo.dbc, if another one has it")
+    ap.add_argument("--also-patch", action="append", default=[],
+                    help="another of your realm's patches carrying a DBC this tool edits (Achievement.dbc, ...)")
     ap.add_argument("--client", required=True, help="the WoW folder (or its Data folder) the patches go on")
     ap.add_argument("--locale", default="enUS")
     ap.add_argument("--out", help="write the changed patches here, under their own names")
@@ -708,7 +902,7 @@ def main():
 
     retail = load_retail()
     items = module_items()
-    patches = [args.patch] + ([args.skill_patch] if args.skill_patch else [])
+    patches = [args.patch] + ([args.skill_patch] if args.skill_patch else []) + args.also_patch
     skip = {os.path.basename(p).lower() for p in patches}
     client = Client(args.client, args.locale, skip)
 
@@ -719,7 +913,7 @@ def main():
 
         dbc, where = {}, {}
         tables = ["SpellIcon", "SkillLine", "SkillRaceClassInfo", "Spell", "SkillLineAbility", "Item",
-                  "ItemDisplayInfo"] + ([] if args.no_models else ["GameObjectDisplayInfo"])
+                  "ItemDisplayInfo", "Achievement", "Achievement_Criteria"] + ([] if args.no_models else ["GameObjectDisplayInfo"])
         for table in tables:
             name = "DBFilesClient\\%s.dbc" % table
             owner = next((i for i, files in enumerate(unpacked) if name in files), None)
@@ -737,6 +931,8 @@ def main():
 
         add_skill(dbc)
         add_spells(dbc)
+        add_traits(dbc)
+        add_achievements(dbc)
         files = unpacked[0]
         files["Interface\\Icons\\%s.blp" % ICON] = retail.fetch.casc_path(args.cache, ICON_FDID)
         add_items(dbc, items, client, files, args.cache, retail)

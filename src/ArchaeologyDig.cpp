@@ -288,6 +288,8 @@ namespace Archaeology
         SendAddon(player, Acore::StringFormat("X:{}:{}:{}", project->id, project->item, project->rare ? 1 : 0));
 
         AddSkill(player, project->rare ? cfg.skillPerRare : cfg.skillPerCommon);
+        UpdateTraitWake(player, true);
+        QueueTraits(player);   // a trait may wake or double, an achievement may be due
         AddRelicPower(player, (project->rare ? cfg.powerPerRare : cfg.powerPerCommon) + (times == 1 ? cfg.powerFirstSolve : 0));
         PickProject(player, raceId);
         SaveRace(player, raceId);

@@ -70,7 +70,11 @@ CREATE TABLE IF NOT EXISTS `mod_archaeology_item_source` (
 DELETE FROM `creature_template_model` WHERE `CreatureID` BETWEEN 9503500 AND 9503599;
 DELETE FROM `creature_template` WHERE `entry` BETWEEN 9503500 AND 9503599;
 INSERT INTO `creature_template` (`entry`, `name`, `subname`, `gossip_menu_id`, `minlevel`, `maxlevel`, `faction`, `npcflag`, `speed_walk`, `speed_run`, `BaseAttackTime`, `RangeAttackTime`, `unit_class`, `unit_flags`, `unit_flags2`, `type`, `flags_extra`, `ScriptName`) VALUES
-(9503500, 'Harrison Jones', 'Archaeology Trainer', 0, 70, 70, 35, 3, 1, 1.14286, 2000, 2000, 1, 768, 2048, 7, 2, 'npc_archaeology_trainer');
+(9503500, 'Harrison Jones', 'Archaeology Trainer', 0, 70, 70, 35, 3, 1, 1.14286, 2000, 2000, 1, 768, 2048, 7, 2, 'npc_archaeology_trainer'),
+-- Kill credit for the capstone quests (never spawned; the module gives the credit).
+(9503510, 'Kel''Thuzad slain with the Unearthed Relic', '', 0, 1, 1, 35, 0, 1, 1.14286, 2000, 2000, 1, 0, 0, 10, 128, ''),
+(9503511, 'Kil''jaeden slain with the Unearthed Relic', '', 0, 1, 1, 35, 0, 1, 1.14286, 2000, 2000, 1, 0, 0, 10, 128, ''),
+(9503512, 'The Lich King slain with the Unearthed Relic', '', 0, 1, 1, 35, 0, 1, 1.14286, 2000, 2000, 1, 0, 0, 10, 128, '');
 INSERT INTO `creature_template_model` (`CreatureID`, `Idx`, `CreatureDisplayID`, `DisplayScale`, `Probability`) VALUES
 (9503500, 0, 22340, 1, 1);
 
@@ -102,16 +106,40 @@ DELETE FROM `spell_script_names` WHERE `spell_id` = 90506 AND `ScriptName` = 'sp
 INSERT INTO `spell_script_names` (`spell_id`, `ScriptName`) VALUES (90506, 'spell_archaeology_survey');
 
 -- A Weapon in Pieces: offered at 50 Archaeology (the module checks the skill), turned in at once.
+-- 9503501-9503503: the capstone quests, one per era (Archaeology.Relic.CapstoneQuest.*). The last
+-- rank of each era waits for one: slay the era's last boss with the relic equipped. Kel'Thuzad
+-- counts in Naxxramas at 40 and at 80. Raid quests (QuestInfoID 62), so raid groups get the credit.
 DELETE FROM `creature_queststarter` WHERE `quest` BETWEEN 9503500 AND 9503519;
 DELETE FROM `creature_questender` WHERE `quest` BETWEEN 9503500 AND 9503519;
 DELETE FROM `quest_offer_reward` WHERE `ID` BETWEEN 9503500 AND 9503519;
 DELETE FROM `quest_request_items` WHERE `ID` BETWEEN 9503500 AND 9503519;
+DELETE FROM `quest_template_addon` WHERE `ID` BETWEEN 9503500 AND 9503519;
 DELETE FROM `quest_template` WHERE `ID` BETWEEN 9503500 AND 9503519;
-INSERT INTO `quest_template` (`ID`, `QuestType`, `QuestLevel`, `MinLevel`, `QuestSortID`, `Flags`, `LogTitle`, `LogDescription`, `QuestDescription`, `AreaDescription`, `QuestCompletionLog`, `VerifiedBuild`) VALUES
-(9503500, 2, -1, 20, 0, 0, 'A Weapon in Pieces', 'Bring the odd fragments from your digs to Harrison Jones.',
+INSERT INTO `quest_template` (`ID`, `QuestType`, `QuestLevel`, `MinLevel`, `QuestSortID`, `QuestInfoID`, `Flags`, `LogTitle`, `LogDescription`, `QuestDescription`, `AreaDescription`, `QuestCompletionLog`, `RequiredNpcOrGo1`, `RequiredNpcOrGoCount1`, `ObjectiveText1`, `VerifiedBuild`) VALUES
+(9503500, 2, -1, 20, 0, 0, 0, 'A Weapon in Pieces', 'Bring the odd fragments from your digs to Harrison Jones.',
  'You keep turning up the same odd pieces at every dig, $n. A sliver of hilt here, a curl of old steel there, and none of it from any one people.$B$BSomebody, long ago, made a weapon out of all of history, and it broke. Bring me what you have found and we will put it back together. It won''t look like much at first. The more you dig, the more of it wakes up.',
- '', 'Return to Harrison Jones.', 0);
+ '', 'Return to Harrison Jones.', 0, 0, '', 0),
+(9503501, 2, 60, 60, 0, 62, 64, 'The Lich in the Necropolis', 'Slay Kel''Thuzad in Naxxramas with your Unearthed Relic equipped, then return to Harrison Jones.',
+ 'Your relic has soaked up every age of the old world, $n, every people you have dug up. But it has never seen an age end.$B$BKel''Thuzad holds Naxxramas over the Plaguelands. Carry the relic into his necropolis and be there when he falls. Whatever is still asleep in that steel will wake up to that.',
+ '', 'Return to Harrison Jones.', 9503510, 1, 'Kel''Thuzad slain with your relic', 0),
+(9503502, 2, 70, 70, 0, 62, 64, 'The Deceiver''s Fall', 'Slay Kil''jaeden at the Sunwell Plateau with your Unearthed Relic equipped, then return to Harrison Jones.',
+ 'Draenei tomes and orc blood texts, and every one of them ends with the same name: Kil''jaeden. Your relic has read them all, $n.$B$BThe Deceiver is trying to come through at the Sunwell. Take the relic there and see him thrown back. Legends are made of less.',
+ '', 'Return to Harrison Jones.', 9503511, 1, 'Kil''jaeden slain with your relic', 0),
+(9503503, 2, 80, 80, 0, 62, 64, 'The Frozen Throne', 'Slay the Lich King in Icecrown Citadel with your Unearthed Relic equipped, then return to Harrison Jones.',
+ 'Nerubian obelisks, vrykul rune sticks. Northrend''s past is all buried under one man''s ice, $n.$B$BThe relic is nearly whole. Take it up the Frozen Throne and be there when the Lich King falls. After that, there is nothing left in it to wake but the relic itself.',
+ '', 'Return to Harrison Jones.', 9503512, 1, 'The Lich King slain with your relic', 0);
+INSERT INTO `quest_template_addon` (`ID`, `PrevQuestID`) VALUES
+(9503501, 9503500),
+(9503502, 9503500),
+(9503503, 9503500);
+INSERT INTO `quest_request_items` (`ID`, `CompletionText`, `VerifiedBuild`) VALUES
+(9503501, 'Has your relic seen Kel''Thuzad fall yet?', 0),
+(9503502, 'Has your relic seen the Deceiver fall yet?', 0),
+(9503503, 'Has your relic seen the Lich King fall yet?', 0);
 INSERT INTO `quest_offer_reward` (`ID`, `RewardText`, `VerifiedBuild`) VALUES
-(9503500, 'Ah, you kept them. Good. Hold still while I fit these together...', 0);
-INSERT INTO `creature_queststarter` (`id`, `quest`) VALUES (9503500, 9503500);
-INSERT INTO `creature_questender` (`id`, `quest`) VALUES (9503500, 9503500);
+(9503500, 'Ah, you kept them. Good. Hold still while I fit these together...', 0),
+(9503501, 'Feel that? It''s colder than it was, and heavier. Something in it remembers Naxxramas now. Dig on, and it will grow into it.', 0),
+(9503502, 'There''s fel in the grain now, and light too, both at once. I''ve never seen a weapon hold both. Keep digging.', 0),
+(9503503, 'It''s humming. It never did that before. It has seen the end of every age now; all it lacks is the rest of its history.', 0);
+INSERT INTO `creature_queststarter` (`id`, `quest`) VALUES (9503500, 9503500), (9503500, 9503501), (9503500, 9503502), (9503500, 9503503);
+INSERT INTO `creature_questender` (`id`, `quest`) VALUES (9503500, 9503500), (9503500, 9503501), (9503500, 9503502), (9503500, 9503503);

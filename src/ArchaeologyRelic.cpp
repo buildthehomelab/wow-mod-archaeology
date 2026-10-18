@@ -14,11 +14,14 @@
 #include "Chat.h"
 #include "Creature.h"
 #include "DatabaseEnv.h"
+#include "DBCStores.h"
+#include "Group.h"
 #include "Item.h"
 #include "Log.h"
 #include "ObjectMgr.h"
 #include "Player.h"
 #include "QuestDef.h"
+#include "Map.h"
 #include "ScriptedGossip.h"
 #include <algorithm>
 #include <atomic>
@@ -34,6 +37,13 @@ namespace
     constexpr uint32 SENDER_FORM = 2;
     constexpr char const* ERA_NAMES[3] = { "old world", "Outland", "Northrend" };
     constexpr char const* QUALITY_NAMES[7] = { "Poor", "Common", "Uncommon", "Rare", "Epic", "Legendary", "Artifact" };
+
+    // The boss each era's capstone quest is about. Kel'Thuzad counts in Naxxramas at 40 (individual
+    // progression's 351019) and at level 80 (15990): a character that missed the 40-man version
+    // before individual progression closes it can still finish the old world's ranks.
+    struct CapstoneBoss { uint32 entry; uint8 era; };
+    constexpr CapstoneBoss CAPSTONE_BOSSES[] = { { 351019, 0 }, { 15990, 0 }, { 25315, 1 }, { 36597, 2 } };
+    constexpr uint32 CAPSTONE_QUESTS[3] = { 9503501, 9503502, 9503503 };   // the module's own, by era
 
     std::vector<RelicStep> steps;
     std::vector<RelicForm> forms;
@@ -170,11 +180,29 @@ namespace
         RelicStep const& step = steps[r.rank - 1];
         Notify(player, Acore::StringFormat("|cffe6cc80Your Unearthed Relic has reached rank {} of {}|r (item level {}, {}).",
             r.rank, RankCount(), step.itemLevel, QUALITY_NAMES[std::min<uint8>(step.quality, 6)]));
+        QueueTraits(player);   // stronger traits, maybe an achievement
         return true;
     }
 
     // Every relic item the character holds: equipped, in bags or in the bank.
     struct Held { Item* item; bool off; bool bank; };
+
+    // The rank (1-based) that finishes each era, and the awakened one; 0 = none in the ladder.
+    uint32 GateRank(uint8 gate, uint8 era)
+    {
+        for (uint32 i = 0; i < steps.size(); ++i)
+            if (steps[i].gate == gate && (gate == 2 || steps[i].era == era))
+                return i + 1;
+        return 0;
+    }
+
+    void Award(Player* player, uint32 id)
+    {
+        if (player->HasAchieved(id))
+            return;
+        if (AchievementEntry const* entry = sAchievementStore.LookupEntry(id))
+            player->CompletedAchievement(entry);
+    }
 
     std::vector<Held> FindRelics(Player* player)
     {
@@ -371,6 +399,7 @@ namespace
             r.form, r.rank, r.power, r.earned, r.traits, r.formChanges, r.mainItem, r.offItem);
         CharacterDatabase.CommitTransaction(trans);
         SendRelic(player);
+        QueueTraits(player);
         return !failed;
     }
 
@@ -633,6 +662,9 @@ namespace Archaeology
             text += Acore::StringFormat("\nRelic Power: {}.", r.power);
         if (!blocked.empty())
             text += " " + blocked;
+        std::string traits = TraitStatusText(player);
+        if (!traits.empty())
+            text += "\n" + traits;
         return text;
     }
 
@@ -745,7 +777,104 @@ namespace Archaeology
             SaveRelic(player);
         }
         SendRelic(player);
+        QueueTraits(player);
         if (!s->relic.form && GetConfig().relicEnabled && !steps.empty())
             SendFormMenu(player, creature);
+    }
+
+    uint32 RelicShownStep(Player* player)
+    {
+        CharState* s = GetState(player);
+        return s && s->relic.rank && !steps.empty() ? ShownStep(player, s->relic) : 0;
+    }
+
+    uint32 RelicRankCount() { return RankCount(); }
+
+    bool IsRelicEquipped(Player* player)
+    {
+        for (uint8 slot : { EQUIPMENT_SLOT_MAINHAND, EQUIPMENT_SLOT_OFFHAND, EQUIPMENT_SLOT_RANGED })
+            if (Item* item = player->GetItemByPos(INVENTORY_SLOT_BAG_0, slot))
+                if (IsRelicItem(item->GetEntry()))
+                    return true;
+        return false;
+    }
+
+    bool IsCapstoneQuest(uint32 questId)
+    {
+        Config const& cfg = GetConfig();
+        return questId && (std::find(std::begin(CAPSTONE_QUESTS), std::end(CAPSTONE_QUESTS), questId) != std::end(CAPSTONE_QUESTS) ||
+            std::find(cfg.capstoneQuest.begin(), cfg.capstoneQuest.end(), questId) != cfg.capstoneQuest.end());
+    }
+
+    // A capstone boss died: everyone in its instance who tapped it (the looting group), has the
+    // era's quest and wears the relic gets the kill. Dead raiders count, as long as they're inside.
+    void CapstoneBossDied(Creature* boss)
+    {
+        Config const& cfg = GetConfig();
+        if (!cfg.relicEnabled)
+            return;
+        CapstoneBoss const* match = nullptr;
+        for (CapstoneBoss const& b : CAPSTONE_BOSSES)
+            if (b.entry == boss->GetEntry())
+                match = &b;
+        if (!match)
+            return;
+        // The module's own quest always counts, since the trainer offers it whatever the config
+        // says; a quest the config names instead counts too.
+        std::vector<Quest const*> quests;
+        for (uint32 id : { CAPSTONE_QUESTS[match->era], cfg.capstoneQuest[match->era] })
+            if (Quest const* q = id ? sObjectMgr->GetQuestTemplate(id) : nullptr)
+                if (std::find(quests.begin(), quests.end(), q) == quests.end())
+                    quests.push_back(q);
+        Player* recipient = boss->GetLootRecipient();
+        Group* group = boss->GetLootRecipientGroup();
+        if (quests.empty() || (!recipient && !group))
+            return;
+        boss->GetMap()->DoForAllPlayers([&](Player* player)
+        {
+            if ((player != recipient && (!group || player->GetGroup() != group)) || !IsRelicEquipped(player))
+                return;
+            for (Quest const* quest : quests)
+            {
+                if (player->GetQuestStatus(quest->GetQuestId()) != QUEST_STATUS_INCOMPLETE)
+                    continue;
+                // The quest's kill-credit objective if it has one, else the quest as a whole.
+                if (quest->RequiredNpcOrGo[0] > 0)
+                    player->KilledMonsterCredit(uint32(quest->RequiredNpcOrGo[0]));
+                else
+                    player->AreaExploredOrEventHappens(quest->GetQuestId());
+            }
+        });
+    }
+
+    // The relic achievements, granted here and never by a boss kill, so individual progression
+    // (which reads raid achievements) never sees them. Safe to call any time.
+    void CheckRelicAchievements(Player* player)
+    {
+        CharState* s = GetState(player);
+        if (!s || !s->skill)
+            return;
+        RelicState const& r = s->relic;
+        if (player->GetQuestRewardStatus(RELIC_QUEST))
+            Award(player, ACHIEVEMENT_WEAPON_IN_PIECES);
+        if (r.rank)
+        {
+            if (uint32 rank = GateRank(1, 0); rank && r.rank >= rank)
+                Award(player, ACHIEVEMENT_TEMPERED);
+            if (uint32 rank = GateRank(1, 1); rank && r.rank >= rank)
+                Award(player, ACHIEVEMENT_LEGEND);
+            if (uint32 rank = GateRank(2, 0); rank && r.rank >= rank)
+                Award(player, ACHIEVEMENT_AWAKENED);
+        }
+        bool allAwake = !AllRaces().empty(), allComplete = !AllRaces().empty();
+        for (Race const& race : AllRaces())
+        {
+            allAwake = allAwake && (r.traits & (1u << race.id));
+            allComplete = allComplete && IsRaceComplete(*s, race.id);
+        }
+        if (allAwake && r.rank)
+            Award(player, ACHIEVEMENT_EVERY_VOICE);
+        if (allComplete)
+            Award(player, ACHIEVEMENT_KEEPER);
     }
 }

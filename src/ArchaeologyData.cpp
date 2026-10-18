@@ -69,12 +69,16 @@ namespace Archaeology
         c.powerFirstSolve = sConfigMgr->GetOption<uint32>("Archaeology.Relic.PowerFirstSolve", 100);
         c.relicCostRate = std::max(sConfigMgr->GetOption<float>("Archaeology.Relic.CostRate", 1.0f), 0.0f);
         c.relicStateWithoutIp = sConfigMgr->GetOption<uint32>("Archaeology.Relic.StateWithoutProgression", 18);
-        c.capstoneQuest[0] = sConfigMgr->GetOption<uint32>("Archaeology.Relic.CapstoneQuest.Vanilla", 0);
-        c.capstoneQuest[1] = sConfigMgr->GetOption<uint32>("Archaeology.Relic.CapstoneQuest.Outland", 0);
-        c.capstoneQuest[2] = sConfigMgr->GetOption<uint32>("Archaeology.Relic.CapstoneQuest.Northrend", 0);
+        c.capstoneQuest[0] = sConfigMgr->GetOption<uint32>("Archaeology.Relic.CapstoneQuest.Vanilla", 9503501);
+        c.capstoneQuest[1] = sConfigMgr->GetOption<uint32>("Archaeology.Relic.CapstoneQuest.Outland", 9503502);
+        c.capstoneQuest[2] = sConfigMgr->GetOption<uint32>("Archaeology.Relic.CapstoneQuest.Northrend", 9503503);
         c.awakenNeedsMaxSkill = sConfigMgr->GetOption<bool>("Archaeology.Relic.AwakenNeedsMaxSkill", true);
         c.formChangeBase = sConfigMgr->GetOption<uint32>("Archaeology.Relic.FormChange.Cost", 100000);
         c.formChangePerRank = sConfigMgr->GetOption<uint32>("Archaeology.Relic.FormChange.CostPerRank", 20000);
+        c.traitsEnabled = sConfigMgr->GetOption<bool>("Archaeology.Relic.Traits.Enable", true);
+        c.traitWakeCommons = std::max(sConfigMgr->GetOption<uint32>("Archaeology.Relic.Traits.WakeCommons", 10), 1u);
+        c.traitFirstRank = std::clamp(sConfigMgr->GetOption<float>("Archaeology.Relic.Traits.FirstRankStrength", 0.4f), 0.0f, 1.0f);
+        c.traitCompleteBonus = std::max(sConfigMgr->GetOption<float>("Archaeology.Relic.Traits.RaceCompleteMultiplier", 2.0f), 1.0f);
         config = c;
     }
 
@@ -179,6 +183,7 @@ namespace Archaeology
 
         LOG_INFO("module", "mod-archaeology: {} races, {} dig sites, {} projects", races.size(), sites.size(), projects.size());
         LoadRelicData();
+        LoadTraitData();
     }
 
     Race const* GetRace(uint8 id)
@@ -262,6 +267,8 @@ namespace Archaeology
         }
 
         LoadRelic(player, s);
+        UpdateTraitWake(player, false);
+        QueueTraits(player);   // auras and achievements once the character is in the world
 
         if (s.skill)
         {

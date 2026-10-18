@@ -73,6 +73,10 @@ namespace Archaeology
         bool awakenNeedsMaxSkill = true;
         uint32 formChangeBase = 100000;      // copper
         uint32 formChangePerRank = 20000;
+        bool traitsEnabled = true;
+        uint32 traitWakeCommons = 10;        // common solves of a race that wake its trait
+        float traitFirstRank = 0.4f;         // a trait's strength at the first rank (1.0 at full rank)
+        float traitCompleteBonus = 2.0f;     // multiplier once every project of the race is solved
     };
 
     struct Race
@@ -136,7 +140,8 @@ namespace Archaeology
         uint8 rank = 0;              // 0 = no relic yet; rank r can show ladder step r - 1
         uint32 power = 0;            // Relic Power not spent on ranks yet
         uint32 earned = 0;           // all Relic Power ever earned
-        uint32 traits = 0;           // awake trait bits (traits come in a later phase)
+        uint32 traits = 0;           // awake trait bits: 1 << race id
+        uint32 complete = 0;         // races with every project solved (not stored: worked out on load)
         uint32 formChanges = 0;
         ObjectGuid::LowType mainItem = 0;   // the relic's item guid
         ObjectGuid::LowType offItem = 0;    // its off-hand half or shield
@@ -219,6 +224,16 @@ namespace Archaeology
 
     // The Unearthed Relic (ArchaeologyRelic.cpp).
     constexpr uint32 RELIC_QUEST = 9503500;
+    // Relic achievements (achievement_dbc, written by tools/build_patch.py).
+    enum RelicAchievement : uint32
+    {
+        ACHIEVEMENT_WEAPON_IN_PIECES = 9240,   // the relic quest
+        ACHIEVEMENT_TEMPERED = 9241,           // last rank of the old world
+        ACHIEVEMENT_LEGEND = 9242,             // last rank of Outland (Legendary)
+        ACHIEVEMENT_EVERY_VOICE = 9243,        // every trait awake
+        ACHIEVEMENT_KEEPER = 9244,             // every project of every race solved
+        ACHIEVEMENT_AWAKENED = 9245,           // the awakened rank (Artifact)
+    };
     void LoadRelicData();
     void LoadRelic(Player* player, CharState& state);
     void SaveRelic(Player* player);
@@ -235,6 +250,22 @@ namespace Archaeology
     void AddRelicGossip(Player* player);
     bool RelicGossipSelect(Player* player, Creature* creature, uint32 sender, uint32 action);
     void RelicQuestRewarded(Player* player, Creature* creature);
+    bool IsCapstoneQuest(uint32 questId);
+    void CapstoneBossDied(Creature* boss);
+    void CheckRelicAchievements(Player* player);
+    uint32 RelicShownStep(Player* player);   // ladder step the relic shows, 0 without one
+    uint32 RelicRankCount();
+    bool IsRelicEquipped(Player* player);
+
+    // Relic traits (ArchaeologyTraits.cpp): one per race, server-side auras while the relic is equipped.
+    void LoadTraitData();
+    bool IsRaceComplete(CharState const& state, uint8 race);
+    void UpdateTraitWake(Player* player, bool announce);   // wake the traits that have earned it
+    void QueueTraits(Player* player);         // re-check the trait auras on the next update
+    void UpdateQueuedTraits(Player* player);
+    void ForgetTraits(Player* player);
+    void RemoveTraits(Player* player);
+    std::string TraitStatusText(Player* player);
 }
 
 #endif
