@@ -226,7 +226,7 @@ public:
     ArchaeologyPlayerScript() : PlayerScript("ArchaeologyPlayerScript", {
         PLAYERHOOK_ON_LOGIN, PLAYERHOOK_ON_LOGOUT, PLAYERHOOK_ON_DELETE, PLAYERHOOK_ON_LEVEL_CHANGED,
         PLAYERHOOK_CAN_PLAYER_USE_PRIVATE_CHAT, PLAYERHOOK_ON_UPDATE, PLAYERHOOK_ON_MAP_CHANGED, PLAYERHOOK_ON_EQUIP,
-        PLAYERHOOK_ON_UNEQUIP_ITEM, PLAYERHOOK_ON_BEFORE_QUEST_COMPLETE }) { }
+        PLAYERHOOK_ON_UNEQUIP_ITEM, PLAYERHOOK_ON_BEFORE_QUEST_COMPLETE, PLAYERHOOK_ON_PLAYER_RESURRECT }) { }
 
     void OnPlayerLogin(Player* player) override
     {
@@ -282,6 +282,13 @@ public:
             QueueRelic(player);
         if (bag == INVENTORY_SLOT_BAG_0 && (slot == EQUIPMENT_SLOT_MAINHAND || slot == EQUIPMENT_SLOT_OFFHAND || slot == EQUIPMENT_SLOT_RANGED) &&
             GetState(player))
+            QueueTraits(player);
+    }
+
+    // Traits can't go on a dead character, so a refresh then waits for this.
+    void OnPlayerResurrect(Player* player, float /*restorePercent*/, bool& /*applySickness*/) override
+    {
+        if (GetState(player))
             QueueTraits(player);
     }
 

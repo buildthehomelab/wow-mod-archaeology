@@ -500,6 +500,11 @@ namespace Archaeology
             if (form.items.size() != steps.size())
                 LOG_ERROR("module", "mod-archaeology: relic form {} has {} of {} steps; it can't be chosen", form.id, form.items.size(), steps.size());
         LOG_INFO("module", "mod-archaeology: relic ladder of {} ranks, {} forms", steps.size(), forms.size());
+        for (uint8 era = 0; era < 3; ++era)
+            if (!GetConfig().capstoneQuest[era])
+                LOG_WARN("module", "mod-archaeology: Archaeology.Relic.CapstoneQuest for the {} is 0: its last rank needs no quest, "
+                    "though the trainer still offers quest {}. A config from before the capstones keeps 0; set {} to use it.",
+                    ERA_NAMES[era], CAPSTONE_QUESTS[era], CAPSTONE_QUESTS[era]);
     }
 
     void LoadRelic(Player* player, CharState& s)

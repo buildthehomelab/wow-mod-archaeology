@@ -149,7 +149,8 @@ DMG_CLASS_MAGIC = 1
 # Proc flags, the same as spell_proc in mod_archaeology_world_traits.sql (the server reads those).
 PROC_DONE_HARM, PROC_DONE_ALL, PROC_TAKEN_HARM = 69972, 87380, 139944
 
-TRAIT_TEXT = "Stronger with every rank of the Unearthed Relic, and twice as strong once every %s project is solved."
+TRAIT_TEXT = "Stronger with every rank of the Unearthed Relic, and stronger still once every %s project is solved."
+MERCY_TEXT = "Stronger with every rank of the Unearthed Relic; recovers faster once every %s project is solved."
 # The relic's traits: aura spells first, then what they cast. effects: (effect, aura, target, misc, amplitude).
 # visual: a stock spell whose SpellVisual the row borrows, 0 for none.
 TRAIT_AURA = dict(attr0=ATTR0_NO_AURA_CANCEL, attr3=ATTR3_ALLOW_AURA_WHILE_DEAD, attr4=ATTR4_ALLOW_ENTERING_ARENA,
@@ -178,7 +179,7 @@ TRAITS = [
          text="Your melee and ranged attacks and harmful spells sometimes poison the target, stacking up to 5 times.",
          effects=[(EFFECT_APPLY_AURA, AURA_DUMMY, TARGET_UNIT_CASTER, 0, 0)], **TRAIT_AURA),
     dict(id=90514, name="Val'kyr's Mercy", icon="Spell_Holy_GuardianSpirit", proc=0, race="Vrykul",
-         text="A killing blow leaves you alive instead, once every 10 minutes.",
+         text="A killing blow leaves you alive instead, then it needs time to recover.", race_text=MERCY_TEXT,
          effects=[(EFFECT_APPLY_AURA, AURA_SCHOOL_ABSORB, TARGET_UNIT_CASTER, SCHOOL_ALL, 0),
                   (EFFECT_APPLY_AURA, AURA_DUMMY, TARGET_UNIT_CASTER, 0, 0),
                   (EFFECT_APPLY_AURA, AURA_DUMMY, TARGET_UNIT_CASTER, 0, 0)], **TRAIT_AURA),
@@ -213,6 +214,8 @@ TRAITS = [
 
 # Relic achievements, ids as the module's src/Archaeology.h. (id, title, description, points, icon)
 ACHIEVEMENT_CATEGORY = 169                  # Professions
+# Tables other modules' patches often carry too: taken from a realm patch only through --also-patch.
+SHARED_TABLES = {"Achievement", "Achievement_Criteria"}
 ACHIEVEMENT_TEMPLATE = 1563                 # Hail to the Chef: its language masks
 RELIC_QUEST = 9503500
 ACHIEVEMENTS = [
@@ -423,6 +426,7 @@ class Client:
         stem = len("patch-" + locale)
         locale_patches = sorted(glob.glob(os.path.join(loc, "patch-%s*.[mM][pP][qQ]" % locale)),
                                 key=lambda p: os.path.basename(p).lower()[stem:-4])
+        self.extra = {os.path.basename(p).lower() for p in extra}   # patches that aren't Blizzard's
         order = extra[::-1] + locale_patches[::-1]
         order += [os.path.join(data, n) for n in ("patch-3.MPQ", "patch-2.MPQ", "patch.MPQ")]
         order += [os.path.join(loc, n % locale) for n in ("lichking-locale-%s.MPQ", "expansion-locale-%s.MPQ",
@@ -776,7 +780,7 @@ def add_traits(dbc):
         row[F_NAME] = spells.add_string(t["name"])
         row[F_SUBTEXT] = spells.add_string(t.get("subtext", ""))
         if "race" in t:
-            text = t["text"] + " " + TRAIT_TEXT % t["race"]
+            text = t["text"] + " " + t.get("race_text", TRAIT_TEXT) % t["race"]
             row[F_DESCRIPTION] = spells.add_string(text)
             row[F_AURA_TEXT] = spells.add_string(text)
         else:
@@ -921,6 +925,9 @@ def main():
                 owner = 0
                 local = os.path.join(work, table + ".dbc")
                 source = client.extract(name, local)
+                if table in SHARED_TABLES and source.lower() in client.extra:
+                    sys.exit("%s.dbc comes from %s, one of your realm's own patches: pass it with --also-patch, or this "
+                             "patch's copy would hide its rows (or be hidden by it)" % (table, source))
                 unpacked[0][name] = local
                 print("%s.dbc: none of the patches has it; the client's copy from %s goes into %s"
                       % (table, source, os.path.basename(patches[0])))

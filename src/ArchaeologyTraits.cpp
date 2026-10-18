@@ -33,6 +33,8 @@ namespace
 
     constexpr uint32 MODULE_SPELL_FIRST = 90500;
     constexpr uint32 MODULE_SPELL_LAST = 90529;
+    constexpr uint32 TRAIT_AURA_FIRST = 90507;
+    constexpr uint32 TRAIT_AURA_LAST = 90514;
     constexpr float STRENGTH_SCALE = 10000.0f;   // strengths are stored on the aura as factor x 10000
 
     enum TraitKind : uint8
@@ -172,6 +174,10 @@ namespace
 
     void RefreshTraits(Player* player)
     {
+        // A trait row taken out of the table (then .arch reload) leaves its aura behind.
+        for (uint32 spell = TRAIT_AURA_FIRST; spell <= TRAIT_AURA_LAST; ++spell)
+            if (!TraitByAura(spell) && player->HasAura(spell))
+                player->RemoveAurasDueToSpell(spell);
         CharState* s = GetState(player);
         bool on = TraitsOn() && s && s->relic.rank && IsRelicEquipped(player);
         float factor = on ? RankFactor(player) : 0.0f;
@@ -241,7 +247,9 @@ class spell_archaeology_trait_proc : public AuraScript
     PrepareAuraScript(spell_archaeology_trait_proc);
 
     // The cast that rolled last. A Spell's address is reused once it's freed, so the spell id and
-    // the tick (a cast's targets are all hit in one) make sure it really is the same cast.
+    // the time make sure it really is the same cast: its targets are hit within a second (later
+    // ones a little after, for spells that travel), sooner than the same spell is cast again.
+    static constexpr uint32 SAME_CAST_MS = 1000;
     Spell const* _lastCast = nullptr;
     uint32 _lastCastSpell = 0;
     uint32 _lastCastTime = 0;
@@ -265,7 +273,7 @@ class spell_archaeology_trait_proc : public AuraScript
         if (Spell const* cast = eventInfo.GetProcSpell(); cast && spell)
         {
             uint32 now = GameTime::GetGameTimeMS().count();
-            if (cast == _lastCast && spell->Id == _lastCastSpell && now == _lastCastTime)
+            if (cast == _lastCast && spell->Id == _lastCastSpell && now - _lastCastTime < SAME_CAST_MS)
                 return false;
             _lastCast = cast;
             _lastCastSpell = spell->Id;
@@ -453,9 +461,20 @@ class spell_archaeology_trait_mercy : public AuraScript
         float kept = 1.0f - IgnoredAbsorbPct(attacker, dmgInfo) / 100.0f;
         uint64 shields = 0;
         if (kept >= 1.0f)
+        {
             for (AuraEffect const* other : target->GetAuraEffectsByType(SPELL_AURA_SCHOOL_ABSORB))
                 if (other != aurEff && other->GetAmount() > 0 && (other->GetMiscValue() & dmgInfo.GetSchoolMask()))
                     shields += uint32(other->GetAmount());
+            // Mana shields come after, as far as the mana goes.
+            for (AuraEffect const* other : target->GetAuraEffectsByType(SPELL_AURA_MANA_SHIELD))
+            {
+                if (other->GetAmount() <= 0 || !(other->GetMiscValue() & dmgInfo.GetSchoolMask()))
+                    continue;
+                float manaPerDamage = other->GetSpellInfo()->Effects[other->GetEffIndex()].CalcValueMultiplier(other->GetCaster());
+                uint64 byMana = manaPerDamage > 0.0f ? uint64(target->GetPower(POWER_MANA) / manaPerDamage) : uint64(other->GetAmount());
+                shields += std::min<uint64>(uint64(other->GetAmount()), byMana);
+            }
+        }
         uint32 damage = dmgInfo.GetDamage();
         uint32 through = uint32(damage - std::min<uint64>(damage, uint64(shields * kept)));
         if (through < target->GetHealth())
@@ -552,7 +571,8 @@ namespace Archaeology
             if ((r.traits & bit) && !(before & bit))
                 Notify(player, Acore::StringFormat("|cffe6cc80{} wakes in your Unearthed Relic:|r {}.", t.name, KIND_TEXT[t.kind]));
             if ((r.complete & bit) && !(wasComplete & bit) && race)
-                Notify(player, Acore::StringFormat("|cffe6cc80{} grows twice as strong:|r you have solved every {} project.", t.name, race->name));
+                Notify(player, Acore::StringFormat(t.kind == TRAIT_MERCY ? "|cffe6cc80{} recovers {:g} times as fast:|r you have solved every {} project."
+                    : "|cffe6cc80{} grows {:g} times as strong:|r you have solved every {} project.", t.name, GetConfig().traitCompleteBonus, race->name));
         }
     }
 
@@ -574,7 +594,9 @@ namespace Archaeology
                 return;
             --queuedCount;
         }
-        RefreshTraits(player);
+        // A dead character can't take auras; resurrecting queues it again.
+        if (player->IsAlive())
+            RefreshTraits(player);
         CheckRelicAchievements(player);
     }
 
@@ -583,12 +605,6 @@ namespace Archaeology
         std::lock_guard<std::mutex> lock(queueLock);
         if (queued.erase(player->GetGUID()))
             --queuedCount;
-    }
-
-    void RemoveTraits(Player* player)
-    {
-        for (Trait const& t : traits)
-            player->RemoveAurasDueToSpell(t.aura);
     }
 
     std::string TraitStatusText(Player* player)
@@ -607,7 +623,7 @@ namespace Archaeology
                 bool complete = IsRaceComplete(*s, t.race);
                 float strength = factor * (complete && t.kind != TRAIT_MERCY ? GetConfig().traitCompleteBonus : 1.0f);
                 text += Acore::StringFormat("\n  {}: {} ({}% strength{}).", t.name, KIND_TEXT[t.kind], int32(std::lround(strength * 100.0f)),
-                    complete ? (t.kind == TRAIT_MERCY ? ", shorter cooldown" : ", doubled") : "");
+                    complete ? (t.kind == TRAIT_MERCY ? ", shorter cooldown" : ", race complete") : "");
             }
             else if (race)
             {

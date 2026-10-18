@@ -264,7 +264,6 @@ namespace Archaeology
     void QueueTraits(Player* player);         // re-check the trait auras on the next update
     void UpdateQueuedTraits(Player* player);
     void ForgetTraits(Player* player);
-    void RemoveTraits(Player* player);
     std::string TraitStatusText(Player* player);
 }
 
