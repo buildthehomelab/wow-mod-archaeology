@@ -14,7 +14,8 @@
 --                    X:<project>:<item>:<rare>                    project solved
 --
 -- Other files hook in with ArchaeologyUI.On(event, fn). Events: STATE, RACES, SITES, PROJECT (id),
--- SURVEY (band, angle), FRAGMENTS (race, gained, total), SOLVED (project, item, rare), POSITION.
+-- SURVEY (band, angle), FRAGMENTS (race, gained, total), SOLVED (project, item, rare), POSITION,
+-- RELIC, LOGIN (A.db is ready), MINIMAP (shown).
 
 local PREFIX = "ARCH"
 local POSITION_INTERVAL = 0.1

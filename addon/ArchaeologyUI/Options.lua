@@ -15,6 +15,7 @@ local minimap = CreateFrame("CheckButton", "ArchaeologyUIOptionsMinimap", panel,
 minimap:SetPoint("TOPLEFT", title, "BOTTOMLEFT", -2, -12)
 _G[minimap:GetName() .. "Text"]:SetText("Show dig sites on the minimap")
 minimap:SetScript("OnClick", function(self)
+    PlaySound(self:GetChecked() and "igMainMenuOptionCheckBoxOn" or "igMainMenuOptionCheckBoxOff")
     A.SetMinimapShown(self:GetChecked() and true or false)
 end)
 
