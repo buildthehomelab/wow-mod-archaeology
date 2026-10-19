@@ -164,7 +164,7 @@ Procs come from melee and ranged hits and from spells (helpful ones too, for the
 - **Research window** (`/arch`): a tab per race you can research, with the current project's name, lore and artifact, your fragments against its cost, a socket per keystone the project takes (click to put one in or take it out), and Solve.
 - **In DragonUI's professions window:** with DragonUI 2.12 or later (its professions window on), the research window is a page of that window instead, with an Archaeology side tab after your profession tabs once you know Archaeology: races in the list column, the project on the recipe card, your skill on the rank bar. `/arch` and everything else that opens the research window opens that page. Retail Professions also lists Archaeology in its professions book and Training column.
 - **In Retail Professions' window:** without DragonUI's window, Retail Professions 1.17 or later takes the research view the same way: its Archaeology side tab opens it as a page of its profession window, the other tabs staying, with the relic and races in the list column, the project on the card and your skill on the skill bar. `/arch` and everything else that opens the research window opens that page too (with the window closed, it opens on it). With `/prof classic`, or without Retail Professions, the research window is used.
-- **Relic line:** the Unearthed Relic's rank, item level and Relic Power toward the next rank, and what holds it back, along the bottom of the research window (under the rank bar on the DragonUI page).
+- **Relic line:** the Unearthed Relic's rank out of the maximum unlocked by your current IP progression, item level and Relic Power toward the next rank, and what holds it back, along the bottom of the research window (under the rank bar on the DragonUI page).
 - **Fragments bar:** slides in at the top when you loot fragments, showing progress toward that race's project. Click it to open that race in the research window.
 
 Slash commands: `/arch` (window), `/arch survey`, `/arch reset` (survey button back to its default spot), `/arch refresh` (ask the server again), `/arch minimap` (dig sites on the minimap on or off), `/arch options` (the Interface Options page).
@@ -185,7 +185,7 @@ Addon whispers to yourself in `LANG_ADDON`, `ARCH\t<COMMAND>[:...]`.
   - `P:<id>:<race>:<rare>:<cost>:<sockets>:<item>:<name>`, `D:<id>:<text>` chunks, `DEND:<id>`
   - `V:RED|YELLOW|GREEN:<angle>`, `V:FOUND`, `V:NONE` (survey result)
   - `F:<race>:<gained>:<total>` (fragments looted), `X:<project>:<item>:<rare>` (solved)
-  - `L:<rank>:<ranks>:<power>:<next cost>:<item level>:<quality>:<form>:<note>` (the relic; rank 0 = not yet)
+  - `L:<rank>:<ranks>:<power>:<next cost>:<item level>:<quality>:<form>:<note>` (the relic; rank 0 = not yet; ranks = current progression ceiling, at least the earned rank)
 
 ## Client patch
 
@@ -233,3 +233,7 @@ Spell 90522 is a hidden, cosmetic dummy aura, checked every 200 ms against the e
 Rebuild the archaeology client patch with `tools/build_patch.py` for its matching Spell row, SpellVisual, SpellVisualKit, SpellVisualEffectName and billboard M2/skin. Pass every realm patch carrying these visual tables with `--also-patch`, including the visible-bags/torch patches as applicable, to preserve their rows. IDs 90522 in those three visual tables are reserved here. The ordinary shovel icon already exists in the 3.3.5 client. Ship the client patch alongside the module and SQL; no addon update is needed.
 
 The source and generated model can be checked locally, but the server build and actual head placement, billboard orientation, sizing across races, cleanup and floor checks must be verified in the 3.3.5 client before deployment. The full patch requires the realm's current MPQs and source data, which are not in this workspace. Keep the implementation PR unmerged pending review; after merge, a separate reviewed wow-server PR must pin the actual merged module commit before delivery.
+
+### Keystone reagent bank
+
+With the matching mod-reagent-bank-account keystone inclusions, all seven keystones can be deposited through the bank’s existing manual and periodic deposit flows. In the research page, click the **Bank** keystone slot, enter a quantity (defaults to one), and press **Withdraw**. The server transfers available keystones into your bags, subject to bag space. Artifact sockets still select keystones from your bags; solving does not consume banked items directly. Fossil has no keystone slot. This requires the updated bank SQL and a server restart to reload deposit inclusions; no client patch change is needed.
