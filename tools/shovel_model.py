@@ -4,6 +4,7 @@ import struct
 HEADER_SIZE = 0x130
 SEQ_FLAG_IN_M2 = 0x20
 SEQUENCE_HASH_SIZE = 8
+TRACK = "<HhIIII"  # interpolation, global sequence, timestamps and values M2Arrays
 
 class Blob:
     def __init__(self):
@@ -39,7 +40,7 @@ def sequence_hash(anim_ids):
     return struct.pack("<%dH" % SEQUENCE_HASH_SIZE, *table)
 
 def empty_track():
-    return struct.pack("<HhIIII", 0, -1, 0, 0, 0, 0)
+    return struct.pack(TRACK, 0, -1, 0, 0, 0, 0)
 
 def bounds(points):
     xs, ys, zs = zip(*points)
