@@ -74,6 +74,23 @@ namespace
         return GetConfig().ipEnabled ? IpState(player) : GetConfig().relicStateWithoutIp;
     }
 
+    // Display the ceiling for this progression stage, independent of power and collection gates.
+    uint32 ProgressionRankCount(Player* player)
+    {
+        uint32 state = ProgressionState(player);
+        uint32 ranks = 0;
+        for (uint32 i = 0; i < steps.size(); ++i)
+        {
+            if (steps[i].state > state)
+                break;
+            ranks = i + 1;
+        }
+        // Earned ranks survive progression/config changes; never display rank 16 of 9.
+        if (CharState* s = GetState(player))
+            ranks = std::max<uint32>(ranks, s->relic.rank);
+        return ranks;
+    }
+
     uint8 RaceEra(Race const& race)
     {
         return race.unlockSkill >= 375 ? 2 : race.unlockSkill >= 300 ? 1 : 0;
@@ -179,7 +196,7 @@ namespace
             return false;
         RelicStep const& step = steps[r.rank - 1];
         Notify(player, Acore::StringFormat("|cffe6cc80Your Unearthed Relic has reached rank {} of {}|r (item level {}, {}).",
-            r.rank, RankCount(), step.itemLevel, QUALITY_NAMES[std::min<uint8>(step.quality, 6)]));
+            r.rank, ProgressionRankCount(player), step.itemLevel, QUALITY_NAMES[std::min<uint8>(step.quality, 6)]));
         QueueTraits(player);   // stronger traits, maybe an achievement
         return true;
     }
@@ -630,7 +647,7 @@ namespace Archaeology
         }
         std::string formName = form ? form->name : "";
         std::replace(formName.begin(), formName.end(), ':', ' ');
-        SendAddon(player, Acore::StringFormat("L:{}:{}:{}:{}:{}:{}:{}:{}", r.rank, RankCount(), r.power,
+        SendAddon(player, Acore::StringFormat("L:{}:{}:{}:{}:{}:{}:{}:{}", r.rank, ProgressionRankCount(player), r.power,
             r.rank < RankCount() ? RankCost(r.rank + 1) : 0, ilvl, quality, formName, note));
     }
 
@@ -650,7 +667,7 @@ namespace Archaeology
         uint32 shown = ShownStep(player, r);
         RelicStep const& step = steps[shown];
         std::string text = Acore::StringFormat("Unearthed Relic{}: rank {} of {}, item level {} ({}).", form ? " (" + form->name + ")" : "",
-            r.rank, RankCount(), step.itemLevel, QUALITY_NAMES[std::min<uint8>(step.quality, 6)]);
+            r.rank, ProgressionRankCount(player), step.itemLevel, QUALITY_NAMES[std::min<uint8>(step.quality, 6)]);
         if (!form)
             text += " Choose its form at an archaeology trainer.";
         if (shown + 1 < r.rank)
