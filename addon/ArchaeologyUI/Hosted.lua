@@ -14,7 +14,6 @@ local TITLE = "Archaeology"
 local BAR_X, BAR_Y, BAR_W, BAR_FILL_W = 110, -40, 453, 441
 local LIST_X, LIST_Y, LIST_W, LIST_H = 5, -72, 304, 517
 local CARD_X, CARD_Y, CARD_INSET = 311, -72, 4
-local ROW_HEIGHT = 44
 -- The recipe list's header strips: where they start in the column, their size, the indent under them.
 local AREA_X, AREA_Y, AREA_W, HEADER_H, INDENT = 8, -8, LIST_W - 8 - 20, 25, 10
 -- Archaeology has no art of its own in DragonUI: the bar's animated fill and the card's drawing are Mining's.
@@ -73,54 +72,9 @@ end
 local function rowFor(list, i)
     local row = rows[i]
     if row then return row end
-    row = CreateFrame("Button", nil, list)
-    row:SetHeight(ROW_HEIGHT)
-    row:SetPoint("TOPLEFT", holder.races, "BOTTOMLEFT", INDENT, -4 - (i - 1) * ROW_HEIGHT)
+    row = R.NewRaceRow(list)
+    row:SetPoint("TOPLEFT", holder.races, "BOTTOMLEFT", INDENT, -4 - (i - 1) * R.ROW_HEIGHT)
     row:SetPoint("RIGHT", holder.races, "RIGHT", 0, 0)
-    row.icon = row:CreateTexture(nil, "ARTWORK")
-    row.icon:SetSize(32, 32)
-    row.icon:SetPoint("LEFT", row, "LEFT", 4, 0)
-    row.icon:SetTexCoord(0.07, 0.93, 0.07, 0.93)
-    row.count = row:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
-    row.count:SetPoint("TOPRIGHT", row, "TOPRIGHT", -4, -7)
-    row.count:SetJustifyH("RIGHT")
-    row.name = row:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-    row.name:SetPoint("TOPLEFT", row.icon, "TOPRIGHT", 8, -2)
-    row.name:SetPoint("RIGHT", row.count, "LEFT", -4, 0)
-    row.name:SetJustifyH("LEFT")
-    row.name:SetWordWrap(false)
-    row.bar = CreateFrame("StatusBar", nil, row)
-    row.bar:SetHeight(8)
-    row.bar:SetPoint("BOTTOMLEFT", row.icon, "BOTTOMRIGHT", 8, 2)
-    row.bar:SetPoint("RIGHT", row, "RIGHT", -4, 0)
-    row.bar:SetStatusBarTexture("Interface\\PaperDollInfoFrame\\UI-Character-Skills-Bar")
-    local bg = row.bar:CreateTexture(nil, "BACKGROUND")
-    bg:SetAllPoints(row.bar)
-    bg:SetTexture(0, 0, 0, 0.65)
-    -- The race on show stays lit.
-    row.lit = row:CreateTexture(nil, "BACKGROUND")
-    row.lit:SetTexture("Interface\\QuestFrame\\UI-QuestTitleHighlight")
-    row.lit:SetBlendMode("ADD")
-    row.lit:SetVertexColor(1, 0.82, 0, 0.3)
-    row.lit:SetAllPoints(row)
-    local hl = row:CreateTexture(nil, "HIGHLIGHT")
-    hl:SetTexture("Interface\\QuestFrame\\UI-QuestTitleHighlight")
-    hl:SetBlendMode("ADD")
-    hl:SetVertexColor(1, 1, 1, 0.35)
-    hl:SetAllPoints(row)
-    row:SetScript("OnClick", function(self)
-        if self.race then R.Select(self.race) end
-    end)
-    row:SetScript("OnEnter", function(self)
-        local race = self.race and A.races[self.race]
-        if not race then return end
-        GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
-        GameTooltip:SetText(race.name)
-        GameTooltip:AddLine(string.format("%d fragments (holds up to %d)", race.fragments, race.cap), 1, 1, 1)
-        GameTooltip:AddLine(string.format("%d %s", race.keystones, race.keystones == 1 and "keystone" or "keystones"), 1, 1, 1)
-        GameTooltip:Show()
-    end)
-    row:SetScript("OnLeave", function() GameTooltip:Hide() end)
     rows[i] = row
     return row
 end
@@ -291,32 +245,10 @@ local function start()
         if fallback then return own.drawRaces(races, current) end
         if not holder then return end
         for i, race in ipairs(races) do
-            local row = rowFor(holder.list, i)
-            row.race = race.id
-            row.icon:SetTexture(A.RaceIcon(race.id))
-            row.name:SetText(race.name)
-            local cost = race.cost or 0
-            if cost > 0 then
-                row.count:SetText(string.format("%d / %d", math.min(race.fragments, cost), cost))
-                row.bar:SetMinMaxValues(0, cost)
-                row.bar:SetValue(math.min(race.fragments, cost))
-            else
-                row.count:SetText(race.fragments)
-                row.bar:SetMinMaxValues(0, 1)
-                row.bar:SetValue(0)
-            end
-            -- Green once the project can be solved without keystones.
-            if cost > 0 and race.fragments >= cost then
-                row.bar:SetStatusBarColor(0.2, 0.8, 0.2)
-            else
-                row.bar:SetStatusBarColor(0.95, 0.6, 0.1)
-            end
-            if race.id == current then row.lit:Show() else row.lit:Hide() end
-            row:Show()
+            R.DrawRaceRow(rowFor(holder.list, i), race, current)
         end
         for i = #races + 1, #rows do
-            rows[i]:Hide()
-            rows[i].race = nil
+            R.DrawRaceRow(rows[i], nil)
         end
     end
     R.toggle = function(open)
