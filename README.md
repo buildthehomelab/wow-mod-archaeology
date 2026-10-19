@@ -220,7 +220,7 @@ The survey shows Cataclysm's telescope (gameobjects 9503500-9503502, displays 10
 - Cataclysm Classic 4.4.2 DB2 exports from [wago.tools](https://wago.tools) (ResearchBranch, ResearchSite, ResearchProject, QuestPOIPoint, SpellEffect, Item, ItemSparse), saved as `tools/cata-data/c_<Table>.csv`
 - SkyFire 5.4.8's `research_digsite_data`, `research_digsite_finds` and `research_project_requirements` rows, saved as `tools/cata-data/sf_arch.sql`
 
-`tools/cata-data/` is not committed. Dig sites in Cataclysm-only zones (skill 450) and all Tol'vir rows are dropped. Some old-world sites sit on terrain that changed in Cataclysm; set `enabled = 0` on any site that does not fit your map.
+`tools/cata-data/` is not committed. Dig sites in Cataclysm-only zones (skill 450) and all Tol'vir rows are dropped. Old-world coordinates are not automatically WotLK compatible. `tools/wotlk-disabled-sites.json` holds known incompatible sites and conservative terrain holds; the generator writes their `enabled = 0` flags explicitly. The matching `mod_archaeology_world_z_wotlk_sites.sql` disables them on existing installations after base data import. See [the WotLK terrain audit](docs/wotlk-digsites.md) and its complete site inventory. Remaining sites are provisional until their individual points and approaches are checked on 3.3.5 terrain.
 
 ## License
 

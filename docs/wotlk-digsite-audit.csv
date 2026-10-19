@@ -1,0 +1,157 @@
+id,map,name,enabled,assessment
+9,0,Ironband's Excavation Site,1,Retained provisionally: individual 3.3.5 terrain and approach checks still required.
+10,0,Ironbeard's Tomb,1,Retained provisionally: individual 3.3.5 terrain and approach checks still required.
+12,0,Whelgar's Excavation Site,0,Wetlands excavation and surrounding flood terrain changed; imported points need WotLK validation.
+13,0,Greenwarden's Fossil Bank,0,Wetlands floodplain changed; imported points need WotLK validation.
+15,0,Thoradin's Wall,0,Thoradin's Wall and its passages changed; imported points need WotLK validation.
+18,0,Witherbark Digsite,1,Retained provisionally: individual 3.3.5 terrain and approach checks still required.
+19,0,Thandol Span,1,Retained provisionally: individual 3.3.5 terrain and approach checks still required.
+20,0,Dun Garok Digsite,0,Dun Garok was reworked; imported interior and approach points need WotLK validation.
+21,0,Southshore Fossil Field,0,Southshore was destroyed and contaminated; imported points need WotLK validation.
+22,0,Aerie Peak Digsite,1,Retained provisionally: individual 3.3.5 terrain and approach checks still required.
+23,0,Shadra'Alor Digsite,1,Retained provisionally: individual 3.3.5 terrain and approach checks still required.
+24,0,Altar of Zul Digsite,1,Retained provisionally: individual 3.3.5 terrain and approach checks still required.
+25,0,Jintha'Alor Lower City Digsite,1,Retained provisionally: individual 3.3.5 terrain and approach checks still required.
+26,0,Jintha'Alor Upper City Digsite,1,Retained provisionally: individual 3.3.5 terrain and approach checks still required.
+27,0,Agol'watha Digsite,1,Retained provisionally: individual 3.3.5 terrain and approach checks still required.
+144,0,Hammertoe's Digsite,0,Badlands excavation terrain was reworked; imported points need WotLK validation.
+146,0,Tomb of the Watchers Digsite,0,Badlands tomb terrain was reworked; imported points need WotLK validation.
+150,0,Uldaman Entrance Digsite,0,Uldaman exterior entrance was reworked; imported points need WotLK validation.
+152,0,Sunken Temple Digsite,0,Sunken Temple exterior and surrounding water require WotLK validation.
+154,0,Misty Reed Fossil Bank,0,Swamp of Sorrows coastline was reworked; imported points need WotLK validation.
+163,0,Twilight Grove Digsite,1,Retained provisionally: individual 3.3.5 terrain and approach checks still required.
+165,0,Vul'Gol Fossil Bank,1,Retained provisionally: individual 3.3.5 terrain and approach checks still required.
+167,1,Nazj'vel Digsite,0,Darkshore coastline was devastated; imported Nazj'vel points need WotLK validation.
+169,1,Zoram Strand Digsite,1,Retained provisionally: individual 3.3.5 terrain and approach checks still required.
+171,1,Ruins of Ordil'Aran,1,Retained provisionally: individual 3.3.5 terrain and approach checks still required.
+173,1,Ruins of Stardust,1,Retained provisionally: individual 3.3.5 terrain and approach checks still required.
+175,1,Forest Song Digsite,1,Retained provisionally: individual 3.3.5 terrain and approach checks still required.
+177,1,Stonetalon Peak,0,Stonetalon Peak was reworked; imported points need WotLK validation.
+179,1,Ruins of Eldre'Thar,0,Ruins of Eldre'Thar and the Sishir Canyon approach are Cataclysm additions.
+181,1,Unearthed Grounds,0,Unearthed Grounds excavation and approach are Cataclysm additions.
+183,1,Bael Modan Digsite,0,Bael Modan was excavated and destroyed in Cataclysm; imported points need WotLK validation.
+185,1,Ruins of Eldarath,0,Azshara terrain was extensively reshaped; imported points need WotLK validation.
+187,1,Ruins of Arkkoran,0,Azshara terrain was extensively reshaped; imported points need WotLK validation.
+189,0,Lakeridge Highway Fossil Bank,0,Redridge lake and highway approaches changed; imported points need WotLK validation.
+191,1,Slitherblade Shore Digsite,0,Desolace shoreline and Slitherblade settlement changed; imported points need WotLK validation.
+193,1,Ethel Rethor Digsite,1,Retained provisionally: individual 3.3.5 terrain and approach checks still required.
+195,1,Valley of Bones,1,Retained provisionally: individual 3.3.5 terrain and approach checks still required.
+197,1,Mannoroc Coven Digsite,0,Mannoroc Coven terrain changed; imported points need WotLK validation.
+199,1,Kodo Graveyard,1,Retained provisionally: individual 3.3.5 terrain and approach checks still required.
+201,1,Sargeron Digsite,1,Retained provisionally: individual 3.3.5 terrain and approach checks still required.
+203,0,Red Reaches Fossil Bank,0,"Red Reaches is a Cataclysm coastal area, not a WotLK dig location."
+205,0,Dreadmaul Fossil Field,1,Retained provisionally: individual 3.3.5 terrain and approach checks still required.
+207,0,Grimsilt Digsite,1,Retained provisionally: individual 3.3.5 terrain and approach checks still required.
+209,0,Pyrox Flats Digsite,1,Retained provisionally: individual 3.3.5 terrain and approach checks still required.
+211,0,Western Ruins of Thaurissan,1,Retained provisionally: individual 3.3.5 terrain and approach checks still required.
+213,0,Eastern Ruins of Thaurissan,1,Retained provisionally: individual 3.3.5 terrain and approach checks still required.
+215,0,Terror Wing Fossil Field,1,Retained provisionally: individual 3.3.5 terrain and approach checks still required.
+217,0,Zul'Mashar Digsite,1,Retained provisionally: individual 3.3.5 terrain and approach checks still required.
+219,0,Quel'Lithien Lodge Digsite,1,Retained provisionally: individual 3.3.5 terrain and approach checks still required.
+221,0,Infectis Scar Fossil Field,0,Eastern Plaguelands scar water levels changed; imported points need WotLK validation.
+223,0,Eastern Zul'Kunda Digsite,1,Retained provisionally: individual 3.3.5 terrain and approach checks still required.
+225,0,Western Zul'Kunda Digsite,1,Retained provisionally: individual 3.3.5 terrain and approach checks still required.
+227,0,Bal'lal Ruins Digsite,1,Retained provisionally: individual 3.3.5 terrain and approach checks still required.
+229,0,Balia'mah Digsite,1,Retained provisionally: individual 3.3.5 terrain and approach checks still required.
+231,0,Ziata'jai Digsite,1,Retained provisionally: individual 3.3.5 terrain and approach checks still required.
+233,0,Eastern Zul'Mamwe Digsite,1,Retained provisionally: individual 3.3.5 terrain and approach checks still required.
+235,0,Western Zul'Mamwe Digsite,1,Retained provisionally: individual 3.3.5 terrain and approach checks still required.
+237,0,Savage Coast Raptor Fields,0,Stranglethorn coastline and adjacent rift changed; imported points need WotLK validation.
+239,0,Ruins of Aboraz,1,Retained provisionally: individual 3.3.5 terrain and approach checks still required.
+241,0,Ruins of Jubuwal,1,Retained provisionally: individual 3.3.5 terrain and approach checks still required.
+243,0,Gurubashi Arena Digsite,1,Retained provisionally: individual 3.3.5 terrain and approach checks still required.
+245,0,Nek'mani Wellspring Digsite,1,Retained provisionally: individual 3.3.5 terrain and approach checks still required.
+247,0,Felstone Fossil Field,1,Retained provisionally: individual 3.3.5 terrain and approach checks still required.
+249,0,Northridge Fossil Field,1,Retained provisionally: individual 3.3.5 terrain and approach checks still required.
+251,0,Andorhal Fossil Bank,1,Retained provisionally: individual 3.3.5 terrain and approach checks still required.
+259,1,Wyrmbog Fossil Field,1,Retained provisionally: individual 3.3.5 terrain and approach checks still required.
+261,1,Quagmire Fossil Field,1,Retained provisionally: individual 3.3.5 terrain and approach checks still required.
+279,1,Dire Maul Digsite,1,Retained provisionally: individual 3.3.5 terrain and approach checks still required.
+281,1,Broken Commons Digsite,1,Retained provisionally: individual 3.3.5 terrain and approach checks still required.
+283,1,Ravenwind Digsite,1,Retained provisionally: individual 3.3.5 terrain and approach checks still required.
+285,1,Oneiros Digsite,1,Retained provisionally: individual 3.3.5 terrain and approach checks still required.
+287,1,Solarsal Digsite,1,Retained provisionally: individual 3.3.5 terrain and approach checks still required.
+289,1,Darkmist Digsite,0,Darkmist Ruins access depends on Cataclysm terrain; reported unreachable on the WotLK realm.
+291,1,South Isildien Digsite,1,Retained provisionally: individual 3.3.5 terrain and approach checks still required.
+293,1,North Isildien Digsite,1,Retained provisionally: individual 3.3.5 terrain and approach checks still required.
+295,1,Constellas Digsite,1,Retained provisionally: individual 3.3.5 terrain and approach checks still required.
+297,1,Morlos'Aran Digsite,1,Retained provisionally: individual 3.3.5 terrain and approach checks still required.
+299,1,Jaedenar Digsite,1,Retained provisionally: individual 3.3.5 terrain and approach checks still required.
+301,1,Ironwood Digsite,1,Retained provisionally: individual 3.3.5 terrain and approach checks still required.
+303,1,Lake Kel'Theril Digsite,1,Retained provisionally: individual 3.3.5 terrain and approach checks still required.
+305,1,Owl Wing Thicket Digsite,1,Retained provisionally: individual 3.3.5 terrain and approach checks still required.
+307,1,Frostwhisper Gorge Digsite,1,Retained provisionally: individual 3.3.5 terrain and approach checks still required.
+309,1,Fields of Blood Fossil Bank,0,Southern Barrens was split by Cataclysm fissures; imported points need WotLK validation.
+313,1,Nightmare Scar Digsite,1,Retained provisionally: individual 3.3.5 terrain and approach checks still required.
+315,1,Zul'Farrak Digsite,1,Retained provisionally: individual 3.3.5 terrain and approach checks still required.
+317,1,Broken Pillar Digsite,1,Retained provisionally: individual 3.3.5 terrain and approach checks still required.
+319,1,Eastmoon Ruins Digsite,0,Tanaris eastern coastline flooded; imported Eastmoon points need WotLK validation.
+321,1,Southmoon Ruins Digsite,1,Retained provisionally: individual 3.3.5 terrain and approach checks still required.
+323,1,Dunemaul Fossil Ridge,1,Retained provisionally: individual 3.3.5 terrain and approach checks still required.
+325,1,Abyssal Sands Fossil Ridge,0,Tanaris coastal sands changed; imported points need WotLK validation.
+327,1,Lower Lakkari Tar Pits,1,Retained provisionally: individual 3.3.5 terrain and approach checks still required.
+329,1,Upper Lakkari Tar Pits,1,Retained provisionally: individual 3.3.5 terrain and approach checks still required.
+331,1,Terror Run Fossil Field,1,Retained provisionally: individual 3.3.5 terrain and approach checks still required.
+333,1,Screaming Reaches Fossil Field,1,Retained provisionally: individual 3.3.5 terrain and approach checks still required.
+335,1,Marshlands Fossil Bank,1,Retained provisionally: individual 3.3.5 terrain and approach checks still required.
+337,1,Southwind Village Digsite,1,Retained provisionally: individual 3.3.5 terrain and approach checks still required.
+339,530,Gor'gaz Outpost Digsite,1,Retained provisionally: individual 3.3.5 terrain and approach checks still required.
+341,530,Zeth'Gor Digsite,1,Retained provisionally: individual 3.3.5 terrain and approach checks still required.
+343,530,Hellfire Basin Digsite,1,Retained provisionally: individual 3.3.5 terrain and approach checks still required.
+345,530,Hellfire Citadel Digsite,1,Retained provisionally: individual 3.3.5 terrain and approach checks still required.
+347,530,Sha'naar Digsite,1,Retained provisionally: individual 3.3.5 terrain and approach checks still required.
+349,530,Boha'mu Ruins Digsite,1,Retained provisionally: individual 3.3.5 terrain and approach checks still required.
+351,530,Twin Spire Ruins Digsite,1,Retained provisionally: individual 3.3.5 terrain and approach checks still required.
+353,530,Ruins of Enkaat Digsite,1,Retained provisionally: individual 3.3.5 terrain and approach checks still required.
+355,530,Arklon Ruins Digsite,1,Retained provisionally: individual 3.3.5 terrain and approach checks still required.
+357,530,Ruins of Farahlon Digsite,1,Retained provisionally: individual 3.3.5 terrain and approach checks still required.
+359,530,Ancestral Grounds Digsite,1,Retained provisionally: individual 3.3.5 terrain and approach checks still required.
+363,530,Sunspring Post Digsite,1,Retained provisionally: individual 3.3.5 terrain and approach checks still required.
+365,530,Laughing Skull Digsite,1,Retained provisionally: individual 3.3.5 terrain and approach checks still required.
+367,530,Burning Blade Digsite,1,Retained provisionally: individual 3.3.5 terrain and approach checks still required.
+369,530,Halaa Digsite,1,Retained provisionally: individual 3.3.5 terrain and approach checks still required.
+371,530,Grangol'var Village Digsite,1,Retained provisionally: individual 3.3.5 terrain and approach checks still required.
+373,530,Tuurem Digsite,1,Retained provisionally: individual 3.3.5 terrain and approach checks still required.
+375,530,Bleeding Hollow Ruins Digsite,1,Retained provisionally: individual 3.3.5 terrain and approach checks still required.
+377,530,Bonechewer Ruins Digsite,1,Retained provisionally: individual 3.3.5 terrain and approach checks still required.
+379,530,Bone Wastes Digsite,1,Retained provisionally: individual 3.3.5 terrain and approach checks still required.
+381,530,East Auchindoun Digsite,1,Retained provisionally: individual 3.3.5 terrain and approach checks still required.
+383,530,West Auchindoun Digsite,1,Retained provisionally: individual 3.3.5 terrain and approach checks still required.
+385,530,Illidari Point Digsite,1,Retained provisionally: individual 3.3.5 terrain and approach checks still required.
+387,530,Coilskar Point Digsite,1,Retained provisionally: individual 3.3.5 terrain and approach checks still required.
+391,530,Ruins of Baa'ri Digsite,1,Retained provisionally: individual 3.3.5 terrain and approach checks still required.
+393,530,Eclipse Point Digsite,1,Retained provisionally: individual 3.3.5 terrain and approach checks still required.
+395,530,Warden's Cage Digsite,1,Retained provisionally: individual 3.3.5 terrain and approach checks still required.
+399,530,Dragonmaw Fortress,1,Retained provisionally: individual 3.3.5 terrain and approach checks still required.
+401,571,Skorn Digsite,1,Retained provisionally: individual 3.3.5 terrain and approach checks still required.
+403,571,Halgrind Digsite,1,Retained provisionally: individual 3.3.5 terrain and approach checks still required.
+405,571,Wyrmskull Digsite,1,Retained provisionally: individual 3.3.5 terrain and approach checks still required.
+407,571,Shield Hill Digsite,1,Retained provisionally: individual 3.3.5 terrain and approach checks still required.
+409,571,Baleheim Digsite,1,Retained provisionally: individual 3.3.5 terrain and approach checks still required.
+411,571,Nifflevar Digsite,1,Retained provisionally: individual 3.3.5 terrain and approach checks still required.
+413,571,Gjalerbron Digsite,1,Retained provisionally: individual 3.3.5 terrain and approach checks still required.
+415,571,Pit of Narjun Digsite,1,Retained provisionally: individual 3.3.5 terrain and approach checks still required.
+417,571,Moonrest Gardens Digsite,1,Retained provisionally: individual 3.3.5 terrain and approach checks still required.
+419,571,En'kilah Digsite,1,Retained provisionally: individual 3.3.5 terrain and approach checks still required.
+421,571,Kolramas Digsite,1,Retained provisionally: individual 3.3.5 terrain and approach checks still required.
+423,571,Riplash Ruins Digsite,1,Retained provisionally: individual 3.3.5 terrain and approach checks still required.
+425,571,Violet Stand Digsite,1,Retained provisionally: individual 3.3.5 terrain and approach checks still required.
+427,571,Ruins of Shandaral Digsite,1,Retained provisionally: individual 3.3.5 terrain and approach checks still required.
+429,571,Altar of Sseratus Digsite,1,Retained provisionally: individual 3.3.5 terrain and approach checks still required.
+431,571,Zim'Rhuk Digsite,1,Retained provisionally: individual 3.3.5 terrain and approach checks still required.
+433,571,Zol'Heb Digsite,1,Retained provisionally: individual 3.3.5 terrain and approach checks still required.
+435,571,Altar of Quetz'lun Digsite,1,Retained provisionally: individual 3.3.5 terrain and approach checks still required.
+437,571,Talramas Digsite,1,Retained provisionally: individual 3.3.5 terrain and approach checks still required.
+439,571,Voldrune Digsite,1,Retained provisionally: individual 3.3.5 terrain and approach checks still required.
+443,571,Drakil'Jin Ruins Digsite,1,Retained provisionally: individual 3.3.5 terrain and approach checks still required.
+445,571,Brunnhildar Village Digsite,1,Retained provisionally: individual 3.3.5 terrain and approach checks still required.
+447,571,Sifreldar Village Digsite,1,Retained provisionally: individual 3.3.5 terrain and approach checks still required.
+449,571,Valkyrion Digsite,1,Retained provisionally: individual 3.3.5 terrain and approach checks still required.
+451,571,Scourgeholme Digsite,1,Retained provisionally: individual 3.3.5 terrain and approach checks still required.
+455,571,Ymirheim Digsite,1,Retained provisionally: individual 3.3.5 terrain and approach checks still required.
+457,571,Jotunheim Digsite,1,Retained provisionally: individual 3.3.5 terrain and approach checks still required.
+459,571,Njorndar Village Digsite,1,Retained provisionally: individual 3.3.5 terrain and approach checks still required.
+587,571,Pit of Fiends Digsite,1,Retained provisionally: individual 3.3.5 terrain and approach checks still required.
+589,571,Sands of Nasam,1,Retained provisionally: individual 3.3.5 terrain and approach checks still required.
+615,0,Terrorweb Tunnel Digsite,1,Retained provisionally: individual 3.3.5 terrain and approach checks still required.
+617,0,Plaguewood Digsite,1,Retained provisionally: individual 3.3.5 terrain and approach checks still required.
