@@ -82,39 +82,38 @@ PROFILES = {   # (stat, share of the points), socket bonus (SpellItemEnchantment
 WEAPON, ARMOR = 2, 4
 AXE, AXE2, BOW, GUN, MACE, MACE2, SWORD, SWORD2, STAFF, FIST, DAGGER, SHIELD = 0, 1, 2, 3, 4, 5, 7, 8, 10, 13, 15, 6
 T_SHIELD, T_BOW, T_2H, T_MH, T_OH, T_GUN = 14, 15, 17, 21, 22, 26
-MAIN, OFF, AEGIS = "Unearthed Relic", "Unearthed Relic Fragment", "Unearthed Aegis"
 
 # kind: name, class, subclass, InventoryType, slot ("2h", "1h", "ranged", "shield"), speed (s),
 #       DPS share of a two-hand weapon, profile, display (existing 3.3.5 ItemDisplayInfo), sheath, material
 KINDS = [
-    (MAIN, WEAPON, SWORD2, T_2H, "2h", 3.6, 1.0, "str", 53938, 1, 1),      # 0 Claymore of Ancient Power
-    (MAIN, WEAPON, AXE2, T_2H, "2h", 3.6, 1.0, "str", 50965, 1, 1),        # 1 Titansteel Defender
-    (MAIN, WEAPON, MACE2, T_2H, "2h", 3.6, 1.0, "str", 52966, 1, 1),       # 2 Titansteel Destroyer
-    (MAIN, WEAPON, SWORD, T_MH, "1h", 2.6, .77, "agi", 59382, 3, 1),       # 3 Titanguard
-    (OFF, WEAPON, SWORD, T_OH, "1h", 1.6, .77, "agi", 59382, 3, 1),        # 4
-    (MAIN, WEAPON, FIST, T_MH, "1h", 2.6, .77, "agi", 58897, 7, 1),        # 5 Golden Saronite Dragon
-    (OFF, WEAPON, FIST, T_OH, "1h", 2.6, .77, "agi", 58897, 7, 1),         # 6
-    (MAIN, WEAPON, AXE, T_MH, "1h", 2.6, .77, "agi", 50076, 3, 1),         # 7 Notched Cobalt War Axe
-    (OFF, WEAPON, AXE, T_OH, "1h", 2.6, .77, "agi", 50076, 3, 1),          # 8
-    (MAIN, WEAPON, DAGGER, T_MH, "1h", 1.8, .77, "agi", 53471, 3, 1),      # 9 Titansteel Shanker
-    (OFF, WEAPON, DAGGER, T_OH, "1h", 1.4, .77, "agi", 53471, 3, 1),       # 10
-    (MAIN, WEAPON, SWORD, T_MH, "1h", 2.6, .77, "str1h", 59382, 3, 1),     # 11
-    (OFF, WEAPON, SWORD, T_OH, "1h", 2.6, .77, "str1h", 59382, 3, 1),      # 12
-    (MAIN, WEAPON, AXE, T_MH, "1h", 2.6, .77, "str1h", 50076, 3, 1),       # 13
-    (OFF, WEAPON, AXE, T_OH, "1h", 2.6, .77, "str1h", 50076, 3, 1),        # 14
-    (OFF, WEAPON, SWORD2, T_2H, "2h", 3.6, 1.0, "str", 53938, 1, 1),       # 15 Titan's Grip off hand
-    (OFF, WEAPON, AXE2, T_2H, "2h", 3.6, 1.0, "str", 50965, 1, 1),         # 16
-    (MAIN, WEAPON, STAFF, T_2H, "2h", 2.1, .77, "caster", 43323, 2, 2),    # 17 Oronok's Ancient Scepter
-    (MAIN, WEAPON, STAFF, T_2H, "2h", 3.0, 1.0, "feral", 20269, 2, 2),     # 18 Explorer's Walking Stick
-    (MAIN, WEAPON, MACE2, T_2H, "2h", 3.4, 1.0, "feral", 25047, 1, 2),     # 19 Hammer of the Titans
-    (MAIN, WEAPON, MACE, T_MH, "1h", 1.8, .475, "heal", 53032, 3, 1),      # 20 Titansteel Guardian
-    (MAIN, WEAPON, BOW, T_BOW, "ranged", 2.8, .88, "ranged", 54501, 0, 2), # 21 Titanium Compound Bow
-    (MAIN, WEAPON, GUN, T_GUN, "ranged", 2.8, .88, "ranged", 28636, 0, 1), # 22 Dwarven Hand Cannon
-    (MAIN, WEAPON, SWORD, T_MH, "1h", 2.4, .77, "tank", 59382, 3, 1),      # 23
-    (MAIN, WEAPON, MACE, T_MH, "1h", 2.4, .77, "tank", 53030, 3, 1),       # 24 Titansteel Bonecrusher
-    (AEGIS, ARMOR, SHIELD, T_SHIELD, "shield", 0, 0, "shield", 53532, 4, 1),  # 25 Titansteel Shield Wall
-    (MAIN, WEAPON, SWORD2, T_2H, "2h", 3.6, 1.0, "tank2h", 52261, 1, 1),   # 26 Titansteel Deflector
-    (MAIN, WEAPON, AXE2, T_2H, "2h", 3.6, 1.0, "tank2h", 50965, 1, 1),     # 27
+    ("Oath of the Forgotten", WEAPON, SWORD2, T_2H, "2h", 3.6, 1.0, "str", 53938, 1, 1),      # 0 Claymore of Ancient Power
+    ("Empire's End", WEAPON, AXE2, T_2H, "2h", 3.6, 1.0, "str", 50965, 1, 1),        # 1 Titansteel Defender
+    ("Weight of Ages", WEAPON, MACE2, T_2H, "2h", 3.6, 1.0, "str", 52966, 1, 1),       # 2 Titansteel Destroyer
+    ("Oath", WEAPON, SWORD, T_MH, "1h", 2.6, .77, "agi", 59382, 3, 1),       # 3 Titanguard
+    ("Reckoning", WEAPON, SWORD, T_OH, "1h", 1.6, .77, "agi", 59382, 3, 1),        # 4
+    ("Grasp", WEAPON, FIST, T_MH, "1h", 2.6, .77, "agi", 58897, 7, 1),        # 5 Golden Saronite Dragon
+    ("Defiance", WEAPON, FIST, T_OH, "1h", 2.6, .77, "agi", 58897, 7, 1),         # 6
+    ("Ruin", WEAPON, AXE, T_MH, "1h", 2.6, .77, "agi", 50076, 3, 1),         # 7 Notched Cobalt War Axe
+    ("Remembrance", WEAPON, AXE, T_OH, "1h", 2.6, .77, "agi", 50076, 3, 1),          # 8
+    ("Secret", WEAPON, DAGGER, T_MH, "1h", 1.8, .77, "agi", 53471, 3, 1),      # 9 Titansteel Shanker
+    ("Silence", WEAPON, DAGGER, T_OH, "1h", 1.4, .77, "agi", 53471, 3, 1),       # 10
+    ("Oath", WEAPON, SWORD, T_MH, "1h", 2.6, .77, "str1h", 59382, 3, 1),     # 11
+    ("Reckoning", WEAPON, SWORD, T_OH, "1h", 2.6, .77, "str1h", 59382, 3, 1),      # 12
+    ("Ruin", WEAPON, AXE, T_MH, "1h", 2.6, .77, "str1h", 50076, 3, 1),       # 13
+    ("Remembrance", WEAPON, AXE, T_OH, "1h", 2.6, .77, "str1h", 50076, 3, 1),        # 14
+    ("Oath of the Forgotten", WEAPON, SWORD2, T_2H, "2h", 3.6, 1.0, "str", 53938, 1, 1),       # 15 Titan's Grip off hand
+    ("Empire's End", WEAPON, AXE2, T_2H, "2h", 3.6, 1.0, "str", 50965, 1, 1),         # 16
+    ("Memory of the First Dawn", WEAPON, STAFF, T_2H, "2h", 2.1, .77, "caster", 43323, 2, 2),    # 17 Oronok's Ancient Scepter
+    ("Root of Ages", WEAPON, STAFF, T_2H, "2h", 3.0, 1.0, "feral", 20269, 2, 2),     # 18 Explorer's Walking Stick
+    ("Weight of Ages", WEAPON, MACE2, T_2H, "2h", 3.4, 1.0, "feral", 25047, 1, 2),     # 19 Hammer of the Titans
+    ("Light of the Lost", WEAPON, MACE, T_MH, "1h", 1.8, .475, "heal", 53032, 3, 1),      # 20 Titansteel Guardian
+    ("Whisper of Ages", WEAPON, BOW, T_BOW, "ranged", 2.8, .88, "ranged", 54501, 0, 2), # 21 Titanium Compound Bow
+    ("The Last Word", WEAPON, GUN, T_GUN, "ranged", 2.8, .88, "ranged", 28636, 0, 1), # 22 Dwarven Hand Cannon
+    ("The Unbroken Oath", WEAPON, SWORD, T_MH, "1h", 2.4, .77, "tank", 59382, 3, 1),      # 23
+    ("Vigil of Stone", WEAPON, MACE, T_MH, "1h", 2.4, .77, "tank", 53030, 3, 1),       # 24 Titansteel Bonecrusher
+    ("Bastion of the Forgotten", ARMOR, SHIELD, T_SHIELD, "shield", 0, 0, "shield", 53532, 4, 1),  # 25 Titansteel Shield Wall
+    ("The Unbroken Oath", WEAPON, SWORD2, T_2H, "2h", 3.6, 1.0, "tank2h", 52261, 1, 1),   # 26 Titansteel Deflector
+    ("Empire's End", WEAPON, AXE2, T_2H, "2h", 3.6, 1.0, "tank2h", 50965, 1, 1),     # 27
 ]
 SLOT_SHARE = {"2h": 1.0, "1h": .47, "ranged": .40, "shield": .55}
 CASTER_2H_SHARE, CASTER_1H_SHARE = 1.0, .44    # caster staves and one-handers: stats on top of their spell power
@@ -162,6 +161,8 @@ def sql_str(s):
 def item_row(step, kind):
     level, ilvl, quality, _ip, _cost, _gate = STEPS[step]
     name, cls, sub, inv, slot, speed, dps_share, profile, display, sheath, material = KINDS[kind]
+    if quality == 6:
+        name = "Awakened " + name
     stats, bonus, spell = PROFILES[profile]
     points = ANCHOR[ilvl] * QUALITY_SCALE[quality]
     share = CASTER_2H_SHARE if spell and slot == "2h" else CASTER_1H_SHARE if spell else SLOT_SHARE[slot]

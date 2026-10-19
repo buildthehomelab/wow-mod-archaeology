@@ -86,6 +86,26 @@ One weapon per character, pieced together from its finds. It never leaves the ch
 
 **Forms.** 21, by class: two-handed sword, axe or mace (Strength); pairs of swords, axes, fist weapons or daggers for dual wield (Agility or Strength); a pair of two-handers with Titan's Grip; staff (Intellect or Agility); two-handed mace (Agility); one-handed mace (Intellect, Spirit); bow or gun; sword or mace and shield, two-handed sword or axe (tank). A pair is two items sharing one rank: a main hand and off hand (or shield), each with a one-hander's stats. Pairs need Dual Wield or Titan's Grip, as the character has them when it chooses.
 
+**Weapon names.** Each form has a name that stays with it as it grows. The final awakened rank adds *Awakened* to the item name.
+
+| Form | Item name(s) |
+| --- | --- |
+| Two-handed sword (Strength, including Titan's Grip) | Oath of the Forgotten |
+| Two-handed axe (Strength or Tank, including Titan's Grip) | Empire's End |
+| Two-handed mace (Strength or Agility) | Weight of Ages |
+| Pair of swords (Agility or Strength) | Oath / Reckoning |
+| Pair of axes (Agility or Strength) | Ruin / Remembrance |
+| Pair of daggers | Secret / Silence |
+| Pair of fist weapons | Grasp / Defiance |
+| Staff (Intellect) | Memory of the First Dawn |
+| Staff (Agility) | Root of Ages |
+| One-handed mace (Intellect, Spirit) | Light of the Lost |
+| Bow | Whisper of Ages |
+| Gun | The Last Word |
+| Tank sword (one-handed or two-handed) | The Unbroken Oath |
+| Tank mace | Vigil of Stone |
+| Shield | Bastion of the Forgotten |
+
 **Ranks.** Relic Power comes only from archaeology: per find, per common and rare solve, and extra for a project solved for the first time (`Archaeology.Relic.Power*`). It is earned from the first find, so digging before the quest counts. Power buys ranks one after the other, at each rank's cost (`mod_archaeology_relic_step.cost` x `CostRate`); the last ranks of each era cost the most. There are 29:
 
 | Ranks | Item level | Quality | Opens at |
