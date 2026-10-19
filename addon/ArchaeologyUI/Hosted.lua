@@ -211,6 +211,19 @@ local function build(H, P, D, parent)
         pcall(CP.ReskinScrollBar, R.loreScroll, R.loreBox, 4, -2, 4, false)
     end
     if D.SkinRedButton then pcall(D.SkinRedButton, R.solve) end
+    -- The project bar as it has always been on the card, not the stock skill bar of our window.
+    local pr = R.progress
+    pr.bar:SetHeight(16)
+    pr.bar:SetStatusBarTexture("Interface\\TargetingFrame\\UI-StatusBar")
+    pr.bg:SetTexture(0, 0, 0, 0.5)
+    pr.edge:Hide()
+    pr.border:ClearAllPoints()
+    pr.border:SetPoint("TOPLEFT", -3, 3)
+    pr.border:SetPoint("BOTTOMRIGHT", 3, -3)
+    pr.border:SetBackdrop({ edgeFile = "Interface\\Tooltips\\UI-Tooltip-Border", edgeSize = 10 })
+    pr.border:SetBackdropBorderColor(0.6, 0.6, 0.6)
+    pr.text:ClearAllPoints()
+    pr.text:SetPoint("CENTER", pr.bar, "CENTER")
 
     local empty = R.empty
     empty:SetParent(holder)
