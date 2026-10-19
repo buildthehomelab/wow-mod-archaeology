@@ -133,14 +133,15 @@ local loreBox = CreateFrame("Frame", nil, page)
 loreBox:SetPoint("TOPLEFT", artifact, "BOTTOMLEFT", -4, -10)
 loreBox:SetPoint("RIGHT", page, "RIGHT", 0, 0)
 loreBox:SetHeight(160)
+-- The stock options box: tooltip border and background in its greys.
 loreBox:SetBackdrop({
     bgFile = "Interface\\Tooltips\\UI-Tooltip-Background",
     edgeFile = "Interface\\Tooltips\\UI-Tooltip-Border",
     tile = true, tileSize = 16, edgeSize = 16,
-    insets = { left = 4, right = 4, top = 4, bottom = 4 },
+    insets = { left = 5, right = 5, top = 5, bottom = 5 },
 })
-loreBox:SetBackdropColor(0, 0, 0, 0.5)
-loreBox:SetBackdropBorderColor(0.6, 0.6, 0.6)
+loreBox:SetBackdropColor(0.1, 0.1, 0.1, 0.5)
+loreBox:SetBackdropBorderColor(0.4, 0.4, 0.4)
 R.loreBox = loreBox
 
 local scroll = CreateFrame("ScrollFrame", "ArchaeologyUILoreScroll", loreBox, "UIPanelScrollFrameTemplate")
@@ -170,22 +171,24 @@ scroll:SetScript("OnSizeChanged", function(self, width)
     end
 end)
 
--- Progress toward the project's cost.
+-- Progress toward the project's cost, on the stock skill bar (as the trade skill window's rank bar).
 local bar = CreateFrame("StatusBar", nil, page)
-bar:SetHeight(16)
+bar:SetHeight(14)
 bar:SetPoint("TOPLEFT", loreBox, "BOTTOMLEFT", 4, -14)
 bar:SetPoint("RIGHT", page, "RIGHT", -4, 0)
-bar:SetStatusBarTexture("Interface\\TargetingFrame\\UI-StatusBar")
+bar:SetStatusBarTexture("Interface\\PaperDollInfoFrame\\UI-Character-Skills-Bar")
 local barBg = bar:CreateTexture(nil, "BACKGROUND")
 barBg:SetAllPoints()
-barBg:SetTexture(0, 0, 0, 0.5)
+barBg:SetTexture(1, 1, 1, 0.2)
 local barBorder = CreateFrame("Frame", nil, bar)
-barBorder:SetPoint("TOPLEFT", -3, 3)
-barBorder:SetPoint("BOTTOMRIGHT", 3, -3)
-barBorder:SetBackdrop({ edgeFile = "Interface\\Tooltips\\UI-Tooltip-Border", edgeSize = 10 })
-barBorder:SetBackdropBorderColor(0.6, 0.6, 0.6)
-local barText = bar:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
-barText:SetPoint("CENTER")
+barBorder:SetAllPoints()
+local barEdge = barBorder:CreateTexture(nil, "ARTWORK")
+barEdge:SetTexture("Interface\\PaperDollInfoFrame\\UI-Character-Skills-BarBorder")
+barEdge:SetPoint("TOPLEFT", -5, 7)
+barEdge:SetPoint("BOTTOMRIGHT", 4, -6)
+local barText = barBorder:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+barText:SetPoint("CENTER", bar, "CENTER", 0, 1)
+R.progress = { bar = bar, bg = barBg, border = barBorder, edge = barEdge, text = barText }
 
 -- Keystone sockets.
 local socketLabel = page:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")

@@ -194,7 +194,15 @@ bar:SetBackdrop({
     tile = true, tileSize = 16, edgeSize = 16,
     insets = { left = 4, right = 4, top = 4, bottom = 4 },
 })
-bar:SetBackdropColor(0, 0, 0, 0.8)
+-- Without DragonUI, in the stock tooltip's colours; with it, the darker pane it has always had.
+local dragonUI = _G.DragonUI ~= nil
+if dragonUI then
+    bar:SetBackdropColor(0, 0, 0, 0.8)
+else
+    bar:SetBackdropColor(TOOLTIP_DEFAULT_BACKGROUND_COLOR.r, TOOLTIP_DEFAULT_BACKGROUND_COLOR.g,
+        TOOLTIP_DEFAULT_BACKGROUND_COLOR.b)
+    bar:SetBackdropBorderColor(TOOLTIP_DEFAULT_COLOR.r, TOOLTIP_DEFAULT_COLOR.g, TOOLTIP_DEFAULT_COLOR.b)
+end
 bar:Hide()
 
 local barIcon = bar:CreateTexture(nil, "ARTWORK")
@@ -211,12 +219,26 @@ local status = CreateFrame("StatusBar", nil, bar)
 status:SetPoint("BOTTOMLEFT", barIcon, "BOTTOMRIGHT", 8, 0)
 status:SetPoint("RIGHT", -12, 0)
 status:SetHeight(12)
-status:SetStatusBarTexture("Interface\\TargetingFrame\\UI-StatusBar")
 local statusBg = status:CreateTexture(nil, "BACKGROUND")
 statusBg:SetAllPoints()
-statusBg:SetTexture(0, 0, 0, 0.5)
-local statusText = status:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
-statusText:SetPoint("CENTER")
+local statusText
+if dragonUI then
+    status:SetStatusBarTexture("Interface\\TargetingFrame\\UI-StatusBar")
+    statusBg:SetTexture(0, 0, 0, 0.5)
+    statusText = status:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+else
+    -- The stock skill bar and its border.
+    status:SetStatusBarTexture("Interface\\PaperDollInfoFrame\\UI-Character-Skills-Bar")
+    statusBg:SetTexture(1, 1, 1, 0.2)
+    local statusBorder = CreateFrame("Frame", nil, status)
+    statusBorder:SetAllPoints()
+    local edge = statusBorder:CreateTexture(nil, "ARTWORK")
+    edge:SetTexture("Interface\\PaperDollInfoFrame\\UI-Character-Skills-BarBorder")
+    edge:SetPoint("TOPLEFT", -5, 6)
+    edge:SetPoint("BOTTOMRIGHT", 4, -6)
+    statusText = statusBorder:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+end
+statusText:SetPoint("CENTER", status, "CENTER")
 
 local barTime, barRace = 0, nil
 bar:SetScript("OnUpdate", function(self, elapsed)
