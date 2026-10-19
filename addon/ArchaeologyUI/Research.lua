@@ -212,6 +212,57 @@ local selected, used = nil, {}   -- shown race id; keystones put in, by race
 local sockets = {}
 local refresh
 
+-- A separate bank slot keeps artifact socket selection independent of withdrawals.
+StaticPopupDialogs["ARCHAEOLOGY_WITHDRAW_KEYSTONE"] = {
+    text = "Withdraw %s from the reagent bank. How many?",
+    button1 = "Withdraw", button2 = CANCEL,
+    hasEditBox = true, timeout = 0, whileDead = true, hideOnEscape = true,
+    OnShow = function(self)
+        self.editBox:SetNumeric(true)
+        self.editBox:SetMaxLetters(10)
+        self.editBox:SetText("1")
+        self.editBox:SetFocus()
+        self.editBox:HighlightText()
+    end,
+    OnAccept = function(self, item)
+        local amount = tonumber(self.editBox:GetText())
+        if not item or not amount or amount < 1
+            or amount ~= math.floor(amount) or amount > 4294967295 then
+            return
+        end
+        SendChatMessage(".rbank withdraw item " .. item .. " exact " .. string.format("%.0f", amount), "SAY")
+    end,
+}
+local bankSlot = CreateFrame("Button", nil, page)
+bankSlot:SetSize(32, 32)
+bankSlot:SetPoint("TOPRIGHT", bar, "BOTTOMRIGHT", -4, -38)
+bankSlot.icon = bankSlot:CreateTexture(nil, "ARTWORK")
+bankSlot.icon:SetAllPoints()
+bankSlot:SetHighlightTexture("Interface\\Buttons\\ButtonHilight-Square", "ADD")
+local bankLabel = bankSlot:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
+bankLabel:SetPoint("BOTTOM", bankSlot, "TOP", 0, 4)
+bankLabel:SetText("Bank")
+bankSlot:SetScript("OnClick", function()
+    local item = KEYSTONES[selected]
+    if item then
+        -- Capture the item: changing race while the prompt is open must not change the request.
+        StaticPopup_Show("ARCHAEOLOGY_WITHDRAW_KEYSTONE", GetItemInfo(item) or "keystones", nil, item)
+    end
+end)
+bankSlot:SetScript("OnEnter", function(self)
+    GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
+    GameTooltip:SetText("Reagent bank keystones")
+    GameTooltip:AddLine("Click to withdraw one or more into your bags.", 1, 1, 1, true)
+    GameTooltip:Show()
+end)
+bankSlot:SetScript("OnLeave", function() GameTooltip:Hide() end)
+-- Withdrawals and deposits change the bag count used by artifact sockets and Solve.
+local bankEvents = CreateFrame("Frame")
+bankEvents:RegisterEvent("BAG_UPDATE")
+bankEvents:SetScript("OnEvent", function()
+    if page:IsShown() then A.Request("RACES", "RACES") end
+end)
+
 for i = 1, MAX_SOCKETS do
     local s = CreateFrame("Button", nil, page)
     s:SetSize(32, 32)
@@ -427,6 +478,13 @@ local function drawRace(race)
         bar:SetStatusBarColor(0.8, 0.55, 0.15)
     end
     barText:SetText(cost > 0 and string.format("%d / %d", have, cost) or "")
+
+    if KEYSTONES[race.id] then
+        bankSlot.icon:SetTexture(A.KeystoneIcon(race.id))
+        bankSlot:Show()
+    else
+        bankSlot:Hide()
+    end
 
     if race.sockets > 0 then
         socketLabel:SetText("Keystones")
