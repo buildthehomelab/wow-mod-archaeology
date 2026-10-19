@@ -39,7 +39,7 @@ Everything also works without the addon, through `.arch` chat commands.
 1. Talk to the trainer (Harrison Jones) to learn Apprentice Archaeology. Higher ranks need skill and level: Journeyman 50/20, Expert 125/20, Artisan 200/35, Master 275/50, Grand Master 350/65.
 2. You hold 4 dig sites per continent. `.arch` lists them.
 3. Inside a dig site, `.arch survey`. A marker points toward the find, and chat says how far (red, yellow, green) and which way.
-4. Within 8 yards the find appears. Click it for fragments, sometimes a keystone, and skill.
+4. Standing within 1 yard of the hidden find shows a small shovel above your head (matching client patch required). It clears when you move away or reveal the find. The spot is still chosen by your first survey, as before. Within 8 yards the find appears when you survey. Click it for fragments, sometimes a keystone, and skill.
 5. After 3 finds the site is depleted and a new one is revealed.
 6. `.arch solve <race> [keystones]` solves the current project for that race when you have enough fragments. Each keystone counts as 12 fragments.
 
@@ -70,7 +70,7 @@ Outland races open at skill 300, Northrend races at 375. With mod-individual-pro
 | Survey telescopes + banner, finds (gameobject_template) | 9503500-9503503, 9503510-9503517 |
 | Keystones and artifacts (item_template, Item.dbc) | 9504010-9504499 |
 | Item displays (ItemDisplayInfo.dbc) | 950410-950899: 950400 + (item - 9504000) |
-| Spells (Spell.dbc, SkillLineAbility.dbc) | 90500-90505 ranks, 90506 Survey, 90507-90514 relic traits, 90515-90521 what they cast (90500-90529 reserved) |
+| Spells (Spell.dbc, SkillLineAbility.dbc) | 90500-90505 ranks, 90506 Survey, 90507-90514 relic traits, 90515-90521 what they cast, 90522 cosmetic overhead shovel (90500-90529 reserved) |
 | Achievements (Achievement.dbc, Achievement_Criteria.dbc) | 9240-9245, criteria 19240 (9240-9259 and 19240-19279 reserved) |
 | Skill line (SkillLine.dbc), SkillRaceClassInfo.dbc, SpellIcon.dbc | 794, 90500, 90500 |
 | Survey telescope (GameObjectDisplayInfo.dbc) | 10101-10103, Cataclysm's own |
@@ -224,3 +224,11 @@ The survey shows Cataclysm's telescope (gameobjects 9503500-9503502, displays 10
 ## License
 
 MIT. Game data derived from World of Warcraft belongs to Blizzard Entertainment.
+
+## Overhead shovel delivery and validation
+
+Spell 90522 is a hidden, cosmetic dummy aura, checked every 200 ms against the existing buried spot. It does not select spots, survey, spawn finds or grant rewards. The indicator uses a 1-yard horizontal radius and a 3-yard ground-height tolerance to avoid showing on another floor; survey and dig thresholds are unchanged. It clears on leaving the spot, revealing a find, death, map change or logout.
+
+Rebuild the archaeology client patch with `tools/build_patch.py` for its matching Spell row, SpellVisual, SpellVisualKit, SpellVisualEffectName and billboard M2/skin. Pass every realm patch carrying these visual tables with `--also-patch`, including the visible-bags/torch patches as applicable, to preserve their rows. IDs 90522 in those three visual tables are reserved here. The ordinary shovel icon already exists in the 3.3.5 client. Ship the client patch alongside the module and SQL; no addon update is needed.
+
+The source and generated model can be checked locally, but the server build and actual head placement, billboard orientation, sizing across races, cleanup and floor checks must be verified in the 3.3.5 client before deployment. The full patch requires the realm's current MPQs and source data, which are not in this workspace. Keep the implementation PR unmerged pending review; after merge, a separate reviewed wow-server PR must pin the actual merged module commit before delivery.
