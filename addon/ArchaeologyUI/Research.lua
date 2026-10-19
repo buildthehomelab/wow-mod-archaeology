@@ -6,8 +6,9 @@
 -- fragments. The server checks everything again when you press Solve.
 --
 -- The view (A.Research) can also live in another window: with DragonUI's professions window it
--- is a page of that (Hosted.lua), which moves R.page and R.empty there and draws the races and
--- the skill its own way.
+-- is a page of that (Hosted.lua), and without it a page of RetailProfessions' window
+-- (HostedRetail.lua). Those move R.page and R.empty there and draw the races (in R.NewRaceRow's
+-- lines) and the skill their own way.
 
 local A = ArchaeologyUI
 local WIDTH, HEIGHT = 400, 500
@@ -138,15 +139,23 @@ local loreBox = CreateFrame("Frame", nil, page)
 loreBox:SetPoint("TOPLEFT", artifact, "BOTTOMLEFT", -4, -10)
 loreBox:SetPoint("RIGHT", page, "RIGHT", 0, 0)
 loreBox:SetHeight(160)
--- An options-box look: the stock tooltip border in the options box grey (0.4) over a faint grey fill.
-loreBox:SetBackdrop({
-    bgFile = "Interface\\Tooltips\\UI-Tooltip-Background",
-    edgeFile = "Interface\\Tooltips\\UI-Tooltip-Border",
-    tile = true, tileSize = 16, edgeSize = 16,
-    insets = { left = 5, right = 5, top = 5, bottom = 5 },
-})
-loreBox:SetBackdropColor(0.1, 0.1, 0.1, 0.5)
-loreBox:SetBackdropBorderColor(0.4, 0.4, 0.4)
+-- An options-box look: the stock tooltip border in the options box grey (0.4) over a faint grey
+-- fill. A host with a parchment card takes it off (R.LoreBox(false)).
+function R.LoreBox(on)
+    if not on then
+        loreBox:SetBackdrop(nil)
+        return
+    end
+    loreBox:SetBackdrop({
+        bgFile = "Interface\\Tooltips\\UI-Tooltip-Background",
+        edgeFile = "Interface\\Tooltips\\UI-Tooltip-Border",
+        tile = true, tileSize = 16, edgeSize = 16,
+        insets = { left = 5, right = 5, top = 5, bottom = 5 },
+    })
+    loreBox:SetBackdropColor(0.1, 0.1, 0.1, 0.5)
+    loreBox:SetBackdropBorderColor(0.4, 0.4, 0.4)
+end
+R.LoreBox(true)
 R.loreBox = loreBox
 
 local scroll = CreateFrame("ScrollFrame", "ArchaeologyUILoreScroll", loreBox, "UIPanelScrollFrameTemplate")
@@ -269,6 +278,101 @@ local hint = page:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
 hint:SetPoint("BOTTOMLEFT", 4, 10)
 hint:SetPoint("RIGHT", solve, "LEFT", -8, 0)
 hint:SetJustifyH("LEFT")
+
+-- A race as a line of a host's list column (Hosted.lua, HostedRetail.lua): its icon, name and
+-- fragments against the project's cost on a bar, lit while it's the race on show. A click shows it.
+R.ROW_HEIGHT = 44
+
+function R.NewRaceRow(parent)
+    local row = CreateFrame("Button", nil, parent)
+    row:SetHeight(R.ROW_HEIGHT)
+    row.icon = row:CreateTexture(nil, "ARTWORK")
+    row.icon:SetSize(32, 32)
+    row.icon:SetPoint("LEFT", row, "LEFT", 4, 0)
+    row.icon:SetTexCoord(0.07, 0.93, 0.07, 0.93)
+    row.count = row:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+    row.count:SetPoint("TOPRIGHT", row, "TOPRIGHT", -4, -7)
+    row.count:SetJustifyH("RIGHT")
+    row.name = row:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+    row.name:SetPoint("TOPLEFT", row.icon, "TOPRIGHT", 8, -2)
+    row.name:SetPoint("RIGHT", row.count, "LEFT", -4, 0)
+    row.name:SetJustifyH("LEFT")
+    row.name:SetWordWrap(false)
+    row.bar = CreateFrame("StatusBar", nil, row)
+    row.bar:SetHeight(8)
+    row.bar:SetPoint("BOTTOMLEFT", row.icon, "BOTTOMRIGHT", 8, 2)
+    row.bar:SetPoint("RIGHT", row, "RIGHT", -4, 0)
+    row.bar:SetStatusBarTexture("Interface\\PaperDollInfoFrame\\UI-Character-Skills-Bar")
+    local bg = row.bar:CreateTexture(nil, "BACKGROUND")
+    bg:SetAllPoints(row.bar)
+    bg:SetTexture(0, 0, 0, 0.65)
+    row.lit = row:CreateTexture(nil, "BACKGROUND")
+    row.lit:SetTexture("Interface\\QuestFrame\\UI-QuestTitleHighlight")
+    row.lit:SetBlendMode("ADD")
+    row.lit:SetVertexColor(1, 0.82, 0, 0.3)
+    row.lit:SetAllPoints(row)
+    local hl = row:CreateTexture(nil, "HIGHLIGHT")
+    hl:SetTexture("Interface\\QuestFrame\\UI-QuestTitleHighlight")
+    hl:SetBlendMode("ADD")
+    hl:SetVertexColor(1, 1, 1, 0.35)
+    hl:SetAllPoints(row)
+    row:SetScript("OnClick", function(self)
+        if self.race then R.Select(self.race) end
+    end)
+    row:SetScript("OnEnter", function(self)
+        local race = self.race and A.races[self.race]
+        if not race then return end
+        GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
+        GameTooltip:SetText(race.name)
+        GameTooltip:AddLine(string.format("%d fragments (holds up to %d)", race.fragments, race.cap), 1, 1, 1)
+        GameTooltip:AddLine(string.format("%d %s", race.keystones, race.keystones == 1 and "keystone" or "keystones"), 1, 1, 1)
+        GameTooltip:Show()
+    end)
+    row:SetScript("OnLeave", function() GameTooltip:Hide() end)
+    return row
+end
+
+-- `race` on the line (nil: the line goes); `current` is the race on show.
+function R.DrawRaceRow(row, race, current)
+    if not race then
+        row:Hide()
+        row.race = nil
+        return
+    end
+    row.race = race.id
+    row.icon:SetTexture(A.RaceIcon(race.id))
+    row.name:SetText(race.name)
+    local cost = race.cost or 0
+    if cost > 0 then
+        row.count:SetText(string.format("%d / %d", math.min(race.fragments, cost), cost))
+        row.bar:SetMinMaxValues(0, cost)
+        row.bar:SetValue(math.min(race.fragments, cost))
+    else
+        row.count:SetText(race.fragments)
+        row.bar:SetMinMaxValues(0, 1)
+        row.bar:SetValue(0)
+    end
+    -- Green once the project can be solved without keystones.
+    if cost > 0 and race.fragments >= cost then
+        row.bar:SetStatusBarColor(0.2, 0.8, 0.2)
+    else
+        row.bar:SetStatusBarColor(0.95, 0.6, 0.1)
+    end
+    if race.id == current then row.lit:Show() else row.lit:Hide() end
+    row:Show()
+end
+
+-- The view and the empty-state text back in our own window, from a host's page.
+function R.TakeBack()
+    page:SetParent(window)
+    page:ClearAllPoints()
+    R.PlacePage(page)
+    empty:SetParent(window)
+    empty:ClearAllPoints()
+    empty:SetPoint("CENTER")
+    empty:SetWidth(WIDTH - 60)
+    R.LoreBox(true)
+end
 
 -- Race tabs down the right side, spellbook style (in our own window).
 local tabs = {}
