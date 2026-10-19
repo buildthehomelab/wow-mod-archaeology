@@ -176,6 +176,7 @@ namespace Archaeology
         std::array<std::vector<ActiveSite>, CONTINENTS.size()> sites;
         std::unordered_map<uint8, RaceProgress> races;
         std::unordered_map<uint32, uint32> solved;   // project id -> times solved
+        uint32 shovelCheckMs = 0;
         uint32 lastSurveyMs = 0;
         RelicState relic;
     };
@@ -210,6 +211,7 @@ namespace Archaeology
 
     // Dig loop.
     void Survey(Player* player);
+    void UpdateFindShovel(Player* player, uint32 diff);
     bool UseFind(Player* player, GameObject* go);
     void ForgetFinds(Player* player);
     bool Solve(Player* player, uint8 race, uint32 keystones, std::string& error);

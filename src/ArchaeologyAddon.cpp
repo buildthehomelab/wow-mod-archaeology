@@ -298,8 +298,9 @@ public:
             QueueTraits(player);
     }
 
-    void OnPlayerUpdate(Player* player, uint32 /*diff*/) override
+    void OnPlayerUpdate(Player* player, uint32 diff) override
     {
+        UpdateFindShovel(player, diff);
         UpdateQueuedRelic(player);
         UpdateQueuedTraits(player);
     }

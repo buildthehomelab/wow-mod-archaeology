@@ -215,7 +215,7 @@ TRAITS = [
 # Relic achievements, ids as the module's src/Archaeology.h. (id, title, description, points, icon)
 ACHIEVEMENT_CATEGORY = 169                  # Professions
 # Tables other modules' patches often carry too: taken from a realm patch only through --also-patch.
-SHARED_TABLES = {"Achievement", "Achievement_Criteria"}
+SHARED_TABLES = {"Achievement", "Achievement_Criteria", "SpellVisual", "SpellVisualKit", "SpellVisualEffectName"}
 ACHIEVEMENT_TEMPLATE = 1563                 # Hail to the Chef: its language masks
 RELIC_QUEST = 9503500
 ACHIEVEMENTS = [
@@ -238,6 +238,9 @@ TABLES = {
     "ItemDisplayInfo": (25, {1, 2, 3, 4, 5, 6, *range(15, 23)}, set(), set()),
     "GameObjectDisplayInfo": (19, {1}, set(range(12, 18)), set()),
     "SpellIcon": (2, {1}, set(), set()),
+    "SpellVisual": (32, set(), set(), set()),
+    "SpellVisualKit": (38, set(), set(), set()),
+    "SpellVisualEffectName": (7, {1, 2}, set(), set()),
     "Achievement": (62, {*range(4, 20), *range(21, 37), *range(43, 59)}, set(), {20, 37, 59}),
     "Achievement_Criteria": (31, set(range(9, 25)), set(), {25}),
     "Spell": (SPELL_FIELDS, SPELL_STRINGS, SPELL_FLOATS, set(range(SPELL_FIELDS)) - SPELL_SIGNED),
@@ -792,6 +795,52 @@ def add_traits(dbc):
     print("Spell.dbc %d-%d relic traits" % (TRAITS[0]["id"], TRAITS[-1]["id"]))
 
 
+
+SHOVEL_SPELL = 90522
+SHOVEL_NAME = "Buried Find"
+SHOVEL_MODEL = "Spells\\EvermoreArchaeologyShovel"
+
+
+def add_find_shovel_spell(dbc):
+    spells = dbc["Spell"]
+    template = spells.template(DUMMY_SPELL, "Dummy Spell")
+    row = [0] * SPELL_FIELDS
+    for field in SPELL_LANG_MASKS:
+        row[field] = template[field]
+    row[0] = SHOVEL_SPELL
+    row[F_ATTRIBUTES] = 0x80 | 0x100 | ATTR0_NO_AURA_CANCEL  # hidden, cosmetic aura
+    row[F_CAST_TIME] = CAST_INSTANT
+    row[F_DURATION] = DURATION["infinite"]
+    row[F_RANGE] = RANGE_SELF
+    row[F_EFFECT], row[F_AURA], row[F_TARGET_A] = EFFECT_APPLY_AURA, AURA_DUMMY, TARGET_UNIT_CASTER
+    row[F_DMG_MULTIPLIER] = float_bits(1.0)
+    row[F_VISUAL] = SHOVEL_SPELL
+    row[F_NAME] = spells.add_string(SHOVEL_NAME)
+    row[F_SCHOOL] = SCHOOL_PHYSICAL
+    spells.put(row, F_NAME, SHOVEL_NAME)
+
+
+def add_find_shovel_visual(dbc, files, work):
+    from shovel_model import quad
+    visual = [0] * 32
+    visual[0], visual[4] = SHOVEL_SPELL, SHOVEL_SPELL
+    dbc["SpellVisual"].put(visual, 4, SHOVEL_SPELL)
+    kit = [0] * 38
+    kit[0], kit[1], kit[2], kit[3], kit[37] = SHOVEL_SPELL, 0xFFFFFFFF, 0xFFFFFFFF, SHOVEL_SPELL, 0x40
+    for field in range(17, 21):
+        kit[field] = 0xFFFFFFFF
+    dbc["SpellVisualKit"].put(kit, 3, SHOVEL_SPELL)
+    effects = dbc["SpellVisualEffectName"]
+    effects.put([SHOVEL_SPELL, effects.add_string(SHOVEL_NAME), effects.add_string(SHOVEL_MODEL + ".mdx"),
+                 float_bits(0.0), float_bits(1.0), float_bits(0.01), float_bits(100.0)], 1, SHOVEL_NAME)
+    model, skin = quad("EvermoreArchaeologyShovel", "Interface\\Icons\\INV_Misc_Shovel_01.blp", size=0.22)
+    for payload, suffix in ((model, ".m2"), (skin, "00.skin")):
+        local = os.path.join(work, "EvermoreArchaeologyShovel" + suffix)
+        with open(local, "wb") as output:
+            output.write(payload)
+        files[SHOVEL_MODEL + suffix] = local
+
+
 def add_achievements(dbc):
     table = dbc["Achievement"]
     template = table.template(ACHIEVEMENT_TEMPLATE, "Hail to the Chef")
@@ -917,7 +966,8 @@ def main():
 
         dbc, where = {}, {}
         tables = ["SpellIcon", "SkillLine", "SkillRaceClassInfo", "Spell", "SkillLineAbility", "Item",
-                  "ItemDisplayInfo", "Achievement", "Achievement_Criteria"] + ([] if args.no_models else ["GameObjectDisplayInfo"])
+                  "ItemDisplayInfo", "Achievement", "Achievement_Criteria",
+                  "SpellVisual", "SpellVisualKit", "SpellVisualEffectName"] + ([] if args.no_models else ["GameObjectDisplayInfo"])
         for table in tables:
             name = "DBFilesClient\\%s.dbc" % table
             owner = next((i for i, files in enumerate(unpacked) if name in files), None)
@@ -939,6 +989,8 @@ def main():
         add_skill(dbc)
         add_spells(dbc)
         add_traits(dbc)
+        add_find_shovel_spell(dbc)
+        add_find_shovel_visual(dbc, unpacked[0], work)
         add_achievements(dbc)
         files = unpacked[0]
         files["Interface\\Icons\\%s.blp" % ICON] = retail.fetch.casc_path(args.cache, ICON_FDID)

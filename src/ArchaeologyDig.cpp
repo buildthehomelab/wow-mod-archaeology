@@ -15,6 +15,7 @@
 #include "Random.h"
 #include "ScriptMgr.h"
 #include "SpellScript.h"
+#include "SpellMgr.h"
 #include "SpellScriptLoader.h"
 #include <cmath>
 
@@ -86,6 +87,51 @@ namespace
 
 namespace Archaeology
 {
+    // Cosmetic only: inspect the existing hidden spot; never select a new one or dig it up.
+    void UpdateFindShovel(Player* player, uint32 diff)
+    {
+        constexpr uint32 shovelSpell = 90522;
+        constexpr float directlyOverYards = 1.0f;
+        CharState* state = GetState(player);
+        if (!state)
+        {
+            player->RemoveAurasDueToSpell(shovelSpell);
+            return;
+        }
+        state->shovelCheckMs += diff;
+        if (state->shovelCheckMs < 200)
+            return;
+        state->shovelCheckMs = 0;
+
+        bool overFind = false;
+        if (GetConfig().enabled && state->skill && player->IsAlive() &&
+            !player->IsInFlight() && !player->GetTransport())
+        {
+            uint32 continent = 0;
+            if (ActiveSite* active = SiteHere(player, *state, continent))
+            {
+                Site const* site = GetSite(active->site);
+                if (active->spot >= 0 && active->spot < int32(site->spots.size()))
+                {
+                    Spot const& spot = site->spots[active->spot];
+                    if (Dist2d(player->GetPositionX(), player->GetPositionY(), spot.x, spot.y) <= directlyOverYards)
+                    {
+                        // Match the find's ground placement, not Cataclysm's original elevation.
+                        float z = player->GetMap()->GetHeight(player->GetPhaseMask(), spot.x, spot.y,
+                            spot.z + 10.0f, true, 50.0f);
+                        if (z <= INVALID_HEIGHT)
+                            z = spot.z;
+                        overFind = std::abs(player->GetPositionZ() - z) <= 3.0f;
+                    }
+                }
+            }
+        }
+        if (!overFind)
+            player->RemoveAurasDueToSpell(shovelSpell);
+        else if (!player->HasAura(shovelSpell) && sSpellMgr->GetSpellInfo(shovelSpell))
+            player->AddAura(shovelSpell, player);
+    }
+
     void Survey(Player* player)
     {
         Config const& cfg = GetConfig();
@@ -153,6 +199,7 @@ namespace Archaeology
             {
                 pendingFinds[go->GetGUID()] = { player->GetGUID(), continent, active->site };
                 active->spot = -1;
+                player->RemoveAurasDueToSpell(90522);
                 Notify(player, Acore::StringFormat("|cff20ff20You've found a {} artifact!|r", race->name));
                 SendAddon(player, "V:FOUND");
             }
@@ -174,6 +221,7 @@ namespace Archaeology
 
     void ForgetFinds(Player* player)
     {
+        player->RemoveAurasDueToSpell(90522);
         for (auto itr = pendingFinds.begin(); itr != pendingFinds.end();)
             itr = itr->second.owner == player->GetGUID() ? pendingFinds.erase(itr) : std::next(itr);
     }
