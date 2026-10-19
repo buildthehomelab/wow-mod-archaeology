@@ -10,7 +10,7 @@
 -- the skill its own way.
 
 local A = ArchaeologyUI
-local WIDTH, HEIGHT = 400, 470
+local WIDTH, HEIGHT = 400, 500
 local MAX_SOCKETS = 4
 -- The stock socketing window's art (3.3.5 has no UI-EmptySocket-Prismatic: that drew nothing).
 local SOCKET_ART = "Interface\\ItemSocketingFrame\\UI-ItemSockets"
@@ -79,11 +79,12 @@ title:SetText("Archaeology")
 local skillText = window:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
 skillText:SetPoint("TOP", title, "BOTTOM", 0, -4)
 
--- The Unearthed Relic, one line along the bottom.
+-- The Unearthed Relic along the bottom, inside the dialog border (it can run to two lines).
 local relicText = window:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
-relicText:SetPoint("BOTTOMLEFT", 20, 8)
-relicText:SetPoint("BOTTOMRIGHT", -20, 8)
+relicText:SetPoint("BOTTOMLEFT", 22, 20)
+relicText:SetPoint("BOTTOMRIGHT", -22, 20)
 relicText:SetJustifyH("LEFT")
+relicText:SetJustifyV("BOTTOM")
 
 local empty = window:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
 empty:SetPoint("CENTER")
@@ -91,9 +92,13 @@ empty:SetWidth(WIDTH - 60)
 R.empty = empty
 
 -- Everything below the title belongs to the selected race.
+-- The page's place in our window, above the relic line (Hosted.lua gives it back here too).
+function R.PlacePage(page)
+    page:SetPoint("TOPLEFT", 20, -56)
+    page:SetPoint("BOTTOMRIGHT", -20, 56)
+end
 local page = CreateFrame("Frame", nil, window)
-page:SetPoint("TOPLEFT", 20, -56)
-page:SetPoint("BOTTOMRIGHT", -20, 38)
+R.PlacePage(page)
 R.page = page
 
 local raceIcon = page:CreateTexture(nil, "ARTWORK")
