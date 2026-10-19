@@ -133,7 +133,7 @@ local loreBox = CreateFrame("Frame", nil, page)
 loreBox:SetPoint("TOPLEFT", artifact, "BOTTOMLEFT", -4, -10)
 loreBox:SetPoint("RIGHT", page, "RIGHT", 0, 0)
 loreBox:SetHeight(160)
--- The stock options box: tooltip border and background in its greys.
+-- An options-box look: the stock tooltip border in the options box grey (0.4) over a faint grey fill.
 loreBox:SetBackdrop({
     bgFile = "Interface\\Tooltips\\UI-Tooltip-Background",
     edgeFile = "Interface\\Tooltips\\UI-Tooltip-Border",
