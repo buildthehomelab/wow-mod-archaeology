@@ -260,7 +260,7 @@ bankSlot:SetScript("OnLeave", function() GameTooltip:Hide() end)
 local bankEvents = CreateFrame("Frame")
 bankEvents:RegisterEvent("BAG_UPDATE")
 bankEvents:SetScript("OnEvent", function()
-    if page:IsShown() then A.Request("RACES", "RACES") end
+    if page:IsVisible() then A.Request("RACES", "RACES") end
 end)
 
 for i = 1, MAX_SOCKETS do
