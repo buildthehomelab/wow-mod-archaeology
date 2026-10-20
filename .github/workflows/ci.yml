@@ -21,3 +21,8 @@ jobs:
 #   with:
 #     module: mod-foo          # only if the server folder isn't the repo name minus "wow-"
 #     lua-exclude: "Astrolabe/**"
+  reward-regression:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: ./test/run-rewards.sh

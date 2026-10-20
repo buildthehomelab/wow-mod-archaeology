@@ -11,10 +11,12 @@
 void AddArchaeologyAddonScripts();
 void AddArchaeologyDigScripts();
 void AddArchaeologyTraitScripts();
+void AddArchaeologyRewardScripts();
 
 void Addmod_archaeologyScripts()
 {
     AddArchaeologyAddonScripts();
     AddArchaeologyDigScripts();
     AddArchaeologyTraitScripts();
+    AddArchaeologyRewardScripts();
 }

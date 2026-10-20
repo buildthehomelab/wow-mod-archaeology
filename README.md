@@ -61,7 +61,9 @@ placeholders.
 
 Previously awarded Hatchling items use the same item template, including ones
 in bags or the bank: no re-solve, replacement item or character database edit
-is needed. Deploy the SQL and restart the server to reload the template. Refresh
+is needed. The item script initializes the zero charges stored by older placeholder
+items on use, then lets the core handle normal companion learning and consumption.
+Deploy the SQL **and rebuilt module**, then restart the server. Refresh
 the client item cache; Evermore's cache-version module/launcher normally handles
 this after the world item data changes. In-game learning, item consumption,
 duplicate ownership, summoning and existing-item behavior still need validation.
