@@ -29,6 +29,10 @@ def generate(data):
         lines += [f"UPDATE `item_template` SET `spellid_1`={t['spell']}, `spelltrigger_1`=0, `spellcharges_1`=0, "
                   f"`spellid_2`=0, `spelltrigger_2`=0, `spellcharges_2`=0, `ScriptName`='', "
                   f"`description`={quote(t['text'])} WHERE `entry`={t['item']};"]
+    # Evermore's mod-hearthstone-cd uses category 1176 and five minutes.
+    # Explicit item values are required for both runtime and client category sync.
+    lines += ["UPDATE `item_template` SET `spellcooldown_1`=300000, `spellcategory_1`=1176, "
+              "`spellcategorycooldown_1`=300000 WHERE `entry`=9504126;"]
     for g in data['gear']:
         values = dict(Class=g['cls'],subclass=g['sub'],InventoryType=g['slot'],Material=g['material'],
                       sheath=g['sheath'],displayid=g['display'],ItemLevel=g['ilvl'],RequiredLevel=g['level'],

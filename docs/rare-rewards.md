@@ -26,7 +26,7 @@ The Gnome uses the stock clockwork-gnome model; Pterrordax Hatchling is a small 
 | The Last Relic of Argus | 9504102 | Teleports you to a random refuge in an era you have unlocked. Cannot be used while in combat, flying, travelling or inside an instance. | 1200 sec |
 | Blessing of the Old God | 9504119 | Take the appearance of a faceless one for 20 seconds. | 600 sec |
 | Puzzle Box of Yogg-Saron | 9504120 | Attempts to open the puzzle box. Something whispers back. | 60 sec |
-| The Innkeeper's Daughter | 9504126 | Returns you to your home. Shares the ordinary Hearthstone cooldown. Sometimes a spectral innkeeper appears. | Hearthstone shared |
+| The Innkeeper's Daughter | 9504126 | Returns you to your home. Shares the ordinary Hearthstone cooldown. Sometimes a spectral innkeeper appears. | Hearthstone shared (Evermore: 5 min) |
 | Bones of Transformation | 9504129 | Take the appearance of a naga for 20 seconds. | 600 sec |
 | Wisp Amulet | 9504133 | Take the appearance of a wisp for 10 minutes. Does not grant flight or invisibility. | 900 sec |
 | Haunted War Drum | 9504141 | Places a haunted drum and plays a spectral drumbeat for 30 seconds. | 60 sec |
