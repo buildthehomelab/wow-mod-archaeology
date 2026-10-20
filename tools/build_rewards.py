@@ -60,7 +60,7 @@ def generate(data):
                   f"INSERT INTO `creature_template_model` (`CreatureID`,`Idx`,`CreatureDisplayID`,`DisplayScale`,`Probability`) "
                   f"VALUES ({entry},0,{model},{scale},1);"]
     lines += ["DELETE FROM `gameobject_template` WHERE `entry`=9503530;",
-              "INSERT INTO `gameobject_template` (`entry`,`type`,`displayId`,`name`,`size`,`flags`) VALUES (9503530,5,7217,'Haunted War Drum',1,16);",
+              "INSERT INTO `gameobject_template` (`entry`,`type`,`displayId`,`name`,`size`) VALUES (9503530,5,7217,'Haunted War Drum',1);",
               "DELETE FROM `spell_script_names` WHERE `ScriptName` IN ('spell_archaeology_reward','spell_archaeology_innkeepers_daughter');"]
     for t in data['toys']:
         if not t.get('external'):

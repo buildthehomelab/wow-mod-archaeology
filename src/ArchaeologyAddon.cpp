@@ -301,6 +301,7 @@ public:
     void OnPlayerUpdate(Player* player, uint32 diff) override
     {
         UpdateFindShovel(player, diff);
+        UpdateRewardCosmetics(player, diff);
         UpdateQueuedRelic(player);
         UpdateQueuedTraits(player);
     }

@@ -5772,7 +5772,7 @@ INSERT INTO `creature_template_model` (`CreatureID`,`Idx`,`CreatureDisplayID`,`D
 INSERT INTO `creature_template` (`entry`,`name`,`minlevel`,`maxlevel`,`faction`,`unit_flags`,`type`,`flags_extra`,`AIName`) VALUES (9503602,'Voodoo Figurine',1,1,188,768,12,2,'NullCreatureAI');
 INSERT INTO `creature_template_model` (`CreatureID`,`Idx`,`CreatureDisplayID`,`DisplayScale`,`Probability`) VALUES (9503602,0,29189,1.0,1);
 DELETE FROM `gameobject_template` WHERE `entry`=9503530;
-INSERT INTO `gameobject_template` (`entry`,`type`,`displayId`,`name`,`size`,`flags`) VALUES (9503530,5,7217,'Haunted War Drum',1,16);
+INSERT INTO `gameobject_template` (`entry`,`type`,`displayId`,`name`,`size`) VALUES (9503530,5,7217,'Haunted War Drum',1);
 DELETE FROM `spell_script_names` WHERE `ScriptName` IN ('spell_archaeology_reward','spell_archaeology_innkeepers_daughter');
 INSERT INTO `spell_script_names` VALUES (90530,'spell_archaeology_reward');
 INSERT INTO `spell_script_names` VALUES (90531,'spell_archaeology_reward');

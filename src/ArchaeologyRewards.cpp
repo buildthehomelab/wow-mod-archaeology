@@ -184,11 +184,8 @@ class spell_archaeology_innkeepers_daughter : public SpellScript
         Player* player = GetCaster()->ToPlayer();
         if (!player || !item || item->GetEntry() != 9504126 || !roll_chance_i(20))
             return;
-        if (Creature* spirit = Cosmetic(player, 9503610, 2.0f, 0.0f, 15000))
-        {
-            spirit->GetMotionMaster()->MoveFollow(player, 2.0f, 0.0f);
-            spirit->CastSpell(spirit, 90582, true);
-        }
+        if (Archaeology::CharState* state = Archaeology::GetState(player))
+            state->innkeeperWaitMs = 500;
     }
 
     void Register() override
@@ -196,6 +193,24 @@ class spell_archaeology_innkeepers_daughter : public SpellScript
         AfterCast += SpellCastFn(spell_archaeology_innkeepers_daughter::AfterHearth);
     }
 };
+
+void Archaeology::UpdateRewardCosmetics(Player* player, uint32 diff)
+{
+    CharState* state = GetState(player);
+    if (!state || !state->innkeeperWaitMs || !player->IsInWorld() || player->IsBeingTeleported())
+        return;
+    if (diff < state->innkeeperWaitMs)
+    {
+        state->innkeeperWaitMs -= diff;
+        return;
+    }
+    state->innkeeperWaitMs = 0;
+    if (Creature* spirit = Cosmetic(player, 9503610, 2.0f, 0.0f, 15000))
+    {
+        spirit->GetMotionMaster()->MoveFollow(player, 2.0f, 0.0f);
+        spirit->CastSpell(spirit, 90582, true);
+    }
+}
 
 void AddArchaeologyCompanionScripts();
 
