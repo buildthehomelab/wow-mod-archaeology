@@ -13,7 +13,7 @@ The dig loop is done, and so is the relic: ranks, forms, item ladder, traits, ca
 | Dig sites, survey, finds, fragments, keystones, solving, skill | Done (this module) |
 | 8 races: Dwarf, Night Elf, Troll, Fossil, Draenei, Orc, Nerubian, Vrykul | Data imported; Tol'vir is left out |
 | ArchaeologyUI addon (map dig sites, research window, survey button) | First version in `addon/ArchaeologyUI`, not yet tried in the game client |
-| Client patch (skill line, telescope model, item icons) | Built by `tools/build_patch.py`; Survey and the telescope are used, the rank spells not yet (see [Client patch](#client-patch)) |
+| Client patch (skill line, telescope model, item icons) | Built by `tools/build_patch.py`; Survey, the rank spells and the telescope are used (see [Client patch](#client-patch)) |
 | Rare rewards as mounts, pets and toys | Rares are placeholder items for now |
 | Unearthed Relic: ranks, forms, item ladder, quest | Done; not yet tried in the game client |
 | Relic traits, capstone raid quests, relic achievements | Done; not yet tried in the game client |
@@ -208,9 +208,9 @@ python3 tools/build_patch.py --patch <your spell/item patch>.MPQ --skill-patch <
 
 `--patch` is the patch with your Spell, SkillLineAbility, SpellIcon, Item and ItemDisplayInfo DBCs. `--skill-patch` is the one with SkillRaceClassInfo.dbc, if that is another patch. `--also-patch` (repeatable) adds any other patch carrying a DBC the tool edits, such as Achievement.dbc. A DBC neither ships (often SkillLine and GameObjectDisplayInfo) comes from the client's newest copy and goes into `--patch`. Each patch that changed is written to `--out` under its own name, with every other file in it unchanged. It also reads `c_Item.csv`, `c_GODI.csv` (Cataclysm Classic GameObjectDisplayInfo) and `listfile_archaeology.csv` from `tools/cata-data/`. Models and icons come from [wago.tools](https://wago.tools), cached in `tools/cata-data/cache`. Running it again on its own output changes nothing.
 
-The survey shows Cataclysm's telescope (gameobjects 9503500-9503502, displays 10101-10103) in the colour of the distance band. A client without the patch doesn't see it; set `Archaeology.Telescope.Green/Yellow/Red` to 9503503 (the excavation banner) until the patch is out. Some patch rows the module doesn't use yet:
+The survey shows Cataclysm's telescope (gameobjects 9503500-9503502, displays 10101-10103) in the colour of the distance band. A client without the patch doesn't see it; set `Archaeology.Telescope.Green/Yellow/Red` to 9503503 (the excavation banner) until the patch is out. How the module uses the patch's spells:
 
-- The trainer still sets the skill directly. Teaching the rank spells instead, and opening the research window when the rank spell is cast, is module work still to do.
+- With `Archaeology.Skill.SkillLine = 794` the module teaches the rank spell for the skill (90500-90505, a `spell_ranks` chain like Cooking's) whenever it sets the skill line: from the trainer, `.arch skill` and at login, so characters who already have Archaeology get it too. It is in the spellbook, and casting it opens ArchaeologyUI's research window (0.5.0). The skill and its spells stay on each character: they are on skill line 794, not one of the professions an account-wide profession module shares. Turning the mirror off (`Archaeology.Skill.SkillLine = 0`) later leaves those spells and skill 794 on characters; the `character_spell`, `character_action` and `character_skills` lines of `data/sql/uninstall/mod_archaeology_uninstall_characters.sql` remove them.
 - Survey (90506) runs the survey (`spell_archaeology_survey`). `.arch survey` and the addon button still work without the patch.
 
 ## Rebuilding the data
@@ -232,7 +232,7 @@ Spell 90522 is a hidden, cosmetic dummy aura, checked every 200 ms against the e
 
 Rebuild the archaeology client patch with `tools/build_patch.py` for its matching Spell row, SpellVisual, SpellVisualKit, SpellVisualEffectName and billboard M2/skin. Pass every realm patch carrying these visual tables with `--also-patch`, including the visible-bags/torch patches as applicable, to preserve their rows. IDs 90522 in those three visual tables are reserved here. The ordinary shovel icon already exists in the 3.3.5 client. Ship the client patch alongside the module and SQL; no addon update is needed.
 
-The source and generated model can be checked locally, but the server build and actual head placement, billboard orientation, sizing across races, cleanup and floor checks must be verified in the 3.3.5 client before deployment. The full patch requires the realm's current MPQs and source data, which are not in this workspace. Keep the implementation PR unmerged pending review; after merge, a separate reviewed wow-server PR must pin the actual merged module commit before delivery.
+The source and generated model can be checked locally, but the server build and actual head placement, billboard orientation, sizing across races, cleanup and floor checks must be verified in the 3.3.5 client before deployment. The full patch requires the realm's current MPQs and source data, which are not in this workspace. Review the change before merging, and deploy the merged commit.
 
 ### Keystone reagent bank
 

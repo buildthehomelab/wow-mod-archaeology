@@ -105,6 +105,12 @@ INSERT INTO `gameobject_template` (`entry`, `type`, `displayId`, `name`, `IconNa
 DELETE FROM `spell_script_names` WHERE `spell_id` = 90506 AND `ScriptName` = 'spell_archaeology_survey';
 INSERT INTO `spell_script_names` (`spell_id`, `ScriptName`) VALUES (90506, 'spell_archaeology_survey');
 
+-- The rank spells the client patch adds (90500-90505, Apprentice to Grand Master), a chain like
+-- Cooking's. The module teaches the rank that matches the skill, so Archaeology is in the spellbook.
+DELETE FROM `spell_ranks` WHERE `first_spell_id` = 90500;
+INSERT INTO `spell_ranks` (`first_spell_id`, `spell_id`, `rank`) VALUES
+(90500, 90500, 1), (90500, 90501, 2), (90500, 90502, 3), (90500, 90503, 4), (90500, 90504, 5), (90500, 90505, 6);
+
 -- A Weapon in Pieces: offered at 50 Archaeology (the module checks the skill), turned in at once.
 -- 9503501-9503503: the capstone quests, one per era (Archaeology.Relic.CapstoneQuest.*). The last
 -- rank of each era waits for one: slay the era's last boss with the relic equipped. Kel'Thuzad

@@ -12,6 +12,8 @@
 #include "Log.h"
 #include "Player.h"
 #include "Random.h"
+#include "SpellInfo.h"
+#include "SpellMgr.h"
 #include <algorithm>
 
 namespace
@@ -375,8 +377,33 @@ namespace Archaeology
             SendState(player);
         }
         if (config.skillLine && sSkillLineStore.LookupEntry(config.skillLine))
-            player->SetSkill(config.skillLine, std::max<uint32>(s->maxSkill / 75, 1), s->skill, s->maxSkill);
+        {
+            uint32 step = std::max<uint32>(s->maxSkill / 75, 1);
+            LearnRankSpell(player, step);
+            player->SetSkill(config.skillLine, step, s->skill, s->maxSkill);
+        }
         RelicSkillChanged(player);
+    }
+
+    // The rank's spell (Apprentice 90500 to Grand Master 90505 in the client patch), so Archaeology
+    // is in the spellbook like Cooking. Only a spell whose Skill effect is the mirrored skill line;
+    // learning it sets that skill, which the caller then sets to the module's values. The ranks are
+    // a chain (spell_ranks) like Cooking's. The core doesn't count skill 794 as a profession, so a
+    // lower rank stays known next to a higher one; never removeSpell a rank: that resets the skill.
+    void LearnRankSpell(Player* player, uint32 step)
+    {
+        uint32 spellId = RANK_SPELL_FIRST + std::min<uint32>(step, RANK_SPELLS) - 1;
+        if (player->HasSpell(spellId))
+            return;
+        SpellInfo const* spell = sSpellMgr->GetSpellInfo(spellId);
+        if (!spell)
+            return;
+        for (SpellEffectInfo const& effect : spell->Effects)
+            if (effect.Effect == SPELL_EFFECT_SKILL && uint32(effect.MiscValue) == config.skillLine)
+            {
+                player->learnSpell(spellId);
+                return;
+            }
     }
 
     uint32 IpState(Player* player)

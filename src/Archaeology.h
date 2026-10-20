@@ -28,6 +28,10 @@ namespace Archaeology
     // Continents dig sites roll on, in slot order.
     constexpr std::array<uint32, 4> CONTINENTS = { 0, 1, 530, 571 };
 
+    // The client patch's rank spells: Apprentice (90500) to Grand Master (90505).
+    constexpr uint32 RANK_SPELL_FIRST = 90500;
+    constexpr uint32 RANK_SPELLS = 6;
+
     enum SurveyBand : uint8 { BAND_RED, BAND_YELLOW, BAND_GREEN, BAND_FOUND };
 
     struct Config
@@ -203,6 +207,7 @@ namespace Archaeology
     bool IsLearned(Player* player);
     void Learn(Player* player, uint32 maxSkill);
     void AddSkill(Player* player, uint32 amount);
+    void LearnRankSpell(Player* player, uint32 step);
     uint32 IpState(Player* player);
     bool CanDigContinent(Player* player, uint32 continentIndex);
     void RollSites(Player* player);
