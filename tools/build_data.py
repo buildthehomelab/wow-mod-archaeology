@@ -180,8 +180,8 @@ def main():
         skill, chance = proj_req.get(pid, (0, 100.0 if not rare else 5.0))
         s = sparse[cata_item]
         base = item_base.get(cata_item, {})
-        # Commons stay gray junk. Rares become placeholder misc items for now; their real form
-        # (mount, pet, toy, appearance) is ported later from base["ClassID"] / ["SubclassID"].
+        # Commons stay gray junk. Rares start as misc placeholders; implemented
+        # reward overrides are applied at the end from world_z_rewards.sql.
         quality = int(s["OverallQualityID"])
         item_rows.append(item_row(next_item, cata_item, 1, 1 if rare else 0, CLASS_MISC, SUBCLASS_OTHER,
                                   quality, r["Description_lang"] if rare else s["Description_lang"]))
@@ -216,6 +216,11 @@ def main():
     out.append("DELETE FROM `mod_archaeology_item_source`;")
     out.append("INSERT INTO `mod_archaeology_item_source` (`item`, `cata_item`, `name`) VALUES\n"
                + ",\n".join(item_map_rows) + ";\n")
+
+    # Include the upgrade overrides in regenerated base data too: the updater
+    # need not rerun an unchanged z_rewards migration after a later data rebuild.
+    rewards = ROOT / "data/sql/db-world/mod_archaeology_world_z_rewards.sql"
+    out.append(rewards.read_text(encoding="utf-8"))
 
     OUT.parent.mkdir(parents=True, exist_ok=True)
     OUT.write_text("\n".join(out), encoding="utf-8")

@@ -14,7 +14,7 @@ The dig loop is done, and so is the relic: ranks, forms, item ladder, traits, ca
 | 8 races: Dwarf, Night Elf, Troll, Fossil, Draenei, Orc, Nerubian, Vrykul | Data imported; Tol'vir is left out |
 | ArchaeologyUI addon (map dig sites, research window, survey button) | First version in `addon/ArchaeologyUI`, not yet tried in the game client |
 | Client patch (skill line, telescope model, item icons) | Built by `tools/build_patch.py`; Survey, the rank spells and the telescope are used (see [Client patch](#client-patch)) |
-| Rare rewards as mounts, pets and toys | Rares are placeholder items for now |
+| Rare rewards as mounts, pets and toys | Fossilized Hatchling teaches the existing Retail Collection pet; other rares remain placeholders |
 | Unearthed Relic: ranks, forms, item ladder, quest | Done; not yet tried in the game client |
 | Relic traits, capstone raid quests, relic achievements | Done; not yet tried in the game client |
 | Relic looks (Cataclysm rare weapons, awakened looks) | Not started |
@@ -46,6 +46,31 @@ Everything also works without the addon, through `.arch` chat commands.
 7. At 50 skill, the trainer has a quest, *A Weapon in Pieces*. Turn it in and choose your relic's form (see [The Unearthed Relic](#the-unearthed-relic)). At 60, 70 and 80 the trainer has a capstone quest for each era's last raid boss.
 
 Outland races open at skill 300, Northrend races at 375. With mod-individual-progression and `Archaeology.IndividualProgression.Enable = 1`, those continents also wait until the character reaches that era.
+
+## Fossilized Hatchling reward
+
+The Fossilized Hatchling rare (project 106) awards item **9504036**. Right-click
+it to learn the **Fossilized Hatchling** companion, then summon it from the Pets
+tab (or Journal). It teaches Retail Collection's existing spell **410266**, so
+it shares ownership with that module's teaching item rather than making a second pet.
+
+This reward requires **mod-retail-collection** and its existing client patch
+(and Retail Library assets). Evermore already pins those modules. No new
+Archaeology client patch or addon is required. Other archaeology rares remain
+placeholders.
+
+Previously awarded Hatchling items use the same item template, including ones
+in bags or the bank: no re-solve, replacement item or character database edit
+is needed. The item script initializes the zero charges stored by older placeholder
+items on use, then lets the core handle normal companion learning and consumption.
+Deploy the SQL **and rebuilt module**, then restart the server. Refresh
+the client item cache; Evermore's cache-version module/launcher normally handles
+this after the world item data changes. In-game learning, item consumption,
+duplicate ownership, summoning and existing-item behavior still need validation.
+
+`mod_archaeology_world_z_rewards.sql` applies the upgrade on existing databases.
+`tools/build_data.py` also appends those overrides to regenerated base data, so
+a later base-data rebuild cannot turn the reward back into a placeholder.
 
 ## Commands
 
