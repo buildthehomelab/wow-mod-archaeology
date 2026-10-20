@@ -28,3 +28,12 @@ DELETE FROM `itemdisplayinfo_dbc` WHERE `ID` BETWEEN 950400 AND 950899;
 DELETE FROM `gameobjectdisplayinfo_dbc` WHERE `ID` BETWEEN 10101 AND 10103;
 DELETE FROM `achievement_criteria_dbc` WHERE `ID` BETWEEN 19240 AND 19279;
 DELETE FROM `achievement_dbc` WHERE `ID` BETWEEN 9240 AND 9259;
+
+-- Functional rare reward rows. Journal's table may be shared with other modules.
+DELETE FROM `creature_template_model` WHERE `CreatureID` BETWEEN 9503600 AND 9503613;
+DELETE FROM `creature_template` WHERE `entry` BETWEEN 9503600 AND 9503613;
+DELETE FROM `spell_script_names` WHERE `ScriptName` IN ('spell_archaeology_reward','spell_archaeology_innkeepers_daughter');
+DELETE FROM `skilllineability_dbc` WHERE `ID` BETWEEN 90530 AND 90589;
+DELETE FROM `spell_dbc` WHERE `ID` BETWEEN 90530 AND 90589;
+DELETE FROM `mod_forever_journal_toy` WHERE `ItemID` IN (9504063,9504064,9504071,9504079,9504101,9504102,9504119,9504120,9504126,9504129,9504133,9504141,9504142,9504143);
+DELETE FROM `mod_forever_journal_collection_note` WHERE `Sort`=90 AND `Note` LIKE 'Archaeology: solve %';

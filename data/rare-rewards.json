@@ -1,0 +1,485 @@
+{
+  "gear": [
+    {
+      "item": 9504074,
+      "name": "Zin'rokh, Destroyer of Worlds",
+      "cls": 2,
+      "sub": 8,
+      "slot": 17,
+      "material": 1,
+      "sheath": 1,
+      "level": 80,
+      "ilvl": 200,
+      "quality": 4,
+      "stats": [
+        [
+          4,
+          81
+        ],
+        [
+          7,
+          121
+        ],
+        [
+          32,
+          54
+        ],
+        [
+          31,
+          46
+        ]
+      ],
+      "damage": [
+        587,
+        881
+      ],
+      "delay": 3600,
+      "armor": 0,
+      "block": 0,
+      "donor_display": 32603,
+      "display": 950474
+    },
+    {
+      "item": 9504080,
+      "name": "Queen Azshara's Dressing Gown",
+      "cls": 4,
+      "sub": 1,
+      "slot": 20,
+      "material": 7,
+      "sheath": 0,
+      "level": 60,
+      "ilvl": 63,
+      "quality": 3,
+      "stats": [
+        [
+          5,
+          25
+        ],
+        [
+          7,
+          20
+        ],
+        [
+          6,
+          18
+        ],
+        [
+          45,
+          35
+        ]
+      ],
+      "damage": [
+        0,
+        0
+      ],
+      "delay": 0,
+      "armor": 95,
+      "block": 0,
+      "donor_display": 12673,
+      "display": 950480
+    },
+    {
+      "item": 9504093,
+      "name": "Headdress of the First Shaman",
+      "cls": 4,
+      "sub": 3,
+      "slot": 1,
+      "material": 1,
+      "sheath": 0,
+      "level": 70,
+      "ilvl": 115,
+      "quality": 3,
+      "stats": [
+        [
+          5,
+          27
+        ],
+        [
+          7,
+          30
+        ],
+        [
+          3,
+          25
+        ],
+        [
+          32,
+          20
+        ],
+        [
+          38,
+          50
+        ]
+      ],
+      "damage": [
+        0,
+        0
+      ],
+      "delay": 0,
+      "armor": 550,
+      "block": 0,
+      "donor_display": 45176,
+      "display": 950493
+    },
+    {
+      "item": 9504105,
+      "name": "Nifflevar Bearded Axe",
+      "cls": 2,
+      "sub": 0,
+      "slot": 13,
+      "material": 1,
+      "sheath": 3,
+      "level": 80,
+      "ilvl": 187,
+      "quality": 3,
+      "stats": [
+        [
+          3,
+          34
+        ],
+        [
+          7,
+          51
+        ],
+        [
+          38,
+          68
+        ],
+        [
+          32,
+          34
+        ],
+        [
+          31,
+          24
+        ]
+      ],
+      "damage": [
+        245,
+        455
+      ],
+      "delay": 2600,
+      "armor": 0,
+      "block": 0,
+      "donor_display": 50076,
+      "display": 950505
+    },
+    {
+      "item": 9504127,
+      "name": "Staff of Sorcerer-Thane Thaurissan",
+      "cls": 2,
+      "sub": 10,
+      "slot": 17,
+      "material": 2,
+      "sheath": 2,
+      "level": 80,
+      "ilvl": 200,
+      "quality": 4,
+      "stats": [
+        [
+          5,
+          90
+        ],
+        [
+          7,
+          90
+        ],
+        [
+          6,
+          70
+        ],
+        [
+          45,
+          408
+        ],
+        [
+          36,
+          60
+        ]
+      ],
+      "damage": [
+        140,
+        260
+      ],
+      "delay": 2100,
+      "armor": 0,
+      "block": 0,
+      "donor_display": 43323,
+      "display": 950527
+    },
+    {
+      "item": 9504128,
+      "name": "Tyrande's Favorite Doll",
+      "cls": 4,
+      "sub": 0,
+      "slot": 12,
+      "material": -1,
+      "sheath": 0,
+      "level": 80,
+      "ilvl": 200,
+      "quality": 4,
+      "stats": [
+        [
+          5,
+          84
+        ],
+        [
+          45,
+          98
+        ]
+      ],
+      "damage": [
+        0,
+        0
+      ],
+      "delay": 0,
+      "armor": 0,
+      "block": 0,
+      "use": 90544,
+      "donor_display": 950528,
+      "display": 950528
+    },
+    {
+      "item": 9504140,
+      "name": "Extinct Turtle Shell",
+      "cls": 4,
+      "sub": 6,
+      "slot": 14,
+      "material": 1,
+      "sheath": 4,
+      "level": 80,
+      "ilvl": 200,
+      "quality": 4,
+      "stats": [
+        [
+          4,
+          40
+        ],
+        [
+          7,
+          73
+        ],
+        [
+          12,
+          37
+        ],
+        [
+          13,
+          32
+        ]
+      ],
+      "damage": [
+        0,
+        0
+      ],
+      "delay": 0,
+      "armor": 7300,
+      "block": 190,
+      "donor_display": 53532,
+      "display": 950540
+    }
+  ],
+  "collectibles": [
+    {
+      "item": 9504036,
+      "name": "Fossilized Hatchling",
+      "spell": 410266,
+      "kind": "pet",
+      "external": true
+    },
+    {
+      "item": 9504083,
+      "name": "Fossilized Raptor",
+      "spell": 400386,
+      "kind": "mount",
+      "external": true
+    },
+    {
+      "item": 9504070,
+      "name": "Clockwork Gnome",
+      "spell": 90560,
+      "kind": "pet",
+      "creature": 9503600,
+      "model": 24103,
+      "scale": 0.65
+    },
+    {
+      "item": 9504144,
+      "name": "Pterrordax Hatchling",
+      "spell": 90561,
+      "kind": "pet",
+      "creature": 9503601,
+      "model": 8410,
+      "scale": 0.3
+    },
+    {
+      "item": 9504145,
+      "name": "Voodoo Figurine",
+      "spell": 90562,
+      "kind": "pet",
+      "creature": 9503602,
+      "model": 29189,
+      "scale": 1.0
+    }
+  ],
+  "toys": [
+    {
+      "item": 9504063,
+      "name": "Highborne Soul Mirror",
+      "spell": 90530,
+      "cooldown": 600,
+      "cast": 1,
+      "text": "Creates a harmless reflection of yourself for 1 minute."
+    },
+    {
+      "item": 9504064,
+      "name": "Druid and Priest Statue Set",
+      "spell": 90531,
+      "cooldown": 900,
+      "cast": 1,
+      "text": "Summons two ancient statues and a shower of green light for 10 seconds."
+    },
+    {
+      "item": 9504071,
+      "name": "Chalice of the Mountain Kings",
+      "spell": 90532,
+      "cooldown": 600,
+      "cast": 1,
+      "text": "Summons four dwarven dancers for 30 seconds."
+    },
+    {
+      "item": 9504079,
+      "name": "Kaldorei Wind Chimes",
+      "spell": 90533,
+      "cooldown": 60,
+      "cast": 1,
+      "text": "Plays a gentle wind chime and surrounds you with nature magic for 10 seconds."
+    },
+    {
+      "item": 9504101,
+      "name": "Arrival of the Naaru",
+      "spell": 90534,
+      "cooldown": 180,
+      "cast": 1,
+      "text": "Summons a harmless image of a naaru for 30 seconds."
+    },
+    {
+      "item": 9504102,
+      "name": "The Last Relic of Argus",
+      "spell": 90535,
+      "cooldown": 1200,
+      "cast": 7,
+      "text": "Teleports you to a random refuge in an era you have unlocked. Cannot be used while in combat, flying, travelling or inside an instance."
+    },
+    {
+      "item": 9504119,
+      "name": "Blessing of the Old God",
+      "spell": 90536,
+      "cooldown": 600,
+      "cast": 1,
+      "text": "Take the appearance of a faceless one for 20 seconds.",
+      "aura": 56,
+      "misc": 9503611,
+      "duration": 18
+    },
+    {
+      "item": 9504120,
+      "name": "Puzzle Box of Yogg-Saron",
+      "spell": 90537,
+      "cooldown": 60,
+      "cast": 7,
+      "text": "Attempts to open the puzzle box. Something whispers back."
+    },
+    {
+      "item": 9504126,
+      "name": "The Innkeeper's Daughter",
+      "spell": 8690,
+      "cooldown": 0,
+      "cast": 0,
+      "text": "Returns you to your home. Shares the ordinary Hearthstone cooldown. Sometimes a spectral innkeeper appears.",
+      "external": true
+    },
+    {
+      "item": 9504129,
+      "name": "Bones of Transformation",
+      "spell": 90538,
+      "cooldown": 600,
+      "cast": 1,
+      "text": "Take the appearance of a naga for 20 seconds.",
+      "aura": 56,
+      "misc": 9503612,
+      "duration": 18
+    },
+    {
+      "item": 9504133,
+      "name": "Wisp Amulet",
+      "spell": 90539,
+      "cooldown": 900,
+      "cast": 1,
+      "text": "Take the appearance of a wisp for 10 minutes. Does not grant flight or invisibility.",
+      "aura": 56,
+      "misc": 9503613,
+      "duration": 6
+    },
+    {
+      "item": 9504141,
+      "name": "Haunted War Drum",
+      "spell": 90540,
+      "cooldown": 60,
+      "cast": 1,
+      "text": "Places a haunted drum and plays a spectral drumbeat for 30 seconds."
+    },
+    {
+      "item": 9504142,
+      "name": "Ancient Amber",
+      "spell": 90541,
+      "cooldown": 300,
+      "cast": 1,
+      "text": "Encases you in cosmetic amber for 10 seconds. Prevents movement but grants no immunity.",
+      "aura": 12,
+      "misc": 0,
+      "duration": 1,
+      "visual": 1022
+    },
+    {
+      "item": 9504143,
+      "name": "Vrykul Drinking Horn",
+      "spell": 90542,
+      "cooldown": 600,
+      "cast": 1,
+      "text": "Drink deeply, becoming larger and drunk for a time. Size lasts 10 minutes.",
+      "aura": 61,
+      "misc": 0,
+      "points": 29,
+      "duration": 6
+    }
+  ],
+  "helpers": [
+    {
+      "spell": 90580,
+      "name": "Highborne Reflection",
+      "aura": 247,
+      "target": 21,
+      "duration": 3,
+      "misc": 0
+    },
+    {
+      "spell": 90581,
+      "name": "Ancient Nature Light",
+      "aura": 4,
+      "target": 1,
+      "duration": 1,
+      "misc": 0,
+      "visual": 740
+    },
+    {
+      "spell": 90582,
+      "name": "Naaru Apparition",
+      "aura": 4,
+      "target": 1,
+      "duration": 9,
+      "misc": 0,
+      "visual": 57901
+    }
+  ]
+}
