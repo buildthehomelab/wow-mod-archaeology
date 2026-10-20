@@ -255,7 +255,8 @@ SQL_TABLES = [("SkillLine", "skillline_dbc"), ("SkillRaceClassInfo", "skillracec
 
 class Dbc:
     def __init__(self, path, table):
-        data = open(path, "rb").read()
+        with open(path, "rb") as source:
+            data = source.read()
         magic, count, fields, size, strsize = struct.unpack_from("<4s4I", data, 0)
         if magic != b"WDBC" or size != fields * 4:
             sys.exit("%s isn't a plain WDBC file" % table)
@@ -996,6 +997,8 @@ def main():
         files["Interface\\Icons\\%s.blp" % ICON] = retail.fetch.casc_path(args.cache, ICON_FDID)
         add_items(dbc, items, client, files, args.cache, retail)
         add_relic(dbc, relic_items())
+        from reward_patch import add_rewards
+        add_rewards(dbc)
         if not args.no_models:
             add_telescope(dbc, client, files, args.cache, retail, work, args.max_texture)
 

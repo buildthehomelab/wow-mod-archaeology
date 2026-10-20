@@ -1,11 +1,11 @@
 // Exercise the real item hook with old/new instance charges. The core-stub
 // surface is deliberately limited to the hook, not a claim of in-game learning.
-#include "../src/ArchaeologyRewards.cpp"
+#include "../src/ArchaeologyCompanions.cpp"
 #include <cassert>
 
 int main()
 {
-    ArchaeologyFossilizedHatchling script;
+    ArchaeologyCompanion script;
     Player player;
     SpellCastTargets targets;
     Item oldItem;
@@ -14,6 +14,15 @@ int main()
     oldItem.changed = false;
     assert(!script.OnUse(&player, &oldItem, targets));
     assert(oldItem.charge == -1 && !oldItem.changed); // fresh/repaired item unchanged
+
+    for (auto const& companion : ArchaeologyRewards::Companions)
+    {
+        Item legacy;
+        legacy.entry = companion.item;
+        legacy.proto.Spells[1].SpellId = companion.spell;
+        assert(!script.OnUse(&player, &legacy, targets));
+        assert(legacy.charge == -1 && legacy.changed);
+    }
 
     Item unrelated;
     unrelated.entry = 9504037;
