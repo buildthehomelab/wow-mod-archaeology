@@ -32,7 +32,7 @@ def generate(data):
     for g in data['gear']:
         values = dict(Class=g['cls'],subclass=g['sub'],InventoryType=g['slot'],Material=g['material'],
                       sheath=g['sheath'],displayid=g['display'],ItemLevel=g['ilvl'],RequiredLevel=g['level'],
-                      Quality=g['quality'],StatsCount=len(g['stats']),armor=g['armor'],block=g['block'],
+                      Quality=g['quality'],armor=g['armor'],block=g['block'],
                       dmg_min1=g['damage'][0],dmg_max1=g['damage'][1],delay=g['delay'],
                       MaxDurability=0,spellid_1=g.get('use',0),spelltrigger_1=0,
                       spellcharges_1=0,spellid_2=0,spelltrigger_2=0,spellcharges_2=0)
@@ -73,7 +73,7 @@ def generate(data):
         kind = 'T' if c in data['toys'] else 'M' if c['kind']=='mount' else 'P'
         entry = c['item'] if kind=='T' else c['spell']
         lines += [f"REPLACE INTO `mod_forever_journal_collection_note` (`Kind`,`ID`,`Sort`,`Note`) VALUES ({quote(kind)},{entry},90,{quote('Archaeology: solve '+c['name']+'.')});"]
-    return '\n'.join(lines)+'\n' 
+    return '\n'.join(lines)+'\n'
 
 
 def main():
