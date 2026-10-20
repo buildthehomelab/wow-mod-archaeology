@@ -19,6 +19,7 @@ Usage: python3 tools/build_data.py
 """
 
 import csv
+import json
 import re
 import sys
 from collections import defaultdict
@@ -31,6 +32,8 @@ OUT = ROOT / "data" / "sql" / "db-world" / "mod_archaeology_world_data.sql"
 MAPS = {0, 1, 530, 571}
 SKIP_BRANCHES = {7, 29}
 MAX_SITE_SKILL = 449
+# Known incompatible sites and conservative terrain holds; see docs/wotlk-digsites.md.
+DISABLED_SITES = json.loads((ROOT / "tools" / "wotlk-disabled-sites.json").read_text())
 
 KEYSTONE_BASE = 9504010   # one keystone item per race, in race order
 ITEM_BASE = 9504020       # artifacts, in project id order
@@ -116,7 +119,7 @@ def main():
         if len(poly) < 3:
             continue
         race_min_skill[branch] = min(race_min_skill.get(branch, 999), skill)
-        site_rows.append(f"({sid}, {map_id}, {branch}, {sql_str(site['Name_lang'])}, {skill}, {level})")
+        site_rows.append(f"({sid}, {map_id}, {branch}, {sql_str(site['Name_lang'])}, {skill}, {level}, {0 if str(sid) in DISABLED_SITES else 1})")
         for idx, (_pid, x, y) in enumerate(poly):
             point_rows.append(f"({sid}, {idx}, {x}, {y})")
         for idx, (x, y, z) in enumerate(spawns[sid]):
@@ -194,7 +197,7 @@ def main():
     out.append("INSERT INTO `mod_archaeology_race` (`id`, `name`, `keystone_item`, `unlock_skill`, `find_go`) VALUES\n"
                + ",\n".join(race_rows) + ";\n")
     out.append("DELETE FROM `mod_archaeology_site`;")
-    out.append("INSERT INTO `mod_archaeology_site` (`id`, `map`, `race`, `name`, `min_skill`, `min_level`) VALUES\n"
+    out.append("INSERT INTO `mod_archaeology_site` (`id`, `map`, `race`, `name`, `min_skill`, `min_level`, `enabled`) VALUES\n"
                + ",\n".join(site_rows) + ";\n")
     out.append("DELETE FROM `mod_archaeology_site_point`;")
     out.append("INSERT INTO `mod_archaeology_site_point` (`site`, `idx`, `x`, `y`) VALUES\n"
