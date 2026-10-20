@@ -627,6 +627,18 @@ function A.OpenWindow()
     refresh()
 end
 
+-- Archaeology in the spellbook (the client patch's rank spells, 90500-90505, all named like
+-- 90500) opens the research window, as Cooking's spell opens its window. The patch names the
+-- spells in English only: another locale's client sees "" for all of them, so it matches nothing.
+local spellbookCast = CreateFrame("Frame")
+spellbookCast:RegisterEvent("UNIT_SPELLCAST_SUCCEEDED")
+spellbookCast:SetScript("OnEvent", function(_, _, unit, spell)
+    local name = GetSpellInfo(90500)
+    if unit == "player" and name and name ~= "" and spell == name then
+        A.OpenWindow()
+    end
+end)
+
 function A.ShowRace(id)
     selected = id
     R.toggle(true)

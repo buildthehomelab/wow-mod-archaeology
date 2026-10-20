@@ -17,6 +17,7 @@ DELETE FROM `quest_template` WHERE `ID` BETWEEN 9503500 AND 9503519;
 DELETE FROM `spell_script_names` WHERE `ScriptName` = 'spell_archaeology_survey' OR `ScriptName` LIKE 'spell_archaeology_trait_%';
 DELETE FROM `spell_proc` WHERE `SpellId` BETWEEN 90500 AND 90529;
 DELETE FROM `spell_bonus_data` WHERE `entry` BETWEEN 90500 AND 90529;
+DELETE FROM `spell_ranks` WHERE `first_spell_id` = 90500;
 -- The client patch's rows (mod_archaeology_world_dbc.sql).
 DELETE FROM `skillline_dbc` WHERE `ID` = 794;
 DELETE FROM `skillraceclassinfo_dbc` WHERE `ID` = 90500;
