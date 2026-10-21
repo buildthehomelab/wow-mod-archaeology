@@ -50,7 +50,7 @@ namespace Archaeology
         float yellowYards = 50.0f;
         float digYards = 8.0f;
         bool shovelDig = true;          // the find comes up only when you dig standing on it
-        float shovelYards = 1.0f;       // how close "standing on it" is (also the overhead shovel)
+        float shovelYards = 3.0f;       // how close "standing on it" is (also the overhead shovel)
         uint32 digMs = 1500;
         float minSpotYards = 40.0f;
         uint32 surveyCooldownMs = 3000;

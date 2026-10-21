@@ -39,7 +39,7 @@ Everything also works without the addon, through `.arch` chat commands.
 1. Talk to the trainer (Harrison Jones) to learn Apprentice Archaeology. Higher ranks need skill and level: Journeyman 50/20, Expert 125/20, Artisan 200/35, Master 275/50, Grand Master 350/65.
 2. You hold 4 dig sites per continent. `.arch` lists them.
 3. Inside a dig site, `.arch survey`. A marker points toward the find, and chat says how far (red, yellow, green) and which way.
-4. Close to the find, a survey says how many yards away it is. Standing on it (within 1 yard) shows a shovel above your head, and the survey button turns into a glowing shovel: click it (or `.arch dig`) to dig. After a moment of digging (moving, a fight or mounting stops it) the find comes up; click it for fragments, sometimes a keystone, and skill. The overhead shovel needs the matching client patch; the Dig button and `.arch dig` work without it. With `Archaeology.Dig.Shovel = 0` a survey within 8 yards uncovers the find instead, as before.
+4. Close to the find, a survey says how many yards away it is. Standing on it (within 3 yards) shows a shovel above your head, and the survey button turns into a glowing shovel: click it (or `.arch dig`) to dig. After a moment of digging (moving, a fight or mounting stops it) the find comes up; click it for fragments, sometimes a keystone, and skill. The overhead shovel needs the matching client patch; the Dig button and `.arch dig` work without it. With `Archaeology.Dig.Shovel = 0` a survey within 8 yards uncovers the find instead, as before.
 5. After 3 finds the site is depleted and a new one is revealed.
 6. `.arch solve <race> [keystones]` solves the current project for that race when you have enough fragments. Each keystone counts as 12 fragments.
 
@@ -259,7 +259,7 @@ MIT. Game data derived from World of Warcraft belongs to Blizzard Entertainment.
 
 ## Overhead shovel delivery and validation
 
-Spell 90522 is a hidden, cosmetic dummy aura, checked every 200 ms against the existing buried spot. It does not select spots, survey, spawn finds or grant rewards. The indicator uses `Archaeology.Dig.ShovelYards` (1 yard) horizontally and a 3-yard ground-height tolerance to avoid showing on another floor; the same test decides where you can dig (`O:1` tells the addon), so the shovel above your head and the Dig button always agree. It clears on leaving the spot, revealing a find, death, map change or logout.
+Spell 90522 is a hidden, cosmetic dummy aura, checked every 200 ms against the existing buried spot. It does not select spots, survey, spawn finds or grant rewards. The indicator uses `Archaeology.Dig.ShovelYards` (3 yards) horizontally and a 3-yard ground-height tolerance to avoid showing on another floor; the same test decides where you can dig (`O:1` tells the addon), so the shovel above your head and the Dig button always agree. It clears on leaving the spot, revealing a find, death, map change or logout.
 
 Rebuild the archaeology client patch with `tools/build_patch.py` for its matching Spell row, SpellVisual, SpellVisualKit, SpellVisualEffectName and billboard M2/skin. Pass every realm patch carrying these visual tables with `--also-patch`, including the visible-bags/torch patches as applicable, to preserve their rows. IDs 90522 in those three visual tables are reserved here. The ordinary shovel icon already exists in the 3.3.5 client. Ship the client patch alongside the module and SQL; no addon update is needed.
 

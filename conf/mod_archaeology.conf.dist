@@ -87,10 +87,10 @@ Archaeology.Survey.CooldownMs = 3000
 #        Description: How close to the find counts as standing on it (the overhead shovel too).
 #    Archaeology.Dig.Ms
 #        Description: How long digging takes. Moving, a fight or mounting stops it.
-#        Default:     1, 1, 1500
+#        Default:     1, 3, 1500
 
 Archaeology.Dig.Shovel = 1
-Archaeology.Dig.ShovelYards = 1
+Archaeology.Dig.ShovelYards = 3
 Archaeology.Dig.Ms = 1500
 
 #
