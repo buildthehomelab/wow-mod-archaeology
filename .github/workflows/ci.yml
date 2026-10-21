@@ -29,4 +29,5 @@ jobs:
       - run: python3 -m unittest discover -s test -p 'test_*.py'
       - run: sudo apt-get update && sudo apt-get install -y lua5.1
       - run: lua5.1 test/test_collection.lua
+      - run: lua5.1 test/test_dig.lua
       - run: python3 tools/check_wotlk_sites.py

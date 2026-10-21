@@ -39,7 +39,7 @@ Everything also works without the addon, through `.arch` chat commands.
 1. Talk to the trainer (Harrison Jones) to learn Apprentice Archaeology. Higher ranks need skill and level: Journeyman 50/20, Expert 125/20, Artisan 200/35, Master 275/50, Grand Master 350/65.
 2. You hold 4 dig sites per continent. `.arch` lists them.
 3. Inside a dig site, `.arch survey`. A marker points toward the find, and chat says how far (red, yellow, green) and which way.
-4. Standing within 1 yard of the hidden find shows a small shovel above your head (matching client patch required). It clears when you move away or reveal the find. The spot is still chosen by your first survey, as before. Within 8 yards the find appears when you survey. Click it for fragments, sometimes a keystone, and skill.
+4. Close to the find, a survey says how many yards away it is. Standing on it (within 1 yard) shows a shovel above your head, and the survey button turns into a glowing shovel: click it (or `.arch dig`) to dig. After a moment of digging (moving, a fight or mounting stops it) the find comes up; click it for fragments, sometimes a keystone, and skill. The overhead shovel needs the matching client patch; the Dig button and `.arch dig` work without it. With `Archaeology.Dig.Shovel = 0` a survey within 8 yards uncovers the find instead, as before.
 5. After 3 finds the site is depleted and a new one is revealed.
 6. `.arch solve <race> [keystones]` solves the current project for that race when you have enough fragments. Each keystone counts as 12 fragments.
 
@@ -80,6 +80,7 @@ a later base-data rebuild cannot turn the reward back into a placeholder.
 | --- | --- | --- |
 | `.arch` | Player | Skill, fragments, current projects and dig sites |
 | `.arch survey` | Player | Survey where you stand |
+| `.arch dig` | Player | Dig where you stand (on the find, the shovel above your head) |
 | `.arch solve <race> [keystones]` | Player | Solve that race's current project |
 | `.arch relic` | Player | Your relic's rank, Relic Power, what holds it back, and its traits |
 | `.arch skill <value>` | GM | Set the selected player's skill (and matching rank) |
@@ -187,14 +188,14 @@ Procs come from melee and ranged hits and from spells (helpful ones too, for the
 
 - **World map and zone map:** each of your dig sites is shaded over its area, with a shovel in the middle. The tooltip gives the race and the finds left.
 - **Minimap:** a shovel pin for each dig site on your continent. Sites out of range wait on the minimap's edge, faded, in their direction. Works with Rotate Minimap and with square minimaps (`GetMinimapShape`). To turn the pins off: right-click one, `/arch minimap`, the key binding, or the checkbox under Interface, AddOns, ArchaeologyUI. The choice is saved for all your characters; the world map keeps its dig sites either way.
-- **Survey button:** shows while you stand in one of your dig sites. Click it (or bind a key under Key Bindings, ArchaeologyUI) to survey. The border turns red, yellow or green, and an arrow above the button points toward the find as you turn. Shift-drag moves the button; right-click opens the research window.
+- **Survey button:** shows while you stand in one of your dig sites. Click it (or bind a key under Key Bindings, ArchaeologyUI) to survey. The border turns red, yellow or green, and an arrow above the button points toward the find as you turn. Standing on the find, it turns from the spyglass into a pulsing green shovel marked **Dig!**: the same click or key digs, the dig time runs on the button, and the find comes up to click. Shift-drag moves the button; right-click opens the research window.
 - **Research window** (`/arch`): a tab per race you can research, with the current project's name, lore and artifact, your fragments against its cost, a socket per keystone the project takes (click to put one in or take it out), and Solve.
 - **In DragonUI's professions window:** with DragonUI 2.12 or later (its professions window on), the research window is a page of that window instead, with an Archaeology side tab after your profession tabs once you know Archaeology: races in the list column, the project on the recipe card, your skill on the rank bar. `/arch` and everything else that opens the research window opens that page. Retail Professions also lists Archaeology in its professions book and Training column.
 - **In Retail Professions' window:** without DragonUI's window, Retail Professions 1.17 or later takes the research view the same way: its Archaeology side tab opens it as a page of its profession window, the other tabs staying, with the relic and races in the list column, the project on the card and your skill on the skill bar. `/arch` and everything else that opens the research window opens that page too (with the window closed, it opens on it). With `/prof classic`, or without Retail Professions, the research window is used.
 - **Relic line:** the Unearthed Relic's rank out of the maximum unlocked by your current IP progression, item level and Relic Power toward the next rank, and what holds it back, along the bottom of the research window (under the rank bar on the DragonUI page).
 - **Fragments bar:** slides in at the top when you loot fragments, showing progress toward that race's project. Click it to open that race in the research window.
 
-Slash commands: `/arch` (window), `/arch survey`, `/arch reset` (survey button back to its default spot), `/arch refresh` (ask the server again), `/arch minimap` (dig sites on the minimap on or off), `/arch options` (the Interface Options page).
+Slash commands: `/arch` (window), `/arch survey`, `/arch dig`, `/arch reset` (survey button back to its default spot), `/arch refresh` (ask the server again), `/arch minimap` (dig sites on the minimap on or off), `/arch options` (the Interface Options page).
 
 Surveying is an addon message, not a spell, so the button is a plain button and nothing is locked in combat. The addon has its own map maths (world bounds of every map in `MapData.lua`), so it needs no Astrolabe. It uses stock 3.3.5 frames and textures for its own window.
 
@@ -204,13 +205,14 @@ The addon assumes the server's defaults for two values it is not sent: `Archaeol
 
 Addon whispers to yourself in `LANG_ADDON`, `ARCH\t<COMMAND>[:...]`.
 
-- Client to server: `HELLO`, `SITES`, `RACES`, `PROJ:<id>`, `SURVEY`, `SOLVE:<race>:<keystones>`
+- Client to server: `HELLO`, `SITES`, `RACES`, `PROJ:<id>`, `SURVEY`, `DIG`, `SOLVE:<race>:<keystones>`
 - Server to client:
   - `S:<skill>:<max>`
   - `R:<race>,<name>,<fragments>,<cap>,<project>,<cost>,<sockets>,<rare>,<keystones owned>,<unlocked>;...` then `REND`
   - `T:<site>,<map>,<race>,<finds left>,<name>;...`, `G:<site>:<x>,<y>;...` (outline, world coordinates), then `TEND`
   - `P:<id>:<race>:<rare>:<cost>:<sockets>:<item>:<name>`, `D:<id>:<text>` chunks, `DEND:<id>`
   - `V:RED|YELLOW|GREEN:<angle>`, `V:FOUND`, `V:NONE` (survey result)
+  - `O:1`, `O:0` (you stand on the hidden find, or left it), `Q:<ms>`, `Q:0` (digging started for ms, stopped)
   - `F:<race>:<gained>:<total>` (fragments looted), `X:<project>:<item>:<rare>` (solved)
   - `L:<rank>:<ranks>:<power>:<next cost>:<item level>:<quality>:<form>:<note>` (the relic; rank 0 = not yet; ranks = current progression ceiling, at least the earned rank)
 
@@ -257,7 +259,7 @@ MIT. Game data derived from World of Warcraft belongs to Blizzard Entertainment.
 
 ## Overhead shovel delivery and validation
 
-Spell 90522 is a hidden, cosmetic dummy aura, checked every 200 ms against the existing buried spot. It does not select spots, survey, spawn finds or grant rewards. The indicator uses a 1-yard horizontal radius and a 3-yard ground-height tolerance to avoid showing on another floor; survey and dig thresholds are unchanged. It clears on leaving the spot, revealing a find, death, map change or logout.
+Spell 90522 is a hidden, cosmetic dummy aura, checked every 200 ms against the existing buried spot. It does not select spots, survey, spawn finds or grant rewards. The indicator uses `Archaeology.Dig.ShovelYards` (1 yard) horizontally and a 3-yard ground-height tolerance to avoid showing on another floor; the same test decides where you can dig (`O:1` tells the addon), so the shovel above your head and the Dig button always agree. It clears on leaving the spot, revealing a find, death, map change or logout.
 
 Rebuild the archaeology client patch with `tools/build_patch.py` for its matching Spell row, SpellVisual, SpellVisualKit, SpellVisualEffectName and billboard M2/skin. Pass every realm patch carrying these visual tables with `--also-patch`, including the visible-bags/torch patches as applicable, to preserve their rows. IDs 90522 in those three visual tables are reserved here. The ordinary shovel icon already exists in the 3.3.5 client. Ship the client patch alongside the module and SQL; no addon update is needed.
 
