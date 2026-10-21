@@ -63,7 +63,8 @@ Archaeology.KeystoneValue = 12
 #    Archaeology.Survey.YellowYards
 #        Description: Distances that make a survey read red (far), yellow, or green (close).
 #    Archaeology.Survey.DigYards
-#        Description: Within this distance a survey uncovers the find.
+#        Description: Within this distance a survey uncovers the find (Archaeology.Dig.Shovel = 0)
+#                     or reads it out in yards (Archaeology.Dig.Shovel = 1).
 #    Archaeology.Survey.MinSpotYards
 #        Description: A new find is hidden at least this far from where you first survey.
 #    Archaeology.Survey.CooldownMs
@@ -75,6 +76,22 @@ Archaeology.Survey.YellowYards = 50
 Archaeology.Survey.DigYards = 8
 Archaeology.Survey.MinSpotYards = 40
 Archaeology.Survey.CooldownMs = 3000
+
+#
+#    Archaeology.Dig.Shovel
+#        Description: 1 = a survey near the find no longer uncovers it: it says how many yards
+#                     away it is, and standing on it (a shovel shows above your head) you dig it
+#                     up (ArchaeologyUI's Dig button, or .arch dig). 0 = a survey within
+#                     Archaeology.Survey.DigYards uncovers the find, as before.
+#    Archaeology.Dig.ShovelYards
+#        Description: How close to the find counts as standing on it (the overhead shovel too).
+#    Archaeology.Dig.Ms
+#        Description: How long digging takes. Moving, a fight or mounting stops it.
+#        Default:     1, 1, 1500
+
+Archaeology.Dig.Shovel = 1
+Archaeology.Dig.ShovelYards = 1
+Archaeology.Dig.Ms = 1500
 
 #
 #    Archaeology.Skill.Max

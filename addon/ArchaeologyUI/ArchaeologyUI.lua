@@ -3,18 +3,20 @@
 -- minimap and survey button can draw them.
 --
 -- Wire format, both directions: an addon whisper to yourself, prefix "ARCH".
---   to the server    HELLO, SITES, RACES, PROJ:<id>, SURVEY, SOLVE:<race>:<keystones>, COLLECTION, TRAITS, ABANDON:<site>
+--   to the server    HELLO, SITES, RACES, PROJ:<id>, SURVEY, DIG, SOLVE:<race>:<keystones>, COLLECTION, TRAITS, ABANDON:<site>
 --   from the server  S:<skill>:<max skill>                       (0 = not learned)
 --                    R:<race>,<name>,<fragments>,<cap>,<project>,<cost>,<sockets>,<rare>,<keystones owned>,<unlocked>;... ... REND
 --                    T:<site>,<map>,<race>,<finds left>,<name>;... then G:<site>:<x>,<y>;... (outline,
 --                      world coordinates) ... TEND
 --                    P:<id>:<race>:<rare>:<cost>:<sockets>:<item>:<name>, D:<id>:<text> ... DEND:<id>
 --                    V:RED|YELLOW|GREEN:<angle> | V:FOUND | V:NONE   survey result
+--                    O:1 | O:0                                    you stand on the hidden find (or left it)
+--                    Q:<ms> | Q:0                                 digging started (for ms) | stopped
 --                    F:<race>:<gained>:<total>                    fragments looted
 --                    X:<project>:<item>:<rare>                    project solved
 --
 -- Other files hook in with ArchaeologyUI.On(event, fn). Events: STATE, RACES, SITES, PROJECT (id),
--- SURVEY (band, angle), FRAGMENTS (race, gained, total), SOLVED (project, item, rare), POSITION,
+-- SURVEY (band, angle), OVERFIND (on), DIG (seconds, 0 = stopped), FRAGMENTS (race, gained, total), SOLVED (project, item, rare), POSITION,
 -- RELIC, LOGIN (A.db is ready), MINIMAP (shown).
 
 local PREFIX = "ARCH"
@@ -83,6 +85,10 @@ end
 
 function A.Survey()
     A.Send("SURVEY")
+end
+
+function A.Dig()
+    A.Send("DIG")
 end
 
 function A.Solve(race, keystones)
@@ -236,6 +242,11 @@ local function onMessage(message)
             p.complete = true
             A.Fire("PROJECT", p.id)
         end
+    elseif command == "O" then
+        A.overFind = rest == "1"
+        A.Fire("OVERFIND", A.overFind)
+    elseif command == "Q" then
+        A.Fire("DIG", (tonumber(rest) or 0) / 1000)
     elseif command == "V" then
         local band, angle = rest:match("^(%u+):?(.*)$")
         A.Fire("SURVEY", band, tonumber(angle))
@@ -377,7 +388,7 @@ frame:SetScript("OnEvent", function(self, event, prefix, message, channel, sende
 end)
 
 BINDING_HEADER_ARCHAEOLOGYUI = "ArchaeologyUI"
-BINDING_NAME_ARCHAEOLOGYUI_SURVEY = "Survey"
+BINDING_NAME_ARCHAEOLOGYUI_SURVEY = "Survey / Dig"
 BINDING_NAME_ARCHAEOLOGYUI_TOGGLE = "Toggle Archaeology window"
 BINDING_NAME_ARCHAEOLOGYUI_MINIMAP = "Toggle dig sites on the minimap"
 
@@ -387,6 +398,8 @@ SlashCmdList.ARCHAEOLOGYUI = function(msg)
     msg = (msg or ""):lower():match("^%s*(.-)%s*$")
     if msg == "survey" then
         A.Survey()
+    elseif msg == "dig" then
+        A.Dig()
     elseif msg == "reset" then
         if A.ResetSurveyButton then
             A.ResetSurveyButton()

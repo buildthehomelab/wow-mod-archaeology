@@ -6,10 +6,13 @@
 -- it too.
 --
 -- A survey answer colours the button's border red, yellow or green and turns an arrow toward the
--- find, kept pointing the right way as you turn. Looted fragments slide a bar in at the top.
+-- find, kept pointing the right way as you turn. Standing on the find (the server shows a shovel
+-- above your head), the button becomes a glowing shovel that sends DIG: the find comes up after
+-- a moment of digging, and you click it to collect it. Looted fragments slide a bar in at the top.
 
 local A = ArchaeologyUI
 local SURVEY_COOLDOWN = 3       -- seconds; the server's Archaeology.Survey.CooldownMs default
+local SURVEY_ICON = "Interface\\Icons\\INV_Misc_Spyglass_02"   -- the telescope a survey puts up
 local ARROW_SECONDS = 60
 local BAR_IN, BAR_HOLD, BAR_OUT = 0.25, 4, 0.4
 local BANDS = {
@@ -30,7 +33,7 @@ button:RegisterForDrag("LeftButton")
 button:Hide()
 
 local icon = _G[button:GetName() .. "Icon"]
-icon:SetTexture(A.SHOVEL)
+icon:SetTexture(SURVEY_ICON)
 local border = _G[button:GetName() .. "Border"]
 local cooldown = _G[button:GetName() .. "Cooldown"]
 local hotkey = _G[button:GetName() .. "HotKey"]
@@ -50,7 +53,16 @@ local function survey()
     CooldownFrame_SetTimer(cooldown, now, SURVEY_COOLDOWN, 1)
     A.Survey()
 end
-A.SurveyButtonClick = survey
+-- On the find the button digs instead; the server says when a dig starts and stops.
+local digging = false
+local function click()
+    if not A.overFind then
+        survey()
+    elseif not digging then
+        A.Dig()
+    end
+end
+A.SurveyButtonClick = click
 
 button:SetScript("OnClick", function(self, mouse)
     self:SetChecked(false)
@@ -59,7 +71,7 @@ button:SetScript("OnClick", function(self, mouse)
             A.ToggleWindow()
         end
     else
-        survey()
+        click()
     end
 end)
 button:SetScript("OnDragStart", function(self)
@@ -74,8 +86,13 @@ button:SetScript("OnDragStop", function(self)
 end)
 button:SetScript("OnEnter", function(self)
     GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
-    GameTooltip:SetText("Survey")
-    GameTooltip:AddLine("Find out which way the nearest artifact lies.", 1, 1, 1, true)
+    if A.overFind then
+        GameTooltip:SetText("Dig")
+        GameTooltip:AddLine("You're standing on the find. Dig it up, then click it to collect it.", 1, 1, 1, true)
+    else
+        GameTooltip:SetText("Survey")
+        GameTooltip:AddLine("Find out which way the nearest artifact lies.", 1, 1, 1, true)
+    end
     GameTooltip:AddLine("Right-click: research window. Shift-drag: move.", 0.6, 0.6, 0.6, true)
     GameTooltip:Show()
 end)
@@ -94,6 +111,42 @@ A.On("LOGIN", function()
         button:SetPoint(saved[1], UIParent, saved[2], saved[3], saved[4])
     end
 end)
+
+-- Dig mode: the shovel, a pulsing green glow and "Dig!" on the button ----------------------------
+
+local glow = button:CreateTexture(nil, "OVERLAY")
+glow:SetTexture("Interface\\Buttons\\UI-ActionButton-Border")
+glow:SetBlendMode("ADD")
+glow:SetVertexColor(0.3, 1, 0.3)
+glow:SetSize(70, 70)
+glow:SetPoint("CENTER")
+glow:Hide()
+local digText = button:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
+digText:SetPoint("BOTTOM", button, "TOP", 0, 6)
+digText:SetTextColor(0.3, 1, 0.3)
+digText:SetText("Dig!")
+digText:Hide()
+local pulse = 0
+local glowFrame = CreateFrame("Frame", nil, button)
+glowFrame:Hide()
+glowFrame:SetScript("OnUpdate", function(_, elapsed)
+    pulse = pulse + elapsed
+    glow:SetAlpha(0.55 + 0.45 * math.sin(pulse * 5))
+end)
+
+local function setDigMode(on)
+    if on then
+        icon:SetTexture(A.SHOVEL)
+        glow:Show()
+        digText:Show()
+        glowFrame:Show()
+    else
+        icon:SetTexture(SURVEY_ICON)
+        glow:Hide()
+        digText:Hide()
+        glowFrame:Hide()
+    end
+end
 
 -- Direction arrow --------------------------------------------------------------------------------
 
@@ -140,6 +193,30 @@ local function clearSurvey()
     border:Hide()
 end
 
+A.On("OVERFIND", function(on)
+    setDigMode(on)
+    if on then
+        clearSurvey()
+        PlaySound("MapPing")
+        UIErrorsFrame:AddMessage("You're standing on the find. Dig it up!", 0.2, 1, 0.2)
+    elseif digging then
+        digging = false
+        CooldownFrame_SetTimer(cooldown, 0, 0, 0)
+    end
+    if GameTooltip:IsOwned(button) then button:GetScript("OnEnter")(button) end
+end)
+
+A.On("DIG", function(seconds)
+    digging = seconds > 0
+    if digging then
+        CooldownFrame_SetTimer(cooldown, GetTime(), seconds, 1)
+        digText:SetText("Digging...")
+    else
+        CooldownFrame_SetTimer(cooldown, 0, 0, 0)
+        digText:SetText("Dig!")
+    end
+end)
+
 A.On("SURVEY", function(band, angle)
     local b = BANDS[band]
     if b and angle then
@@ -154,7 +231,7 @@ A.On("SURVEY", function(band, angle)
         clearSurvey()
         border:SetVertexColor(0.2, 1, 0.2, 0.7)
         border:Show()
-        UIErrorsFrame:AddMessage("You found an artifact! Click it to dig it up.", 0.2, 1, 0.2)
+        UIErrorsFrame:AddMessage("You found an artifact! Click it to collect it.", 0.2, 1, 0.2)
     else
         clearSurvey()
     end

@@ -3,13 +3,15 @@
  * player/world hooks that load and drop state.
  *
  * Addon wire format, both directions: an addon whisper to yourself, "ARCH\t<COMMAND>[:...]".
- *   client -> server  HELLO, SITES, RACES, PROJ:<id>, SURVEY, SOLVE:<race>:<keystones>, COLLECTION, TRAITS, ABANDON:<site>
+ *   client -> server  HELLO, SITES, RACES, PROJ:<id>, SURVEY, DIG, SOLVE:<race>:<keystones>, COLLECTION, TRAITS, ABANDON:<site>
  *   server -> client  S:<skill>:<max skill>               skill (0 = not learned)
  *                     R:<race>,<name>,<fragments>,<cap>,<project>,<cost>,<sockets>,<rare>,<keystones owned>,<unlocked>;...  REND
  *                     T:<site>,<map>,<race>,<finds left>,<name>;...  TEND   your dig sites
  *                     G:<site>:<x>,<y>;<x>,<y>;...                    a site's outline (world coordinates)
  *                     P:<id>:<race>:<rare>:<cost>:<sockets>:<item>:<name>   D:<id>:<text> ...  DEND:<id>
  *                     V:RED|YELLOW|GREEN:<angle> | V:FOUND | V:NONE   survey result
+ *                     O:1 | O:0                                       you stand on the hidden find (or left it)
+ *                     Q:<ms> | Q:0                                    digging started (for ms) | stopped
  *                     F:<race>:<gained>:<total>                       fragments looted
  *                     X:<project>:<item>:<rare>                       project solved
  *                     L:<rank>:<ranks>:<power>:<next cost>:<item level>:<quality>:<form>:<note>   the relic
@@ -356,6 +358,9 @@ public:
                 SendRaces(player);
                 SendSites(player);
                 SendRelic(player);
+                // A reloaded addon has forgotten it stands on the find: tell it again.
+                if (CharState* state = GetState(player))
+                    state->overFind = false;
             }
         }
         else if (command == "TRAITS")
@@ -385,6 +390,8 @@ public:
         }
         else if (command == "SURVEY")
             Survey(player);   // has its own cooldown
+        else if (command == "DIG")
+            Dig(player);      // one dig at a time
         else if (command.substr(0, 5) == "PROJ:")
         {
             if (!Throttled(player, REQUEST_PROJ))
@@ -529,6 +536,7 @@ public:
             { "",       HandleStatus, SEC_PLAYER,        Console::No },
             { "abandon", HandleAbandon, SEC_PLAYER, Console::No },
             { "survey", HandleSurvey, SEC_PLAYER,        Console::No },
+            { "dig",    HandleDig,    SEC_PLAYER,        Console::No },
             { "solve",  HandleSolve,  SEC_PLAYER,        Console::No },
             { "skill",  HandleSkill,  SEC_GAMEMASTER,    Console::No },
             { "reload", HandleReload, SEC_ADMINISTRATOR, Console::Yes },
@@ -557,6 +565,12 @@ public:
     static bool HandleSurvey(ChatHandler* handler)
     {
         Survey(handler->GetPlayer());
+        return true;
+    }
+
+    static bool HandleDig(ChatHandler* handler)
+    {
+        Dig(handler->GetPlayer());
         return true;
     }
 

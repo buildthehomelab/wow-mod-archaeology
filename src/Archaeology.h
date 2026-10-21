@@ -49,6 +49,9 @@ namespace Archaeology
         float redYards = 100.0f;
         float yellowYards = 50.0f;
         float digYards = 8.0f;
+        bool shovelDig = true;          // the find comes up only when you dig standing on it
+        float shovelYards = 1.0f;       // how close "standing on it" is (also the overhead shovel)
+        uint32 digMs = 1500;
         float minSpotYards = 40.0f;
         uint32 surveyCooldownMs = 3000;
         uint32 skillPerFindUntil = 50;
@@ -185,6 +188,9 @@ namespace Archaeology
         std::unordered_map<uint8, RaceProgress> races;
         std::unordered_map<uint32, uint32> solved;   // project id -> times solved
         uint32 shovelCheckMs = 0;
+        bool overFind = false;       // last O: sent to the addon
+        uint32 digMs = 0;            // a dig in progress: time left
+        float digX = 0.0f, digY = 0.0f;
         uint32 lastSurveyMs = 0;
         uint32 abandonUntil = 0;
         uint32 excludedSite = 0; // transient replacement exclusion
@@ -226,6 +232,7 @@ namespace Archaeology
 
     // Dig loop.
     void Survey(Player* player);
+    void Dig(Player* player);
     void UpdateFindShovel(Player* player, uint32 diff);
     void UpdateRewardCosmetics(Player* player, uint32 diff);
     bool UseFind(Player* player, GameObject* go);

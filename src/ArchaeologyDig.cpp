@@ -83,53 +83,151 @@ namespace
         }
         return nullptr;
     }
+
+    constexpr uint32 SHOVEL_SPELL = 90522;   // the shovel above your head (client patch)
+
+    // Where a find stands: on this map's ground, not at Cataclysm's elevation for the spot.
+    float GroundZ(Player* player, Spot const& spot)
+    {
+        float z = player->GetMap()->GetHeight(player->GetPhaseMask(), spot.x, spot.y, spot.z + 10.0f, true, 50.0f);
+        return z <= INVALID_HEIGHT ? spot.z : z;
+    }
+
+    // The dig site whose hidden find you stand on (within Archaeology.Dig.ShovelYards, on its
+    // floor), or nullptr.
+    ActiveSite* OverFind(Player* player, CharState& state, uint32& continent)
+    {
+        if (!GetConfig().enabled || !state.skill || !player->IsAlive() || player->IsInFlight() || player->GetTransport())
+            return nullptr;
+        ActiveSite* active = SiteHere(player, state, continent);
+        if (!active)
+            return nullptr;
+        Site const* site = GetSite(active->site);
+        if (active->spot < 0 || active->spot >= int32(site->spots.size()))
+            return nullptr;
+        Spot const& spot = site->spots[active->spot];
+        if (Dist2d(player->GetPositionX(), player->GetPositionY(), spot.x, spot.y) > GetConfig().shovelYards)
+            return nullptr;
+        return std::abs(player->GetPositionZ() - GroundZ(player, spot)) <= 3.0f ? active : nullptr;
+    }
+
+    // The find comes up at its spot; the next survey hides another.
+    void RevealFind(Player* player, ActiveSite& active, uint32 continent)
+    {
+        Site const* site = GetSite(active.site);
+        Spot const& spot = site->spots[active.spot];
+        Race const* race = GetRace(site->race);
+        float ang = player->GetAngle(spot.x, spot.y);
+        if (GameObject* go = player->SummonGameObject(race->findGo, spot.x, spot.y, GroundZ(player, spot), ang, 0.0f, 0.0f,
+            std::sin(ang / 2.0f), std::cos(ang / 2.0f), GetConfig().findSeconds))
+        {
+            pendingFinds[go->GetGUID()] = { player->GetGUID(), continent, active.site };
+            active.spot = -1;
+            player->RemoveAurasDueToSpell(SHOVEL_SPELL);
+            Notify(player, Acore::StringFormat("|cff20ff20You've found a {} artifact!|r", race->name));
+            SendAddon(player, "V:FOUND");
+        }
+    }
+
+    void StopDig(Player* player, CharState& state, char const* why)
+    {
+        state.digMs = 0;
+        player->SetUInt32Value(UNIT_NPC_EMOTESTATE, EMOTE_ONESHOT_NONE);
+        SendAddon(player, "Q:0");
+        if (why)
+            Notify(player, why);
+    }
+
+    // A dig in progress: moving, a fight, mounting or dying stops it; at the end the find comes up.
+    void UpdateDig(Player* player, CharState& state, uint32 diff)
+    {
+        if (!player->IsAlive() || player->IsInCombat() || player->IsMounted() || player->IsInFlight() ||
+            Dist2d(player->GetPositionX(), player->GetPositionY(), state.digX, state.digY) > 0.5f)
+        {
+            StopDig(player, state, "You stop digging.");
+            return;
+        }
+        if (diff < state.digMs)
+        {
+            state.digMs -= diff;
+            return;
+        }
+        StopDig(player, state, nullptr);
+        uint32 continent = 0;
+        if (ActiveSite* active = OverFind(player, state, continent))
+            RevealFind(player, *active, continent);
+        else
+            Notify(player, "There is nothing buried here.");
+    }
 }
 
 namespace Archaeology
 {
-    // Cosmetic only: inspect the existing hidden spot; never select a new one or dig it up.
+    // Standing on the hidden find shows the shovel above your head and tells the addon (its Dig
+    // button); it never selects a spot or digs. Also runs a dig in progress.
     void UpdateFindShovel(Player* player, uint32 diff)
     {
-        constexpr uint32 shovelSpell = 90522;
-        constexpr float directlyOverYards = 1.0f;
         CharState* state = GetState(player);
         if (!state)
         {
-            player->RemoveAurasDueToSpell(shovelSpell);
+            player->RemoveAurasDueToSpell(SHOVEL_SPELL);
             return;
         }
+        if (state->digMs)
+            UpdateDig(player, *state, diff);
         state->shovelCheckMs += diff;
         if (state->shovelCheckMs < 200)
             return;
         state->shovelCheckMs = 0;
 
-        bool overFind = false;
-        if (GetConfig().enabled && state->skill && player->IsAlive() &&
-            !player->IsInFlight() && !player->GetTransport())
+        uint32 continent = 0;
+        bool overFind = OverFind(player, *state, continent) != nullptr;
+        if (overFind != state->overFind)
         {
-            uint32 continent = 0;
-            if (ActiveSite* active = SiteHere(player, *state, continent))
-            {
-                Site const* site = GetSite(active->site);
-                if (active->spot >= 0 && active->spot < int32(site->spots.size()))
-                {
-                    Spot const& spot = site->spots[active->spot];
-                    if (Dist2d(player->GetPositionX(), player->GetPositionY(), spot.x, spot.y) <= directlyOverYards)
-                    {
-                        // Match the find's ground placement, not Cataclysm's original elevation.
-                        float z = player->GetMap()->GetHeight(player->GetPhaseMask(), spot.x, spot.y,
-                            spot.z + 10.0f, true, 50.0f);
-                        if (z <= INVALID_HEIGHT)
-                            z = spot.z;
-                        overFind = std::abs(player->GetPositionZ() - z) <= 3.0f;
-                    }
-                }
-            }
+            state->overFind = overFind;
+            SendAddon(player, overFind ? "O:1" : "O:0");
         }
         if (!overFind)
-            player->RemoveAurasDueToSpell(shovelSpell);
-        else if (!player->HasAura(shovelSpell) && sSpellMgr->GetSpellInfo(shovelSpell))
-            player->AddAura(shovelSpell, player);
+            player->RemoveAurasDueToSpell(SHOVEL_SPELL);
+        else if (!player->HasAura(SHOVEL_SPELL) && sSpellMgr->GetSpellInfo(SHOVEL_SPELL))
+            player->AddAura(SHOVEL_SPELL, player);
+    }
+
+    // Dig where you stand: on the find (the shovel above your head) it comes up after
+    // Archaeology.Dig.Ms of digging.
+    void Dig(Player* player)
+    {
+        Config const& cfg = GetConfig();
+        CharState* state = GetState(player);
+        if (!cfg.enabled || !state || !state->skill)
+        {
+            Notify(player, "You don't know Archaeology. Find an archaeology trainer to learn it.");
+            return;
+        }
+        if (state->digMs)
+            return;
+        if (player->IsInCombat() || player->IsMounted() || player->IsInFlight() || player->GetTransport())
+        {
+            Notify(player, "You can't dig right now.");
+            return;
+        }
+        uint32 continent = 0;
+        if (!OverFind(player, *state, continent))
+        {
+            Notify(player, "There is nothing buried here. Survey to find the spot, then stand where the shovel shows.");
+            return;
+        }
+        if (!cfg.digMs)
+        {
+            if (ActiveSite* active = OverFind(player, *state, continent))
+                RevealFind(player, *active, continent);
+            return;
+        }
+        state->digMs = cfg.digMs;
+        state->digX = player->GetPositionX();
+        state->digY = player->GetPositionY();
+        player->SetUInt32Value(UNIT_NPC_EMOTESTATE, EMOTE_STATE_WORK_MINING);
+        SendAddon(player, Acore::StringFormat("Q:{}", cfg.digMs));
     }
 
     void Survey(Player* player)
@@ -187,22 +285,16 @@ namespace Archaeology
         float dist = Dist2d(px, py, spot.x, spot.y);
         Race const* race = GetRace(site->race);
 
-        if (dist <= cfg.digYards)
+        if (dist <= cfg.digYards && !cfg.shovelDig)
         {
-            // Dig spots come from Cataclysm data; stand the find on this map's ground instead.
-            float z = player->GetMap()->GetHeight(player->GetPhaseMask(), spot.x, spot.y, spot.z + 10.0f, true, 50.0f);
-            if (z <= INVALID_HEIGHT)
-                z = spot.z;
-            float ang = player->GetAngle(spot.x, spot.y);
-            if (GameObject* go = player->SummonGameObject(race->findGo, spot.x, spot.y, z, ang, 0.0f, 0.0f,
-                std::sin(ang / 2.0f), std::cos(ang / 2.0f), cfg.findSeconds))
-            {
-                pendingFinds[go->GetGUID()] = { player->GetGUID(), continent, active->site };
-                active->spot = -1;
-                player->RemoveAurasDueToSpell(90522);
-                Notify(player, Acore::StringFormat("|cff20ff20You've found a {} artifact!|r", race->name));
-                SendAddon(player, "V:FOUND");
-            }
+            RevealFind(player, *active, continent);
+            return;
+        }
+        if (cfg.shovelDig && OverFind(player, *state, continent))
+        {
+            Notify(player, Acore::StringFormat("|cff20ff20You're standing on the {} find. Dig it up!|r", race->name));
+            state->overFind = true;
+            SendAddon(player, "O:1");
             return;
         }
 
@@ -215,13 +307,26 @@ namespace Archaeology
             std::sin(ang / 2.0f), std::cos(ang / 2.0f), cfg.telescopeSeconds);
 
         static char const* const colours[3] = { "|cffff2020far away (red)|r", "|cffffff20closer (yellow)|r", "|cff20ff20close (green)|r" };
-        Notify(player, Acore::StringFormat("The find is {}, to the {}.", colours[band], Compass(ang)));
+        if (dist <= cfg.digYards)
+        {
+            int32 yards = std::max(1, int32(std::lround(dist)));
+            Notify(player, Acore::StringFormat("|cff20ff20The find is {} {} away|r, to the {}. Stand on it and dig.",
+                yards, yards == 1 ? "yard" : "yards", Compass(ang)));
+        }
+        else
+            Notify(player, Acore::StringFormat("The find is {}, to the {}.", colours[band], Compass(ang)));
         SendAddon(player, Acore::StringFormat("V:{}:{:.3f}", band == BAND_RED ? "RED" : band == BAND_YELLOW ? "YELLOW" : "GREEN", ang));
     }
 
     void ForgetFinds(Player* player)
     {
-        player->RemoveAurasDueToSpell(90522);
+        player->RemoveAurasDueToSpell(SHOVEL_SPELL);
+        if (CharState* state = GetState(player))
+        {
+            if (state->digMs)
+                StopDig(player, *state, nullptr);
+            state->overFind = false;
+        }
         for (auto itr = pendingFinds.begin(); itr != pendingFinds.end();)
             itr = itr->second.owner == player->GetGUID() ? pendingFinds.erase(itr) : std::next(itr);
     }
