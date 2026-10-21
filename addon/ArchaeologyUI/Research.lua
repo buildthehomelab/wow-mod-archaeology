@@ -86,6 +86,14 @@ relicText:SetPoint("BOTTOMLEFT", 22, 20)
 relicText:SetPoint("BOTTOMRIGHT", -22, 20)
 relicText:SetJustifyH("LEFT")
 relicText:SetJustifyV("BOTTOM")
+-- Hover it for the relic's tooltip; shift-click links it.
+local relicHit = CreateFrame("Frame", nil, window)
+relicHit:SetPoint("TOPLEFT", relicText, "TOPLEFT")
+relicHit:SetPoint("BOTTOMRIGHT", relicText, "BOTTOMRIGHT")
+relicHit:EnableMouse(true)
+relicHit:SetScript("OnEnter", function(self) A.ShowRelicTooltip(self) end)
+relicHit:SetScript("OnLeave", function() GameTooltip:Hide() end)
+relicHit:SetScript("OnMouseUp", function() A.ClickRelic() end)
 
 local empty = window:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
 empty:SetPoint("CENTER")
@@ -540,11 +548,225 @@ function A.RelicLine()
     end
     local color = ITEM_QUALITY_COLORS and ITEM_QUALITY_COLORS[r.quality]
     local name = (color and color.hex or "|cffe6cc80") .. "Unearthed Relic|r"
+    if r.form ~= "" then
+        name = name .. " (" .. r.form .. ")"
+    end
     local line = string.format("%s rank %d/%d, item level %d", name, r.rank, r.ranks, r.itemLevel)
     if r.cost > 0 then
         line = line .. string.format("  -  Relic Power %d/%d", r.power, r.cost)
     end
     return r.note ~= "" and (line .. "\n" .. r.note) or line
+end
+
+-- The relic's link: the one on the character or in the bags (with its enchants and gems), else
+-- the plain item the server named (in the bank, say). An older server names none; then any relic
+-- step found on the character will do.
+local RELIC_FIRST, RELIC_LAST = 9505000, 9505899
+function A.RelicLink()
+    local r = A.relic
+    if not (r and r.rank > 0) then
+        return nil
+    end
+    local function wanted(link)
+        local id = link and tonumber(link:match("item:(%d+)"))
+        if not id then
+            return false
+        end
+        if r.item and r.item > 0 then
+            return id == r.item
+        end
+        return id >= RELIC_FIRST and id <= RELIC_LAST
+    end
+    for slot = 16, 18 do
+        local link = GetInventoryItemLink("player", slot)
+        if wanted(link) then
+            return link
+        end
+    end
+    for bag = 0, NUM_BAG_SLOTS do
+        for slot = 1, GetContainerNumSlots(bag) do
+            local link = GetContainerItemLink(bag, slot)
+            if wanted(link) then
+                return link
+            end
+        end
+    end
+    if r.item and r.item > 0 then
+        return select(2, GetItemInfo(r.item)) or ("item:" .. r.item)
+    end
+end
+
+function A.RelicIcon()
+    local r = A.relic
+    local link = A.RelicLink()
+    local id = (r and r.item and r.item > 0 and r.item) or (link and tonumber(link:match("item:(%d+)")))
+    return id and GetItemIcon(id) or nil
+end
+
+local function qualityText(quality, text)
+    local color = ITEM_QUALITY_COLORS and ITEM_QUALITY_COLORS[quality or 1]
+    return (color and color.hex or "") .. text .. (color and "|r" or "")
+end
+
+-- The relic's tooltip: the weapon itself (its stats), then rank, power, the next rank, what
+-- holds it back and its traits.
+function A.ShowRelicTooltip(owner)
+    local r = A.relic
+    if not r then
+        return
+    end
+    GameTooltip:SetOwner(owner, "ANCHOR_RIGHT")
+    local link = A.RelicLink()
+    -- Only a cached item: an uncached one would draw an empty tooltip under our lines.
+    if link and GetItemInfo(link) then
+        GameTooltip:SetHyperlink(link)
+        GameTooltip:AddLine(" ")
+        GameTooltip:AddLine("Unearthed Relic", 0.9, 0.8, 0.5)
+    else
+        GameTooltip:SetText("Unearthed Relic", 0.9, 0.8, 0.5)
+    end
+    if r.rank > 0 then
+        if r.form ~= "" then
+            GameTooltip:AddDoubleLine("Form", r.form, 1, 0.82, 0, 1, 1, 1)
+        end
+        GameTooltip:AddDoubleLine("Rank", string.format("%d of %d", r.rank, r.ranks), 1, 0.82, 0, 1, 1, 1)
+        if r.cost > 0 then
+            GameTooltip:AddDoubleLine("Relic Power", string.format("%d / %d  (%d to go)", r.power, r.cost,
+                math.max(0, r.cost - r.power)), 1, 0.82, 0, 1, 1, 1)
+        else
+            GameTooltip:AddDoubleLine("Relic Power", tostring(r.power), 1, 0.82, 0, 1, 1, 1)
+        end
+        if r.nextItemLevel and r.nextItemLevel > 0 then
+            GameTooltip:AddDoubleLine("Rank " .. (r.rank + 1),
+                qualityText(r.nextQuality, "item level " .. r.nextItemLevel), 1, 0.82, 0, 1, 1, 1)
+        end
+        if r.held == 1 then
+            GameTooltip:AddLine(string.format("Your level holds it back: at level %d it grows to item level %d.",
+                r.heldLevel, r.heldItemLevel), 1, 0.5, 0.25, true)
+        elseif r.held == 2 then
+            GameTooltip:AddLine(string.format("Your progress through the ages holds it back; next it grows to item level %d.",
+                r.heldItemLevel), 1, 0.5, 0.25, true)
+        end
+    else
+        GameTooltip:AddDoubleLine("Relic Power", tostring(r.power), 1, 0.82, 0, 1, 1, 1)
+    end
+    if r.note ~= "" then
+        GameTooltip:AddLine(r.note, 1, 1, 1, true)
+    end
+
+    -- Traits, once the server has sent them (asked for when the window opens).
+    local traits, awake = {}, 0
+    for _, id in ipairs(A.raceOrder) do
+        local t = A.traits and A.traits[id]
+        if t then
+            tinsert(traits, t)
+            if t.awake then awake = awake + 1 end
+        end
+    end
+    if r.rank > 0 and #traits > 0 then
+        GameTooltip:AddLine(" ")
+        GameTooltip:AddLine(string.format("Traits: %d of %d awake", awake, #traits), 1, 0.82, 0)
+        for _, t in ipairs(traits) do
+            if t.awake then
+                GameTooltip:AddDoubleLine("  " .. t.name, t.strength .. "%", 0.3, 1, 0.3, 0.3, 1, 0.3)
+            else
+                GameTooltip:AddDoubleLine("  " .. t.name, string.format("%d/%d commons", math.min(t.commons, t.need), t.need),
+                    0.5, 0.5, 0.5, 0.5, 0.5, 0.5)
+            end
+        end
+    end
+    if link then
+        GameTooltip:AddLine(" ")
+        GameTooltip:AddLine("Shift-click to link it. Ctrl-click to try it on.", 0.5, 0.5, 0.5)
+    end
+    GameTooltip:Show()
+end
+
+-- Shift-click links the relic in chat, Ctrl-click shows it in the dressing room.
+function A.ClickRelic()
+    local link = A.RelicLink()
+    if not link then
+        return
+    end
+    if IsModifiedClick("CHATLINK") then
+        ChatEdit_InsertLink(select(2, GetItemInfo(link)) or link)
+    elseif IsModifiedClick("DRESSUP") then
+        DressUpItemLink(link)
+    end
+end
+
+-- The relic under a list-column header (Hosted.lua, HostedRetail.lua): its icon, its form and item
+-- level, Relic Power on the right and a thin bar of it underneath; hover for the full story.
+function R.NewRelicRow(list, header)
+    local row = CreateFrame("Frame", nil, list)
+    row:SetPoint("TOPLEFT", header, "BOTTOMLEFT", 8, -4)
+    row:SetPoint("RIGHT", header, "RIGHT", -8, 0)
+    row:SetHeight(24)
+    row.icon = row:CreateTexture(nil, "ARTWORK")
+    row.icon:SetSize(16, 16)
+    row.icon:SetPoint("TOPLEFT", 0, 0)
+    row.icon:SetTexCoord(0.07, 0.93, 0.07, 0.93)
+    row.power = row:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+    row.power:SetPoint("TOPRIGHT", 0, -2)
+    row.power:SetJustifyH("RIGHT")
+    row.line = row:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+    row.line:SetPoint("TOPLEFT", row.icon, "TOPRIGHT", 5, -2)
+    row.line:SetPoint("RIGHT", row.power, "LEFT", -6, 0)
+    row.line:SetJustifyH("LEFT")
+    row.line:SetWordWrap(false)
+    row.bar = CreateFrame("StatusBar", nil, row)
+    row.bar:SetPoint("TOPLEFT", row.icon, "BOTTOMLEFT", 0, -3)
+    row.bar:SetPoint("RIGHT", row, "RIGHT", 0, 0)
+    row.bar:SetHeight(4)
+    row.bar:SetStatusBarTexture("Interface\\TargetingFrame\\UI-StatusBar")
+    row.bar:SetStatusBarColor(0.9, 0.7, 0.2)
+    row.bar.bg = row.bar:CreateTexture(nil, "BACKGROUND")
+    row.bar.bg:SetAllPoints()
+    row.bar.bg:SetTexture(0, 0, 0, 0.5)
+
+    -- The header and the row both show the tooltip and take the clicks.
+    for _, f in ipairs({ header, row }) do
+        f:EnableMouse(true)
+        f:SetScript("OnEnter", function(self) A.ShowRelicTooltip(self) end)
+        f:SetScript("OnLeave", function() GameTooltip:Hide() end)
+        f:SetScript("OnMouseUp", function() A.ClickRelic() end)
+    end
+    header.row = row
+    return row
+end
+
+function R.DrawRelicRow(header)
+    local r, row = A.relic, header.row
+    local color = r.rank > 0 and ITEM_QUALITY_COLORS and ITEM_QUALITY_COLORS[r.quality]
+    if color then
+        header.label:SetTextColor(color.r, color.g, color.b)
+    else
+        header.label:SetTextColor(0.9, 0.8, 0.5)
+    end
+    header.note:SetText(r.rank > 0 and string.format("Rank %d/%d", r.rank, r.ranks) or "")
+    local icon = A.RelicIcon()
+    row.icon:SetTexture(icon or "Interface\\Icons\\INV_Misc_QuestionMark")
+    if r.rank > 0 then
+        local form = r.form ~= "" and r.form or "No form yet"
+        row.line:SetText(string.format("%s, item level %d", form, r.itemLevel))
+        if r.held and r.held > 0 then
+            row.line:SetTextColor(1, 0.5, 0.25)   -- held back: the tooltip says why
+        else
+            row.line:SetTextColor(1, 1, 1)
+        end
+    else
+        row.line:SetText(r.note)
+        row.line:SetTextColor(1, 1, 1)
+    end
+    if r.cost > 0 then
+        row.power:SetText(string.format("%d/%d", r.power, r.cost))
+        row.bar:SetMinMaxValues(0, r.cost)
+        row.bar:SetValue(math.min(r.power, r.cost))
+    else
+        row.power:SetText(r.rank > 0 and "Max" or tostring(r.power))
+        row.bar:SetMinMaxValues(0, 1)
+        row.bar:SetValue(r.rank > 0 and 1 or 0)
+    end
 end
 
 -- How our own window shows the skill and the races; Hosted.lua swaps these for its own.
@@ -615,6 +837,10 @@ end
 function R.Opened()
     if not A.connected then
         A.Request("HELLO", "HELLO")
+    end
+    -- The relic's tooltip lists its traits.
+    if A.relic and A.relic.rank > 0 then
+        A.Request("TRAITS", "TRAITS")
     end
     refresh()
 end

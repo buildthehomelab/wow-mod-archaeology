@@ -14,7 +14,9 @@
  *                     Q:<ms> | Q:0                                    digging started (for ms) | stopped
  *                     F:<race>:<gained>:<total>                       fragments looted
  *                     X:<project>:<item>:<rare>                       project solved
+ *                     LN:<item>:<off item>:<next item level>:<next quality>:<held>:<held level>:<held item level>
  *                     L:<rank>:<ranks>:<power>:<next cost>:<item level>:<quality>:<form>:<note>   the relic
+ *                       (LN comes first: held 1 = level, 2 = progression keeps the item below its rank)
  *
  * Released under the MIT License.
  */
