@@ -10,6 +10,7 @@
 local A = ArchaeologyUI
 local UPDATE_INTERVAL = 0.05
 local PIN_SIZE = 14
+local ORDER_PIN_SIZE = 18   -- the site today's Dig Orders name, also gold
 local EDGE_ALPHA = 0.6
 
 -- Yards across the whole minimap by zoom level (0 = farthest out).
@@ -31,6 +32,10 @@ local function pinTooltip(self)
     GameTooltip:SetText(site.name)
     GameTooltip:AddLine((race and race.name or "Unknown") .. " dig site", 1, 1, 1)
     GameTooltip:AddLine(site.finds .. (site.finds == 1 and " find left" or " finds left"), 0.8, 0.8, 0.8)
+    local order = A.digOrder
+    if order and order.site == site.id then
+        GameTooltip:AddLine(("Dig Orders: %d/%d finds"):format(order.done, order.need), 1, 0.82, 0)
+    end
     if self.distance then
         GameTooltip:AddLine(math.floor(self.distance) .. " yards", 0.8, 0.8, 0.8)
     end
@@ -119,6 +124,9 @@ local function update()
             n = n + 1
             local p = pin(n)
             p.site, p.distance = site, distance
+            local ordered = A.digOrder and A.digOrder.site == site.id
+            p:SetSize(ordered and ORDER_PIN_SIZE or PIN_SIZE, ordered and ORDER_PIN_SIZE or PIN_SIZE)
+            p.icon:SetVertexColor(1, ordered and 0.82 or 1, ordered and 0 or 1)
             if reach > edge then
                 sx, sy = sx * edge / reach, sy * edge / reach
                 p:SetAlpha(EDGE_ALPHA)

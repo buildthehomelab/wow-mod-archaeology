@@ -15,6 +15,7 @@
  *                     F:<race>:<gained>:<total>                       fragments looted
  *                     X:<project>:<item>:<rare>                       project solved
  *                     L:<rank>:<ranks>:<power>:<next cost>:<item level>:<quality>:<form>:<note>   the relic
+ *                     W:<site>:<finds done>:<finds needed>          today's Dig Orders (site 0 = none being worked)
  *
  * Released under the MIT License.
  */
@@ -27,6 +28,7 @@
 #include "GameTime.h"
 #include "Item.h"
 #include "Map.h"
+#include "ObjectMgr.h"
 #include "Player.h"
 #include "QuestDef.h"
 #include "ScriptMgr.h"
@@ -133,6 +135,8 @@ namespace
                 if (Site const* site = GetSite(a.site))
                     text += Acore::StringFormat("\n  {} [site {}, recommended level {}] ({}, {} of {} finds left)", site->name, site->id, site->minLevel, GetRace(site->race)->name,
                         GetConfig().findsPerSite - a.finds, GetConfig().findsPerSite);
+        if (std::string orders = DigOrdersText(player); !orders.empty())
+            text += "\n" + orders;
         return text;
     }
 }
@@ -252,7 +256,8 @@ public:
     ArchaeologyPlayerScript() : PlayerScript("ArchaeologyPlayerScript", {
         PLAYERHOOK_ON_LOGIN, PLAYERHOOK_ON_LOGOUT, PLAYERHOOK_ON_DELETE, PLAYERHOOK_ON_LEVEL_CHANGED,
         PLAYERHOOK_CAN_PLAYER_USE_PRIVATE_CHAT, PLAYERHOOK_ON_UPDATE, PLAYERHOOK_ON_MAP_CHANGED, PLAYERHOOK_ON_EQUIP,
-        PLAYERHOOK_ON_UNEQUIP_ITEM, PLAYERHOOK_ON_BEFORE_QUEST_COMPLETE, PLAYERHOOK_ON_PLAYER_RESURRECT }) { }
+        PLAYERHOOK_ON_UNEQUIP_ITEM, PLAYERHOOK_ON_BEFORE_QUEST_COMPLETE, PLAYERHOOK_ON_PLAYER_RESURRECT,
+        PLAYERHOOK_ON_PLAYER_QUEST_ACCEPT, PLAYERHOOK_ON_QUEST_ABANDON }) { }
 
     void OnPlayerLogin(Player* player) override
     {
@@ -264,6 +269,7 @@ public:
     {
         lastRequest.erase(player->GetGUID().GetCounter());
         ForgetFinds(player);
+        ForgetDigOrdersCaches(player);
         ForgetRelic(player);
         ForgetTraits(player);
         if (CharState* s = GetState(player); s && (s->relic.rank || s->relic.earned))
@@ -280,6 +286,7 @@ public:
         CharacterDatabase.Execute("DELETE FROM `mod_archaeology_char_expedition` WHERE `guid` = {}", low);
         CharacterDatabase.Execute("DELETE FROM `mod_archaeology_char_history` WHERE `guid` = {}", low);
         CharacterDatabase.Execute("DELETE FROM `mod_archaeology_char_relic` WHERE `guid` = {}", low);
+        CharacterDatabase.Execute("DELETE FROM `mod_archaeology_char_dig_orders` WHERE `guid` = {}", low);
     }
 
     // Higher levels open more dig sites, and let the relic grow.
@@ -338,6 +345,18 @@ public:
         return questId != RELIC_QUEST || CanTakeRelicQuest(player);
     }
 
+    void OnPlayerQuestAccept(Player* player, Quest const* quest) override
+    {
+        if (quest->GetQuestId() == DIG_ORDERS_QUEST)
+            DigOrdersAccepted(player);
+    }
+
+    void OnPlayerQuestAbandon(Player* player, uint32 questId) override
+    {
+        if (questId == DIG_ORDERS_QUEST)
+            DigOrdersDropped(player);
+    }
+
     // CMSG_MESSAGECHAT runs on the world thread.
     bool OnPlayerCanUseChat(Player* player, uint32 type, uint32 language, std::string& msg, Player* receiver) override
     {
@@ -358,6 +377,7 @@ public:
                 SendRaces(player);
                 SendSites(player);
                 SendRelic(player);
+                SendDigOrders(player);
                 // A reloaded addon has forgotten it stands on the find: tell it again.
                 if (CharState* state = GetState(player))
                     state->overFind = false;
@@ -447,7 +467,7 @@ class npc_archaeology_trainer : public CreatureScript
 public:
     npc_archaeology_trainer() : CreatureScript("npc_archaeology_trainer") { }
 
-    enum Actions : uint32 { ACTION_TRAIN = 1, ACTION_STATUS = 2 };   // 10-13: the relic's, ArchaeologyRelic.cpp
+    enum Actions : uint32 { ACTION_TRAIN = 1, ACTION_STATUS = 2, ACTION_ORDERS = 3 };   // 10-13: the relic's, ArchaeologyRelic.cpp
 
     // A Weapon in Pieces waits for skill 50, which the quest system can't see.
     static bool OffersRelicQuest(Player* player)
@@ -455,9 +475,58 @@ public:
         return player->GetQuestStatus(RELIC_QUEST) != QUEST_STATUS_NONE || CanTakeRelicQuest(player);
     }
 
-    uint32 GetDialogStatus(Player* player, Creature* /*creature*/) override
+    // The quest system can't see archaeology skill or progression either: Dig Orders only for
+    // archaeologists, the relic's quests only once the relic quest is open, and a capstone only once
+    // progression reaches its raid. Quests in the log can always be turned in.
+    static bool Offers(Player* player, uint32 questId)
     {
-        return OffersRelicQuest(player) ? DIALOG_STATUS_SCRIPTED_NO_STATUS : DIALOG_STATUS_NONE;
+        QuestStatus status = player->GetQuestStatus(questId);
+        bool inLog = status == QUEST_STATUS_INCOMPLETE || status == QUEST_STATUS_COMPLETE;
+        if (questId != DIG_ORDERS_QUEST)
+            return OffersRelicQuest(player) && (inLog || CapstoneQuestOpen(player, questId));
+        return inLog || OffersDigOrders(player);
+    }
+
+    static uint32 QuestMark(Player* player, uint32 questId)
+    {
+        Quest const* quest = sObjectMgr->GetQuestTemplate(questId);
+        if (!quest || !Offers(player, questId))
+            return DIALOG_STATUS_NONE;
+        switch (player->GetQuestStatus(questId))
+        {
+            case QUEST_STATUS_COMPLETE:   return DIALOG_STATUS_REWARD;
+            case QUEST_STATUS_INCOMPLETE: return DIALOG_STATUS_INCOMPLETE;
+            case QUEST_STATUS_NONE:
+                return player->CanTakeQuest(quest, false) ? (quest->IsDaily() ? DIALOG_STATUS_AVAILABLE_REP : DIALOG_STATUS_AVAILABLE)
+                    : DIALOG_STATUS_NONE;
+            default:                      return DIALOG_STATUS_NONE;
+        }
+    }
+
+    uint32 GetDialogStatus(Player* player, Creature* creature) override
+    {
+        uint32 mark = DIALOG_STATUS_NONE;
+        if (!GetConfig().enabled || !GetState(player))
+            return mark;
+        for (auto bounds : { sObjectMgr->GetCreatureQuestRelationBounds(creature->GetEntry()),
+                sObjectMgr->GetCreatureQuestInvolvedRelationBounds(creature->GetEntry()) })
+            for (auto itr = bounds.first; itr != bounds.second; ++itr)
+                mark = std::max(mark, QuestMark(player, itr->second));
+        return mark;
+    }
+
+    // PrepareQuestMenu lists every quest CanTakeQuest allows; take out the ones not offered yet.
+    static void PrepareQuests(Player* player, Creature* creature)
+    {
+        player->PrepareQuestMenu(creature->GetGUID());
+        QuestMenu& menu = player->PlayerTalkClass->GetQuestMenu();
+        std::vector<QuestMenuItem> keep;
+        for (uint8 i = 0; i < menu.GetMenuItemCount(); ++i)
+            if (Offers(player, menu.GetItem(i).QuestId))
+                keep.push_back(menu.GetItem(i));
+        menu.ClearMenu();
+        for (QuestMenuItem const& item : keep)
+            menu.AddMenuItem(item.QuestId, item.QuestIcon);
     }
 
     bool OnQuestReward(Player* player, Creature* creature, Quest const* quest, uint32 /*opt*/) override
@@ -465,6 +534,11 @@ public:
         if (IsCapstoneQuest(quest->GetQuestId()))
         {
             QueueRelic(player);   // the rank it held back can come now
+            return false;
+        }
+        if (quest->GetQuestId() == DIG_ORDERS_QUEST)
+        {
+            DigOrdersRewarded(player);
             return false;
         }
         if (quest->GetQuestId() != RELIC_QUEST)
@@ -478,8 +552,7 @@ public:
         ClearGossipMenuFor(player);
         if (GetConfig().enabled && GetState(player))
         {
-            if (OffersRelicQuest(player))
-                player->PrepareQuestMenu(creature->GetGUID());
+            PrepareQuests(player, creature);
             if (Rank const* rank = NextRank(player))
             {
                 if (CanTrain(player, *rank))
@@ -491,6 +564,8 @@ public:
             }
             if (IsLearned(player))
                 AddGossipItemFor(player, GOSSIP_ICON_CHAT, "Where are my dig sites?", GOSSIP_SENDER_MAIN, ACTION_STATUS);
+            if (player->GetQuestStatus(DIG_ORDERS_QUEST) == QUEST_STATUS_INCOMPLETE)
+                AddGossipItemFor(player, GOSSIP_ICON_CHAT, "Which dig site do my orders name?", GOSSIP_SENDER_MAIN, ACTION_ORDERS);
             AddRelicGossip(player);
         }
         SendGossipMenuFor(player, TRAINER_TEXT, creature->GetGUID());
@@ -514,6 +589,11 @@ public:
         }
         else if (action == ACTION_STATUS)
             Notify(player, StatusText(player));
+        else if (action == ACTION_ORDERS)
+        {
+            Notify(player, DigOrdersText(player));
+            SendDigOrders(player);
+        }
         return true;
     }
 };

@@ -10,6 +10,7 @@
 
 void AddArchaeologyAddonScripts();
 void AddArchaeologyDigScripts();
+void AddArchaeologyDigOrdersScripts();
 void AddArchaeologyTraitScripts();
 void AddArchaeologyRewardScripts();
 
@@ -17,6 +18,7 @@ void Addmod_archaeologyScripts()
 {
     AddArchaeologyAddonScripts();
     AddArchaeologyDigScripts();
+    AddArchaeologyDigOrdersScripts();
     AddArchaeologyTraitScripts();
     AddArchaeologyRewardScripts();
 }

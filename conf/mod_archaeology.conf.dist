@@ -235,6 +235,29 @@ Archaeology.Relic.Traits.WakeCommons = 10
 Archaeology.Relic.Traits.FirstRankStrength = 0.4
 Archaeology.Relic.Traits.RaceCompleteMultiplier = 2.0
 
+#
+#    Archaeology.DigOrders.Enable
+#        Description: Dig Orders, a daily quest from the archaeology trainer for anyone who knows
+#                     Archaeology. It names one of the character's own dig sites (one on the
+#                     continent they stand on and not yet dug, if there is one); finds dug up there
+#                     count (RequiredNpcOrGoCount1 of quest 9503504, 3), and a site dug out fills
+#                     the orders. The last find uncovers a fragment cache. If the named site goes
+#                     away (abandoned), the orders name another.
+#    Archaeology.DigOrders.CacheFragments.Min
+#    Archaeology.DigOrders.CacheFragments.Max
+#        Description: Bonus fragments in the cache, of the dig site's race (up to the fragment cap).
+#    Archaeology.DigOrders.CacheKeystoneChance
+#        Description: Percent chance the cache also holds that race's keystone.
+#    Archaeology.DigOrders.RelicPower
+#        Description: Relic Power for turning the orders in, once the character has the relic.
+#        Default:     1, 15, 25, 50, 50
+
+Archaeology.DigOrders.Enable = 1
+Archaeology.DigOrders.CacheFragments.Min = 15
+Archaeology.DigOrders.CacheFragments.Max = 25
+Archaeology.DigOrders.CacheKeystoneChance = 50
+Archaeology.DigOrders.RelicPower = 50
+
 # Expedition abandonment cooldown, persisted across logins (1..86400 seconds).
 Archaeology.AbandonCooldownSeconds = 1800
 # Prefer sites this many levels below the player; keep at most one near-limit

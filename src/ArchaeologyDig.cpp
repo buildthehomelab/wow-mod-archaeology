@@ -345,6 +345,7 @@ namespace Archaeology
         Config const& cfg = GetConfig();
         PendingFind find = itr->second;
         pendingFinds.erase(itr);
+        Position const where = go->GetPosition();
         // DespawnOrUnsummon would only reset a summon whose timer is still running; delete it outright.
         player->RemoveGameObject(go, true);
 
@@ -378,7 +379,9 @@ namespace Archaeology
         {
             if (a->site != find.site)
                 continue;
-            if (++a->finds >= cfg.findsPerSite)
+            bool depleted = ++a->finds >= cfg.findsPerSite;
+            DigOrdersFind(player, find.site, depleted, where);
+            if (depleted)
             {
                 held.erase(a);
                 Notify(player, Acore::StringFormat("{} has been depleted. A new dig site has been revealed.", site->name));

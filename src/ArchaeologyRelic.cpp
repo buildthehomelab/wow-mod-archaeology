@@ -828,6 +828,18 @@ namespace Archaeology
             std::find(cfg.capstoneQuest.begin(), cfg.capstoneQuest.end(), questId) != cfg.capstoneQuest.end());
     }
 
+    // A capstone quest opens with the progression state of the rank it unlocks (Naxxramas for the
+    // old world's): offered any earlier, it would sit in the log long before its raid is open.
+    bool CapstoneQuestOpen(Player* player, uint32 questId)
+    {
+        Config const& cfg = GetConfig();
+        for (uint8 era = 0; era < 3; ++era)
+            if (questId == CAPSTONE_QUESTS[era] || questId == cfg.capstoneQuest[era])
+                if (uint32 rank = GateRank(1, era))
+                    return ProgressionState(player) >= steps[rank - 1].state;
+        return true;
+    }
+
     // A capstone boss died: everyone in its instance who tapped it (the looting group), has the
     // era's quest and wears the relic gets the kill. Dead raiders count, as long as they're inside.
     void CapstoneBossDied(Creature* boss)

@@ -35,6 +35,7 @@ CharState* GetState(Player*) {return &state;}
 Site const* GetSite(uint32 id) {auto i=sites.find(id);return i==sites.end()?nullptr:&i->second;}
 bool CanDigContinent(Player*,uint32 c) {return c<2 || expansionOpen;}
 void ForgetFinds(Player*) {++forgotten;}
+void CheckDigOrders(Player*) {}
 std::vector<std::tuple<uint32,bool,std::vector<ActiveSite>>> commits;
 void SaveSites(Player*,uint32 c,bool cooldown=false) {++saves;if(cooldown)++dbWrites;commits.emplace_back(c,cooldown,state.sites[c]);}
 void RollSites(Player*,uint32 deferredContinent=CONTINENTS.size());

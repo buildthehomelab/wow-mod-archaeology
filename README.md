@@ -43,7 +43,9 @@ Everything also works without the addon, through `.arch` chat commands.
 5. After 3 finds the site is depleted and a new one is revealed.
 6. `.arch solve <race> [keystones]` solves the current project for that race when you have enough fragments. Each keystone counts as 12 fragments.
 
-7. At 50 skill, the trainer has a quest, *A Weapon in Pieces*. Turn it in and choose your relic's form (see [The Unearthed Relic](#the-unearthed-relic)). At 60, 70 and 80 the trainer has a capstone quest for each era's last raid boss.
+7. Once a day the trainer has *Dig Orders*: it names one of your own dig sites (on the continent you stand on, and one you haven't started, if it can). Dig up 3 finds there, or dig the site out; the last find uncovers a **fragment cache** with 15-25 bonus fragments of that race and a 50% chance of a keystone. Turn the orders in for some experience and, once you have the relic, 50 Relic Power. The world map and minimap mark the ordered site in gold; the trainer and `.arch` say which site it is. Abandon the site and the orders name another. See `Archaeology.DigOrders.*` in the config.
+
+8. At 50 skill, the trainer has a quest, *A Weapon in Pieces*. Turn it in and choose your relic's form (see [The Unearthed Relic](#the-unearthed-relic)). At 60, 70 and 80 the trainer has a capstone quest for each era's last raid boss.
 
 Outland races open at skill 300, Northrend races at 375. With mod-individual-progression and `Archaeology.IndividualProgression.Enable = 1`, those continents also wait until the character reaches that era.
 
@@ -93,9 +95,10 @@ a later base-data rebuild cannot turn the reward back into a placeholder.
 | --- | --- |
 | Trainer creature (also the relic quest giver), npc_text | 9503500, npc_text 9503500-9503501 |
 | Capstone kill credit (creature_template, never spawned) | 9503510-9503512 |
-| Quests: *A Weapon in Pieces*, capstones | 9503500, 9503501-9503503 (9503500-9503519 reserved) |
+| Dig Orders kill credit (creature_template, never spawned) | 9503513 |
+| Quests: *A Weapon in Pieces*, capstones, *Dig Orders* (daily) | 9503500, 9503501-9503503, 9503504 (9503500-9503519 reserved) |
 | Relic items (item_template, Item.dbc) | 9505000-9505999: 9505000 + step x 30 + kind |
-| Survey telescopes + banner, finds (gameobject_template) | 9503500-9503503, 9503510-9503517 |
+| Survey telescopes + banner, finds, Dig Orders fragment cache (gameobject_template) | 9503500-9503503, 9503510-9503517, 9503520 |
 | Keystones and artifacts (item_template, Item.dbc) | 9504010-9504499 |
 | Item displays (ItemDisplayInfo.dbc) | 950410-950899: 950400 + (item - 9504000) |
 | Spells (Spell.dbc, SkillLineAbility.dbc) | 90500-90505 ranks, 90506 Survey, 90507-90514 relic traits, 90515-90521 what they cast, 90522 cosmetic overhead shovel (90500-90529 reserved) |
@@ -161,7 +164,7 @@ Ranks are never lost. When rank, level or progression changes what the relic sho
 | 9503502 *The Deceiver's Fall* | level 70 | Kil'jaeden, Sunwell Plateau |
 | 9503503 *The Frozen Throne* | level 80 | The Lich King, Icecrown Citadel |
 
-They open once the character has the relic. Everyone in the instance who is in the group that tapped the boss gets the kill, if they have the quest and wear the relic, dead or alive, as long as they are inside the instance. They are raid quests, so a raid group counts. The 80 Kel'Thuzad counts too because individual progression closes the 40-man Naxxramas later on, and a character that missed it there could otherwise never finish the old world's ranks. The quests give nothing but the rank they unlock. Set a `CapstoneQuest` to 0 to drop it; ranks already earned are never taken back, whatever the config says. Upgrading: a `mod_archaeology.conf` copied before the capstones existed still has `CapstoneQuest.* = 0`, so the quests unlock nothing there; set them to 9503501-9503503 (the server logs a warning at startup for each one left at 0).
+They open once the character has the relic and its progression state reaches the rank the quest unlocks: 7 (Naxxramas) for the old world's, 12 for Outland's, 18 for Northrend's. Without individual progression they open at their level. Everyone in the instance who is in the group that tapped the boss gets the kill, if they have the quest and wear the relic, dead or alive, as long as they are inside the instance. They are raid quests, so a raid group counts. The 80 Kel'Thuzad counts too because individual progression closes the 40-man Naxxramas later on, and a character that missed it there could otherwise never finish the old world's ranks. The quests give nothing but the rank they unlock. Set a `CapstoneQuest` to 0 to drop it; ranks already earned are never taken back, whatever the config says. Upgrading: a `mod_archaeology.conf` copied before the capstones existed still has `CapstoneQuest.* = 0`, so the quests unlock nothing there; set them to 9503501-9503503 (the server logs a warning at startup for each one left at 0).
 
 **Traits.** One per race, waking when one of that race's rares is solved, or after 10 of its commons (`Archaeology.Relic.Traits.WakeCommons`, repeats count). While the relic is equipped, every awake trait is an aura on the character (spells 90507-90514). The numbers below are at full rank. A trait starts at 40% of them (`FirstRankStrength`) and grows with the ladder step the relic shows, so level and progression hold it back as they do the item. Solving every project of its race doubles it (`RaceCompleteMultiplier`).
 
@@ -186,7 +189,7 @@ Procs come from melee and ranged hits and from spells (helpful ones too, for the
 
 `addon/ArchaeologyUI` is the client side, for the 3.3.5a client (Interface 30300). Copy the folder into `World of Warcraft/Interface/AddOns/`.
 
-- **World map and zone map:** each of your dig sites is shaded over its area, with a shovel in the middle. The tooltip gives the race and the finds left.
+- **World map and zone map:** each of your dig sites is shaded over its area, with a shovel in the middle. The tooltip gives the race and the finds left. The site your Dig Orders name has a bigger gold shovel and its progress in the tooltip (the minimap pin too).
 - **Minimap:** a shovel pin for each dig site on your continent. Sites out of range wait on the minimap's edge, faded, in their direction. Works with Rotate Minimap and with square minimaps (`GetMinimapShape`). To turn the pins off: right-click one, `/arch minimap`, the key binding, or the checkbox under Interface, AddOns, ArchaeologyUI. The choice is saved for all your characters; the world map keeps its dig sites either way.
 - **Survey button:** shows while you stand in one of your dig sites. Click it (or bind a key under Key Bindings, ArchaeologyUI) to survey. The border turns red, yellow or green, and an arrow above the button points toward the find as you turn. Standing on the find, it turns from the spyglass into a pulsing green shovel marked **Dig!**: the same click or key digs, the dig time runs on the button, and the find comes up to click. Shift-drag moves the button; right-click opens the research window.
 - **Research window** (`/arch`): a tab per race you can research, with the current project's name, lore and artifact, your fragments against its cost, a socket per keystone the project takes (click to put one in or take it out), and Solve.
@@ -215,6 +218,7 @@ Addon whispers to yourself in `LANG_ADDON`, `ARCH\t<COMMAND>[:...]`.
   - `O:1`, `O:0` (you stand on the hidden find, or left it), `Q:<ms>`, `Q:0` (digging started for ms, stopped)
   - `F:<race>:<gained>:<total>` (fragments looted), `X:<project>:<item>:<rare>` (solved)
   - `L:<rank>:<ranks>:<power>:<next cost>:<item level>:<quality>:<form>:<note>` (the relic; rank 0 = not yet; ranks = current progression ceiling, at least the earned rank)
+  - `W:<site>:<finds done>:<finds needed>` (today's Dig Orders; site 0 = none being worked)
 
 ## Client patch
 

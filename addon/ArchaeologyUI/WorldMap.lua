@@ -1,5 +1,6 @@
 -- World map: every dig site on the open zone or continent map gets its area shaded and a shovel
--- icon in the middle, with the race and the finds left in its tooltip.
+-- icon in the middle, with the race and the finds left in its tooltip. The site today's Dig Orders
+-- name gets a bigger gold shovel.
 --
 -- The shading is filled scanline by scanline: one plain coloured strip per row span of the
 -- outline. That needs no triangle texture and looks the same on every client.
@@ -7,6 +8,7 @@
 local A = ArchaeologyUI
 local SHADE = { 0.85, 0.55, 0.2, 0.35 }
 local ICON_SIZE = 20
+local ORDER_ICON_SIZE = 28
 
 local overlay = CreateFrame("Frame", "ArchaeologyUIWorldMapOverlay", WorldMapButton)
 overlay:SetAllPoints(WorldMapButton)
@@ -34,6 +36,10 @@ local function pinTooltip(self)
     GameTooltip:SetText(site.name)
     GameTooltip:AddLine((race and race.name or "Unknown") .. " dig site", 1, 1, 1)
     GameTooltip:AddLine(site.finds .. (site.finds == 1 and " find left" or " finds left"), 0.8, 0.8, 0.8)
+    local order = A.digOrder
+    if order and order.site == site.id then
+        GameTooltip:AddLine(("Dig Orders: %d/%d finds"):format(order.done, order.need), 1, 0.82, 0)
+    end
     if site.level then
         GameTooltip:AddLine("Recommended level: " .. site.level, 1, 1, 1)
         if site.challenge then GameTooltip:AddLine("Challenging expedition", 1, 0.65, 0.2) end
@@ -143,6 +149,9 @@ local function redraw()
             if mx >= 0 and mx <= 1 and my >= 0 and my <= 1 then
                 local p = pin()
                 p.site = site
+                local ordered = A.digOrder and A.digOrder.site == site.id
+                p:SetSize(ordered and ORDER_ICON_SIZE or ICON_SIZE, ordered and ORDER_ICON_SIZE or ICON_SIZE)
+                p.icon:SetVertexColor(1, ordered and 0.82 or 1, ordered and 0 or 1)
                 p:ClearAllPoints()
                 p:SetPoint("CENTER", overlay, "TOPLEFT", mx * w, -my * h)
             end
