@@ -134,7 +134,7 @@ One weapon per character, pieced together from its finds. It never leaves the ch
 | Tank mace | Vigil of Stone |
 | Shield | Bastion of the Forgotten |
 
-**Ranks.** Relic Power comes only from archaeology: per find, per common and rare solve, and extra for a project solved for the first time (`Archaeology.Relic.Power*`). It is earned from the first find, so digging before the quest counts. Power buys ranks one after the other, at each rank's cost (`mod_archaeology_relic_step.cost` x `CostRate`); the last ranks of each era cost the most. There are 29:
+**Ranks.** Relic Power comes only from archaeology: per find, per common and rare solve, and extra for a project solved for the first time (`Archaeology.Relic.Power*`). Finds count once the character has the relic, so a relic starts at rank 1 however much was dug before; projects solved before the quest still count. Power buys ranks one after the other, at each rank's cost (`mod_archaeology_relic_step.cost` x `CostRate`); the last ranks of each era cost the most. There are 29:
 
 | Ranks | Item level | Quality | Opens at |
 | --- | --- | --- | --- |

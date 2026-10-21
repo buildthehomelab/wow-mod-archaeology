@@ -168,8 +168,8 @@ Archaeology.Relic.Skill = 50
 #    Archaeology.Relic.PowerPerRare
 #    Archaeology.Relic.PowerFirstSolve
 #        Description: Relic Power per find dug up, per common and rare project solved, and extra for
-#                     a project solved for the first time. Earned from the first find on, so digging
-#                     before the relic quest still counts.
+#                     a project solved for the first time. Finds count once the character has the
+#                     relic; solves before the relic quest still count.
 #    Archaeology.Relic.CostRate
 #        Description: Multiplies every rank's cost (mod_archaeology_relic_step.cost).
 #        Default:     10, 30, 300, 100, 1.0
