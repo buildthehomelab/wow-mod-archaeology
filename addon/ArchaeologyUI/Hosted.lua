@@ -4,10 +4,15 @@
 -- on the rank bar, in DragonUI's art. /arch, the key binding, the survey button's right-click and
 -- the fragments bar open that page; our own window (Research.lua) isn't used then. The tab shows
 -- once you know Archaeology.
+--
+-- The collection (Collection.lua) is a second page under the same tab: its races in the list
+-- column, the race's page on the card, and the artifacts you have found on the rank bar.
 
 local A = ArchaeologyUI
 local R = A.Research
+local C = A.Collection
 local PAGE = "archaeology"
+local COLLECTION = "archaeology-collection"
 local TITLE = "Archaeology"
 
 -- DragonUI's window layout: the crafting page's rank bar, list column and recipe card.
@@ -79,37 +84,122 @@ local function rowFor(list, i)
     return row
 end
 
+-- The crafting page's rank bar: its fill (Forever's default blue) and "<what> n/max" on it.
+local function rankBar(parent, P)
+    local Art = P.Art
+    local b = CreateFrame("Frame", nil, parent)
+    b:SetSize(BAR_W, 18)
+    b:SetPoint("TOPLEFT", parent, "TOPLEFT", BAR_X, BAR_Y)
+    local bg = b:CreateTexture(nil, "BACKGROUND")
+    Art.Set(bg, "rankbar-bg", true)
+    bg:SetPoint("TOPLEFT")
+    b.fx = P.Fill.Create(b, BAR_W, 0, 18)
+    b.fx:SetPoint("TOPLEFT", b, "TOPLEFT", 5, -3)
+    local top = CreateFrame("Frame", nil, b)
+    top:SetAllPoints()
+    top:SetFrameLevel(b.fx:GetFrameLevel() + 1)
+    local border = top:CreateTexture(nil, "ARTWORK")
+    Art.Set(border, "rankbar-border", true)
+    border:SetPoint("TOPLEFT")
+    b.rank = Art.RankText(top)
+    b.rank:SetCenter(b, "TOPLEFT", 5 + BAR_FILL_W / 2, -12)
+    return b
+end
+
+local function listColumn(parent)
+    local list = CreateFrame("Frame", nil, parent)
+    list:SetPoint("TOPLEFT", parent, "TOPLEFT", LIST_X, LIST_Y)
+    list:SetSize(LIST_W, LIST_H)
+    return list
+end
+
+-- The recipe card: its parchment, the crafting card's drawing (withDrawing) and the inside frame.
+local function recipeCard(parent, P, withDrawing)
+    local Art = P.Art
+    local size = P.Atlas["card-base"]
+    local card = CreateFrame("Frame", nil, parent)
+    card:SetPoint("TOPLEFT", parent, "TOPLEFT", CARD_X, CARD_Y)
+    card:SetSize(size[2], size[3])
+    local base = card:CreateTexture(nil, "BACKGROUND")
+    Art.SetInset(base, "card-base", CARD_INSET)
+    base:ClearAllPoints()
+    base:SetPoint("TOPLEFT", card, "TOPLEFT", CARD_INSET, -CARD_INSET)
+    base:SetPoint("BOTTOMRIGHT", card, "BOTTOMRIGHT", -CARD_INSET, CARD_INSET)
+    local drawing = withDrawing and Art.CardDrawing and Art.CardDrawing(ART_KEY)
+    local at = P.ArtLayout and P.ArtLayout.cardDraw
+    if drawing and at and Art.SetClipped then
+        local draw = card:CreateTexture(nil, "BORDER")
+        draw:SetPoint("TOPLEFT", card, "TOPLEFT", at[1], at[2])
+        Art.SetClipped(draw, drawing, size[2] - CARD_INSET - at[1], size[3] - CARD_INSET + at[2])
+    end
+    local frame = Art.NineSlice(card, "ARTWORK", "insideframe", 53)
+    Art.PlaceNineSlice(frame, card, 53)
+    return card
+end
+
+-- The collection page: the races under a "Races" strip, the race's page on the card (no drawing:
+-- the race's crest is the art there), the artifacts found on the rank bar, and the way back.
+local collection
+local function buildCollection(H, P, D, parent)
+    if collection then
+        collection:SetParent(parent)
+        return collection
+    end
+    collection = CreateFrame("Frame", nil, parent)
+    local totals = rankBar(collection, P)
+
+    local list = listColumn(collection)
+    local races = header(list, P, D, "Races")
+    races:SetPoint("TOPLEFT", list, "TOPLEFT", AREA_X, AREA_Y)
+    local research = CreateFrame("Button", nil, list, "UIPanelButtonTemplate")
+    research:SetSize(AREA_W - INDENT, 22)
+    research:SetPoint("BOTTOMLEFT", list, "BOTTOMLEFT", AREA_X + INDENT, 8)
+    research:SetText("Back to Research")
+    research:SetScript("OnClick", function() H.SetPage(PAGE) end)
+
+    local card = recipeCard(collection, P, false)
+    local page = C.card
+    page:SetParent(card)
+    page:ClearAllPoints()
+    page:SetPoint("TOPLEFT", card, "TOPLEFT", 18, -18)
+    page:SetPoint("BOTTOMRIGHT", card, "BOTTOMRIGHT", -16, 14)
+    local raceList = C.list
+    raceList:SetParent(list)
+    raceList:ClearAllPoints()
+    raceList:SetPoint("TOPLEFT", races, "BOTTOMLEFT", INDENT, -4)
+    raceList:SetPoint("RIGHT", races, "RIGHT", 0, 0)
+    raceList:SetPoint("BOTTOM", research, "TOP", 0, 6)
+    C.SetInk(false)
+    if D.SkinRedButton then
+        pcall(D.SkinRedButton, research)
+        for _, b in ipairs(C.buttons) do pcall(D.SkinRedButton, b) end
+    end
+    C.drawTotals = function(loaded, done, count)
+        if not loaded or count == 0 then
+            totals:Hide()
+            return
+        end
+        totals:Show()
+        P.Fill.Update(totals.fx, ART_KEY, done / count, done >= count)
+        totals.rank:Set("Artifacts " .. done, count)
+    end
+    if ArchaeologyUICollection then ArchaeologyUICollection:Hide() end
+    return collection
+end
+
 local function build(H, P, D, parent)
     if holder then
         holder:SetParent(parent)
         return holder
     end
-    local Art = P.Art
     holder = CreateFrame("Frame", nil, parent)
 
     -- The skill, on the crafting page's rank bar (Forever's default blue fill).
-    bar = CreateFrame("Frame", nil, holder)
-    bar:SetSize(BAR_W, 18)
-    bar:SetPoint("TOPLEFT", holder, "TOPLEFT", BAR_X, BAR_Y)
-    local barBg = bar:CreateTexture(nil, "BACKGROUND")
-    Art.Set(barBg, "rankbar-bg", true)
-    barBg:SetPoint("TOPLEFT")
-    bar.fx = P.Fill.Create(bar, BAR_W, 0, 18)
-    bar.fx:SetPoint("TOPLEFT", bar, "TOPLEFT", 5, -3)
-    local top = CreateFrame("Frame", nil, bar)
-    top:SetAllPoints()
-    top:SetFrameLevel(bar.fx:GetFrameLevel() + 1)
-    local border = top:CreateTexture(nil, "ARTWORK")
-    Art.Set(border, "rankbar-border", true)
-    border:SetPoint("TOPLEFT")
-    bar.rank = Art.RankText(top)
-    bar.rank:SetCenter(bar, "TOPLEFT", 5 + BAR_FILL_W / 2, -12)
+    bar = rankBar(holder, P)
 
     -- The list column, in the recipe list's headers: the relic on top (where the search box is on
     -- the crafting page), then the races.
-    local list = CreateFrame("Frame", nil, holder)
-    list:SetPoint("TOPLEFT", holder, "TOPLEFT", LIST_X, LIST_Y)
-    list:SetSize(LIST_W, LIST_H)
+    local list = listColumn(holder)
     holder.list = list
 
     local relic = header(list, P, D, "Unearthed Relic")
@@ -132,26 +222,9 @@ local function build(H, P, D, parent)
     holder.races = header(list, P, D, "Races")
     layout(false)
 
-    -- The project, on the recipe card's parchment in its inside frame.
-    local size = P.Atlas["card-base"]
-    local card = CreateFrame("Frame", nil, holder)
-    card:SetPoint("TOPLEFT", holder, "TOPLEFT", CARD_X, CARD_Y)
-    card:SetSize(size[2], size[3])
-    local base = card:CreateTexture(nil, "BACKGROUND")
-    Art.SetInset(base, "card-base", CARD_INSET)
-    base:ClearAllPoints()
-    base:SetPoint("TOPLEFT", card, "TOPLEFT", CARD_INSET, -CARD_INSET)
-    base:SetPoint("BOTTOMRIGHT", card, "BOTTOMRIGHT", -CARD_INSET, CARD_INSET)
-    -- The drawing the crafting card shows under the reagents, where it shows it.
-    local drawing = Art.CardDrawing and Art.CardDrawing(ART_KEY)
-    local at = P.ArtLayout and P.ArtLayout.cardDraw
-    if drawing and at and Art.SetClipped then
-        local draw = card:CreateTexture(nil, "BORDER")
-        draw:SetPoint("TOPLEFT", card, "TOPLEFT", at[1], at[2])
-        Art.SetClipped(draw, drawing, size[2] - CARD_INSET - at[1], size[3] - CARD_INSET + at[2])
-    end
-    local frame = Art.NineSlice(card, "ARTWORK", "insideframe", 53)
-    Art.PlaceNineSlice(frame, card, 53)
+    -- The project, on the recipe card's parchment in its inside frame, with the crafting card's
+    -- drawing under the reagents.
+    local card = recipeCard(holder, P, true)
 
     local page = R.page
     page:SetParent(card)
@@ -164,7 +237,10 @@ local function build(H, P, D, parent)
     if CP and CP.ReskinScrollBar then
         pcall(CP.ReskinScrollBar, R.loreScroll, R.loreBox, 4, -2, 4, false)
     end
-    if D.SkinRedButton then pcall(D.SkinRedButton, R.solve) end
+    if D.SkinRedButton then
+        pcall(D.SkinRedButton, R.solve)
+        pcall(D.SkinRedButton, C.entry)
+    end
     -- The project bar as it has always been on the card, not the stock skill bar of our window.
     local pr = R.progress
     pr.bar:SetHeight(16)
@@ -264,8 +340,18 @@ local function start()
             R.empty:ClearAllPoints()
             R.empty:SetPoint("CENTER")
             R.empty:SetWidth(340)
+            C.TakeBack()
         end
         own.toggle(open)
+    end
+    -- The collection page, the window opened (or switched) there; false sends it to our window.
+    C.openHosted = function()
+        if fallback then return false end
+        if TradeSkillFrame and TradeSkillFrame:IsShown() then
+            if H.Page() ~= COLLECTION then H.SetPage(COLLECTION) end
+            return H.Page() == COLLECTION
+        end
+        return H.TogglePage(COLLECTION)
     end
 
     H.AddPage(PAGE, {
@@ -274,8 +360,17 @@ local function start()
         portrait = A.Icon(),
         build = function(parent) return build(H, P, D, parent) end,
     })
+    H.AddPage(COLLECTION, {
+        standalone = true,
+        title = "Archaeology Collection",
+        portrait = A.Icon(),
+        build = function(parent) return buildCollection(H, P, D, parent) end,
+    })
+    -- One tab for both pages: it shows the research page and stays lit on the collection.
     H.AddTab({
-        key = PAGE, label = TITLE, icon = A.Icon, after = "professions", page = PAGE, standalone = true,
+        key = PAGE, label = TITLE, icon = A.Icon, after = "professions", standalone = true,
+        onClick = function() H.SetPage(PAGE) end,
+        selected = function(page) return page == PAGE or page == COLLECTION end,
         shown = function() return (A.skill or 0) > 0 end,
     })
     A.On("STATE", function() H.RefreshTabs() end)
