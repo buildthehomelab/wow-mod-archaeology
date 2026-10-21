@@ -4,7 +4,9 @@
  * fragment cache with bonus fragments of that site's race. Turning it in gives Relic Power.
  *
  * The quest system can't say which site: the module keeps it (mod_archaeology_char_dig_orders),
- * tells the player, and the addon marks it on the maps.
+ * tells the player, and the addon marks it on the maps. The row outlives the quest for the rest of
+ * the day: orders dropped and taken again the same day name the same site, and only one cache a
+ * day can turn up, so abandoning filled orders can't farm caches.
  *
  * Released under the MIT License.
  */
@@ -13,11 +15,14 @@
 #include "Containers.h"
 #include "DatabaseEnv.h"
 #include "GameObject.h"
+#include "Item.h"
+#include "Mail.h"
 #include "ObjectMgr.h"
 #include "Player.h"
 #include "QuestDef.h"
 #include "Random.h"
 #include "ScriptMgr.h"
+#include "World.h"
 #include <cmath>
 
 namespace
@@ -25,14 +30,14 @@ namespace
     using namespace Archaeology;
 
     constexpr uint32 CACHE_SECONDS = 300;
+    constexpr uint32 TRAINER_ENTRY = 9503500;   // Harrison Jones, who signs the keystone mail
 
-    // A fragment cache waiting for its owner to open it.
-    struct PendingCache
+    // The daily quest day the orders belong to: the time of the next daily reset, which stays the
+    // same all day and moves on when the dailies reset.
+    uint32 OrdersDay()
     {
-        ObjectGuid owner;
-        uint8 race;
-    };
-    std::unordered_map<ObjectGuid, PendingCache> pendingCaches;
+        return uint32(sWorld->GetNextDailyQuestsResetTime().count());
+    }
 
     bool OnOrders(Player* player)
     {
@@ -62,8 +67,8 @@ namespace
         return false;
     }
 
-    // One of the character's dig sites: on the continent they stand on if they can, and one they
-    // haven't started digging if they can.
+    // One of the character's dig sites: one they haven't started digging if they can (a site
+    // nearly dug out would fill the orders in a find or two), on the continent they stand on if they can.
     uint32 PickSite(Player* player, CharState const& state)
     {
         std::vector<uint32> best;
@@ -77,7 +82,7 @@ namespace
                 Site const* site = GetSite(a.site);
                 if (!site)
                     continue;
-                int32 score = (site->map == player->GetMapId() ? 2 : 0) + (a.finds == 0 ? 1 : 0);
+                int32 score = (a.finds == 0 ? 2 : 0) + (site->map == player->GetMapId() ? 1 : 0);
                 if (score > bestScore)
                 {
                     best.clear();
@@ -90,13 +95,27 @@ namespace
         return best.empty() ? 0 : Acore::Containers::SelectRandomContainerElement(best);
     }
 
-    void SaveOrder(Player* player, uint32 site)
+    void SaveOrder(Player* player, CharState const& state)
     {
-        ObjectGuid::LowType guid = player->GetGUID().GetCounter();
-        if (site)
-            CharacterDatabase.Execute("REPLACE INTO `mod_archaeology_char_dig_orders` (`guid`, `site`) VALUES ({}, {})", guid, site);
-        else
-            CharacterDatabase.Execute("DELETE FROM `mod_archaeology_char_dig_orders` WHERE `guid` = {}", guid);
+        CharacterDatabase.Execute("REPLACE INTO `mod_archaeology_char_dig_orders` (`guid`, `site`, `day`, `cache_day`) VALUES ({}, {}, {}, {})",
+            player->GetGUID().GetCounter(), state.digOrderSite, state.digOrderDay, state.digCacheDay);
+    }
+
+    // A keystone that doesn't fit in the bags comes by mail.
+    void GiveOrMail(Player* player, uint32 itemId)
+    {
+        if (player->AddItem(itemId, 1))
+            return;
+        Item* item = Item::CreateItem(itemId, 1, player);
+        if (!item)
+            return;
+        CharacterDatabaseTransaction trans = CharacterDatabase.BeginTransaction();
+        item->SaveToDB(trans);
+        MailDraft("Fragment cache", "This keystone was in your fragment cache, but your bags were full.")
+            .AddItem(item)
+            .SendMailTo(trans, MailReceiver(player), MailSender(MAIL_CREATURE, TRAINER_ENTRY));
+        CharacterDatabase.CommitTransaction(trans);
+        Notify(player, "Your bags are full: the keystone from the cache is in your mail.");
     }
 
     std::string SiteLabel(Site const* site)
@@ -122,7 +141,7 @@ namespace
             progress.fragments, cfg.fragmentCap));
         SendAddon(player, Acore::StringFormat("F:{}:{}:{}", race->id, progress.fragments - before, progress.fragments));
         if (race->keystoneItem && roll_chance_f(cfg.cacheKeystoneChance))
-            player->AddItem(race->keystoneItem, 1);
+            GiveOrMail(player, race->keystoneItem);
         SendRaces(player);
     }
 }
@@ -136,15 +155,14 @@ namespace Archaeology
 
     void LoadDigOrders(Player* player, CharState& state)
     {
-        QueryResult result = CharacterDatabase.Query("SELECT `site` FROM `mod_archaeology_char_dig_orders` WHERE `guid` = {}",
+        QueryResult result = CharacterDatabase.Query("SELECT `site`, `day`, `cache_day` FROM `mod_archaeology_char_dig_orders` WHERE `guid` = {}",
             player->GetGUID().GetCounter());
         if (!result)
             return;
-        // Orders turned in or dropped while the module was off leave a stale row.
-        if (player->GetQuestStatus(DIG_ORDERS_QUEST) == QUEST_STATUS_NONE)
-            SaveOrder(player, 0);
-        else
-            state.digOrderSite = result->Fetch()[0].Get<uint32>();
+        Field* fields = result->Fetch();
+        state.digOrderSite = fields[0].Get<uint32>();
+        state.digOrderDay = fields[1].Get<uint32>();
+        state.digCacheDay = fields[2].Get<uint32>();
     }
 
     void DigOrdersAccepted(Player* player)
@@ -152,8 +170,12 @@ namespace Archaeology
         CharState* state = GetState(player);
         if (!state || !state->skill)
             return;
-        state->digOrderSite = PickSite(player, *state);
-        SaveOrder(player, state->digOrderSite);
+        // Taken again the same day: the same site, so dropping the orders can't re-roll them.
+        uint32 today = OrdersDay();
+        if (state->digOrderDay != today || !state->digOrderSite || !Holds(*state, state->digOrderSite))
+            state->digOrderSite = PickSite(player, *state);
+        state->digOrderDay = today;
+        SaveOrder(player, *state);
         if (Site const* site = GetSite(state->digOrderSite))
             Notify(player, Acore::StringFormat("|cffffd200Dig Orders:|r dig up {} finds at {}. It's marked on your map.", FindsNeeded(), SiteLabel(site)));
         else
@@ -161,13 +183,9 @@ namespace Archaeology
         SendDigOrders(player);
     }
 
+    // The site stays saved for the day (see DigOrdersAccepted); the maps just stop marking it.
     void DigOrdersDropped(Player* player)
     {
-        CharState* state = GetState(player);
-        if (!state || !state->digOrderSite)
-            return;
-        state->digOrderSite = 0;
-        SaveOrder(player, 0);
         SendDigOrders(player);
     }
 
@@ -176,7 +194,7 @@ namespace Archaeology
         CharState* state = GetState(player);
         if (state && state->relic.rank)   // like finds: Relic Power once the relic is in hand
             AddRelicPower(player, GetConfig().digOrdersRelicPower);
-        DigOrdersDropped(player);
+        SendDigOrders(player);
     }
 
     // The ordered site can go away (abandoned, or no longer fits the character): name another.
@@ -191,14 +209,14 @@ namespace Archaeology
         if (site == state->digOrderSite)
             return;
         state->digOrderSite = site;
-        SaveOrder(player, site);
+        SaveOrder(player, *state);
         if (Site const* s = GetSite(site))
             Notify(player, Acore::StringFormat("|cffffd200Dig Orders:|r your orders now name {}.", SiteLabel(s)));
         SendDigOrders(player);
     }
 
     // A find was dug up. At the ordered site it counts; a depleted site fills the orders, since
-    // there is nothing left there to dig. The last find uncovers the fragment cache.
+    // there is nothing left there to dig. The last find uncovers the fragment cache, once a day.
     void DigOrdersFind(Player* player, uint32 site, bool depleted, Position const& where)
     {
         CharState* state = GetState(player);
@@ -215,39 +233,40 @@ namespace Archaeology
         if (player->GetQuestStatus(DIG_ORDERS_QUEST) != QUEST_STATUS_COMPLETE)
             return;
 
+        // One cache per day of orders: counted by the day the orders were taken, so orders filled
+        // just after the daily reset don't use up the new day's cache.
         Site const* s = GetSite(site);
         float ang = player->GetAngle(where.GetPositionX(), where.GetPositionY());
-        if (GameObject* go = s ? player->SummonGameObject(DIG_ORDERS_CACHE, where.GetPositionX(), where.GetPositionY(), where.GetPositionZ(),
-            ang, 0.0f, 0.0f, std::sin(ang / 2.0f), std::cos(ang / 2.0f), CACHE_SECONDS) : nullptr)
+        if (GameObject* go = s && state->digCacheDay != state->digOrderDay ? player->SummonGameObject(DIG_ORDERS_CACHE, where.GetPositionX(),
+            where.GetPositionY(), where.GetPositionZ(), ang, 0.0f, 0.0f, std::sin(ang / 2.0f), std::cos(ang / 2.0f), CACHE_SECONDS) : nullptr)
         {
-            pendingCaches[go->GetGUID()] = { player->GetGUID(), s->race };
+            state->digCacheGuid = go->GetGUID();
+            state->digCacheRace = s->race;
+            state->digCacheDay = state->digOrderDay;
+            SaveOrder(player, *state);
             Notify(player, "|cff20ff20Your Dig Orders are filled, and the last find turned up a fragment cache!|r Open it, then report to an archaeology trainer.");
         }
         else
             Notify(player, "|cff20ff20Your Dig Orders are filled.|r Report to an archaeology trainer.");
     }
 
+    // The cache is the owner's to open, once. Each character keeps its own unopened cache in its own
+    // state rather than in a table every map thread writes to; a cache that despawned is never matched.
     bool UseDigOrdersCache(Player* player, GameObject* go)
     {
-        auto itr = pendingCaches.find(go->GetGUID());
-        if (itr == pendingCaches.end())
-            return false;
-        if (itr->second.owner != player->GetGUID())
+        if (go->GetOwnerGUID() != player->GetGUID())
         {
             Notify(player, "This cache belongs to someone else's dig.");
             return true;
         }
-        uint8 race = itr->second.race;
-        pendingCaches.erase(itr);
+        CharState* state = GetState(player);
+        if (!state || !state->digCacheGuid || state->digCacheGuid != go->GetGUID())
+            return false;
+        uint8 race = state->digCacheRace;
+        state->digCacheGuid.Clear();
         player->RemoveGameObject(go, true);
         OpenCache(player, race);
         return true;
-    }
-
-    void ForgetDigOrdersCaches(Player* player)
-    {
-        for (auto itr = pendingCaches.begin(); itr != pendingCaches.end();)
-            itr = itr->second.owner == player->GetGUID() ? pendingCaches.erase(itr) : std::next(itr);
     }
 
     // W:<site>:<finds done>:<finds needed>, site 0 = no orders being worked.

@@ -203,7 +203,12 @@ namespace Archaeology
         uint32 abandonUntil = 0;
         uint32 excludedSite = 0; // transient replacement exclusion
         uint32 innkeeperWaitMs = 0; // transient: summon only after hearth transfer completes
-        uint32 digOrderSite = 0;     // the dig site today's Dig Orders name, 0 = none
+        uint32 digOrderSite = 0;     // the dig site the Dig Orders of digOrderDay name, 0 = none
+        uint32 digOrderDay = 0;      // daily reset time those orders belong to
+        uint32 digCacheDay = 0;      // daily reset time of the last fragment cache: one a day
+        ObjectGuid digCacheGuid;     // the unopened cache, if any
+        uint8 digCacheRace = 0;
+        uint32 questSweepMs = 0;     // non-archaeologists: time since archaeologist-only quests were last swept
         RelicState relic;
     };
 
@@ -309,12 +314,11 @@ namespace Archaeology
     bool OffersDigOrders(Player* player);
     void LoadDigOrders(Player* player, CharState& state);
     void DigOrdersAccepted(Player* player);
-    void DigOrdersDropped(Player* player);         // abandoned or turned in
+    void DigOrdersDropped(Player* player);         // abandoned
     void DigOrdersRewarded(Player* player);
     void CheckDigOrders(Player* player);           // name another site if the ordered one is gone
     void DigOrdersFind(Player* player, uint32 site, bool depleted, Position const& where);
     bool UseDigOrdersCache(Player* player, GameObject* go);
-    void ForgetDigOrdersCaches(Player* player);
     void SendDigOrders(Player* player);
     std::string DigOrdersText(Player* player);
 }

@@ -121,7 +121,8 @@ INSERT INTO `spell_ranks` (`first_spell_id`, `spell_id`, `rank`) VALUES
 -- counts in Naxxramas at 40 and at 80. Raid quests (QuestInfoID 62), so raid groups get the credit.
 -- 9503504: Dig Orders, a daily for anyone who knows Archaeology (the module checks). The module
 -- names one of the character's own dig sites; finds there give the credit, 3 by default
--- (RequiredNpcOrGoCount1), and a site dug out fills the orders.
+-- (RequiredNpcOrGoCount1), and a site dug out fills the orders. A raid quest too (QuestInfoID 62):
+-- the core gives no kill credit for other quests in a raid group, and bot raids dig together.
 DELETE FROM `creature_queststarter` WHERE `quest` BETWEEN 9503500 AND 9503519;
 DELETE FROM `creature_questender` WHERE `quest` BETWEEN 9503500 AND 9503519;
 DELETE FROM `quest_offer_reward` WHERE `ID` BETWEEN 9503500 AND 9503519;
@@ -141,7 +142,7 @@ INSERT INTO `quest_template` (`ID`, `QuestType`, `QuestLevel`, `MinLevel`, `Ques
 (9503503, 2, 80, 80, 0, 62, 64, 'The Frozen Throne', 'Slay the Lich King in Icecrown Citadel with your Unearthed Relic equipped, then return to Harrison Jones.',
  'Nerubian obelisks, vrykul rune sticks. Northrend''s past is all buried under one man''s ice, $n.$B$BThe relic is nearly whole. Take it up the Frozen Throne and be there when the Lich King falls. After that, there is nothing left in it to wake but the relic itself.',
  '', 'Return to Harrison Jones.', 9503512, 1, 'The Lich King slain with your relic', 0, 0),
-(9503504, 2, -1, 1, 0, 0, 4096, 'Dig Orders', 'Dig up the finds at the dig site named in your orders, then return to an archaeology trainer.',
+(9503504, 2, -1, 1, 0, 62, 4096, 'Dig Orders', 'Dig up the finds at the dig site named in your orders, then return to an archaeology trainer.',
  'There''s more ground than diggers, $n, and every season the farmers plough a little more of it under.$B$BHere are today''s orders. One of your own dig sites, written at the top. Work it properly: survey, dig, catalogue. Whoever was there before you tends to leave a cache of loose fragments lying about, and you may keep whatever you find in it.',
  '', 'Return to an archaeology trainer.', 9503513, 3, 'Finds dug up at your ordered dig site', 5, 0);
 INSERT INTO `quest_template_addon` (`ID`, `PrevQuestID`, `SpecialFlags`) VALUES

@@ -250,6 +250,35 @@ namespace Archaeology
     }
 }
 
+namespace
+{
+    using namespace Archaeology;
+
+    constexpr uint32 QUEST_SWEEP_MS = 30000;
+
+    // Take a quest back out of the log, as abandoning it does.
+    void TakeBackQuest(Player* player, uint32 questId)
+    {
+        uint16 slot = player->FindQuestSlot(questId);
+        player->RemoveActiveQuest(questId);
+        if (slot < MAX_QUEST_LOG_SIZE)
+            player->SetQuestSlot(slot, 0);
+    }
+
+    // A Weapon in Pieces and Dig Orders are only for archaeologists. Playerbots add quests without
+    // the trainer's list (hundreds of random bots held A Weapon in Pieces, which they can never turn
+    // in), so characters that don't know Archaeology are swept at login and now and then.
+    void DropArchaeologistQuests(Player* player)
+    {
+        CharState* s = GetState(player);
+        if (!s || s->skill || player->IsGameMaster())
+            return;
+        for (uint32 questId : { RELIC_QUEST, DIG_ORDERS_QUEST })
+            if (player->FindQuestSlot(questId) < MAX_QUEST_LOG_SIZE)
+                TakeBackQuest(player, questId);
+    }
+}
+
 class ArchaeologyPlayerScript : public PlayerScript
 {
 public:
@@ -261,15 +290,16 @@ public:
 
     void OnPlayerLogin(Player* player) override
     {
-        if (GetConfig().enabled)
-            LoadCharacter(player);
+        if (!GetConfig().enabled)
+            return;
+        LoadCharacter(player);
+        DropArchaeologistQuests(player);
     }
 
     void OnPlayerLogout(Player* player) override
     {
         lastRequest.erase(player->GetGUID().GetCounter());
         ForgetFinds(player);
-        ForgetDigOrdersCaches(player);
         ForgetRelic(player);
         ForgetTraits(player);
         if (CharState* s = GetState(player); s && (s->relic.rank || s->relic.earned))
@@ -334,6 +364,11 @@ public:
 
     void OnPlayerUpdate(Player* player, uint32 diff) override
     {
+        if (CharState* s = GetState(player); s && !s->skill && (s->questSweepMs += diff) >= QUEST_SWEEP_MS)
+        {
+            s->questSweepMs = 0;
+            DropArchaeologistQuests(player);
+        }
         UpdateFindShovel(player, diff);
         UpdateRewardCosmetics(player, diff);
         UpdateQueuedRelic(player);
@@ -345,9 +380,22 @@ public:
         return questId != RELIC_QUEST || CanTakeRelicQuest(player);
     }
 
+    // The trainer only lists these when they're open, but an accept packet can name any quest the
+    // trainer starts, and bots copy their master's accepts: take back what wasn't on offer.
     void OnPlayerQuestAccept(Player* player, Quest const* quest) override
     {
-        if (quest->GetQuestId() == DIG_ORDERS_QUEST)
+        uint32 questId = quest->GetQuestId();
+        bool refuse = !player->IsGameMaster() && ((questId == DIG_ORDERS_QUEST && !OffersDigOrders(player)) ||
+            (IsCapstoneQuest(questId) && !CapstoneQuestOpen(player, questId)));
+        if (refuse)
+        {
+            TakeBackQuest(player, questId);
+            Notify(player, questId == DIG_ORDERS_QUEST ? "Dig Orders are for archaeologists." : "That quest isn't open to you yet.");
+            if (CharState* s = GetState(player); s && questId == DIG_ORDERS_QUEST)
+                s->questSweepMs = QUEST_SWEEP_MS;   // playerbots add a refused quest straight back: look again next update
+            return;
+        }
+        if (questId == DIG_ORDERS_QUEST)
             DigOrdersAccepted(player);
     }
 

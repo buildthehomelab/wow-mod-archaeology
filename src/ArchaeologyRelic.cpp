@@ -44,6 +44,9 @@ namespace
     struct CapstoneBoss { uint32 entry; uint8 era; };
     constexpr CapstoneBoss CAPSTONE_BOSSES[] = { { 351019, 0 }, { 15990, 0 }, { 25315, 1 }, { 36597, 2 } };
     constexpr uint32 CAPSTONE_QUESTS[3] = { 9503501, 9503502, 9503503 };   // the module's own, by era
+    // The individual progression state at which each era's capstone raid opens: Naxxramas 40 once
+    // AQ40 is done (6), the Sunwell Plateau (12), Icecrown Citadel (16).
+    constexpr uint32 CAPSTONE_RAID_STATE[3] = { 6, 12, 16 };
 
     std::vector<RelicStep> steps;
     std::vector<RelicForm> forms;
@@ -828,15 +831,14 @@ namespace Archaeology
             std::find(cfg.capstoneQuest.begin(), cfg.capstoneQuest.end(), questId) != cfg.capstoneQuest.end());
     }
 
-    // A capstone quest opens with the progression state of the rank it unlocks (Naxxramas for the
-    // old world's): offered any earlier, it would sit in the log long before its raid is open.
+    // A capstone quest opens once progression opens its raid: offered any earlier, it would sit in
+    // the log long before the character can get in. (Its rank still waits for its own state.)
     bool CapstoneQuestOpen(Player* player, uint32 questId)
     {
         Config const& cfg = GetConfig();
         for (uint8 era = 0; era < 3; ++era)
             if (questId == CAPSTONE_QUESTS[era] || questId == cfg.capstoneQuest[era])
-                if (uint32 rank = GateRank(1, era))
-                    return ProgressionState(player) >= steps[rank - 1].state;
+                return ProgressionState(player) >= CAPSTONE_RAID_STATE[era];
         return true;
     }
 
