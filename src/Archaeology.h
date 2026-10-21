@@ -207,7 +207,7 @@ namespace Archaeology
     void LoadCharacter(Player* player);
     void UnloadCharacter(Player* player);
     void SaveSkill(Player* player);
-    void SaveSites(Player* player, uint32 continent);
+    void SaveSites(Player* player, uint32 continent, bool persistAbandonCooldown = false);
     void SaveRace(Player* player, uint8 race);
     void SaveSolved(Player* player, uint32 project);
 
@@ -217,7 +217,7 @@ namespace Archaeology
     void LearnRankSpell(Player* player, uint32 step);
     uint32 IpState(Player* player);
     bool CanDigContinent(Player* player, uint32 continentIndex);
-    void RollSites(Player* player);
+    void RollSites(Player* player, uint32 deferredContinent = CONTINENTS.size());
     bool AbandonSite(Player* player, uint32 site, std::string& error);
     void SendCollection(Player* player);
     void SendTraits(Player* player);

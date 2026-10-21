@@ -303,14 +303,14 @@ namespace Archaeology
             player->GetGUID().GetCounter(), s->skill, s->maxSkill);
     }
 
-    void SaveSites(Player* player, uint32 continent)
+    void SaveSites(Player* player, uint32 continent, bool persistAbandonCooldown)
     {
         CharState* s = GetState(player);
         if (!s || continent >= CONTINENTS.size())
             return;
         ObjectGuid::LowType guid = player->GetGUID().GetCounter();
         CharacterDatabaseTransaction trans = CharacterDatabase.BeginTransaction();
-        if (s->abandonUntil)
+        if (persistAbandonCooldown)
             trans->Append("REPLACE INTO `mod_archaeology_char_expedition` (`guid`, `until_time`) VALUES ({}, {})", guid, s->abandonUntil);
         trans->Append("DELETE FROM `mod_archaeology_char_site` WHERE `guid` = {} AND `continent` = {}", guid, continent);
         uint32 slot = 0;
@@ -441,7 +441,7 @@ namespace Archaeology
         return s && s->skill && s->skill >= race.unlockSkill;
     }
 
-    void RollSites(Player* player)
+    void RollSites(Player* player, uint32 deferredContinent)
     {
         CharState* s = GetState(player);
         if (!s || !s->skill)
@@ -461,7 +461,8 @@ namespace Archaeology
             {
                 ForgetFinds(player);
                 held.erase(end, held.end());
-                SaveSites(player, c);
+                if (c != deferredContinent)
+                    SaveSites(player, c);
             }
             if (held.size() >= config.sitesPerContinent)
                 continue;
@@ -516,7 +517,7 @@ namespace Archaeology
                 weights.erase(weights.begin() + pick);
                 changed = true;
             }
-            if (changed)
+            if (changed && c != deferredContinent)
                 SaveSites(player, c);
         }
     }
@@ -546,8 +547,10 @@ namespace Archaeology
             held.erase(it);
             s->excludedSite = id;
             s->abandonUntil = now + config.abandonSeconds;
-            // RollSites saves the final replacement and cooldown in one transaction.
-            RollSites(player);
+            // Other continents may repair/refill first. Only this final transaction
+            // may persist the new cooldown; defer every intermediate save for c.
+            RollSites(player, c);
+            SaveSites(player, c, true);
             s->excludedSite = 0;
             SendSites(player);
             Notify(player, "Expedition abandoned. A replacement has been revealed; no rewards were granted.");

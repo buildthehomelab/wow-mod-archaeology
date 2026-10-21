@@ -14,6 +14,7 @@ PREAMBLE = r'''
 #include <map>
 #include <random>
 #include <string>
+#include <tuple>
 #include <unordered_map>
 #include <vector>
 using uint8=unsigned char; using uint32=unsigned; using int32=int;
@@ -34,7 +35,9 @@ CharState* GetState(Player*) {return &state;}
 Site const* GetSite(uint32 id) {auto i=sites.find(id);return i==sites.end()?nullptr:&i->second;}
 bool CanDigContinent(Player*,uint32 c) {return c<2 || expansionOpen;}
 void ForgetFinds(Player*) {++forgotten;}
-void SaveSites(Player*,uint32) {++saves;if(state.abandonUntil)++dbWrites;}
+std::vector<std::tuple<uint32,bool,std::vector<ActiveSite>>> commits;
+void SaveSites(Player*,uint32 c,bool cooldown=false) {++saves;if(cooldown)++dbWrites;commits.emplace_back(c,cooldown,state.sites[c]);}
+void RollSites(Player*,uint32 deferredContinent=CONTINENTS.size());
 void SendSites(Player*) {}
 void Notify(Player*,std::string const&) {++notifications;}
 struct DB {template<class... T>void Execute(char const*,T...){++dbWrites;}} CharacterDatabase;
@@ -46,7 +49,7 @@ std::mt19937 generator(42);
 template<class V> auto SelectRandomWeightedContainerElement(V& pool,std::vector<double> const& weights) {std::discrete_distribution<std::size_t> pick(weights.begin(),weights.end());return pool.begin()+pick(generator);}
 }}
 void add(uint32 id,uint32 level=1,uint8 team=1,uint32 zone=12,uint32 map=0) {Site s;s.id=id;s.minLevel=level;s.team=team;s.starterZone=zone;s.map=map;sites[id]=s;sitesByMap[map].push_back(id);}
-void reset() {state=CharState();sites.clear();sitesByMap.clear();forgotten=saves=notifications=dbWrites=0;GameTime::seconds=100;}
+void reset() {commits.clear();state=CharState();sites.clear();sitesByMap.clear();forgotten=saves=notifications=dbWrites=0;GameTime::seconds=100;}
 '''
 TESTS = r'''
 int main() {
@@ -64,6 +67,13 @@ int main() {
  for(unsigned run=0;run<200;++run){reset();p.level=20;for(unsigned i=1;i<=8;++i)add(i,10,0,0);for(unsigned i=9;i<=20;++i)add(i,19,0,0);RollSites(&p);unsigned hard=0;for(auto a:state.sites[0])hard+=sites[a.site].minLevel>17;assert(hard<=1);}
  // A reduced slot cap must not consume an expedition without a replacement.
  reset();p.level=20;for(unsigned i=1;i<=8;++i)add(i,10,0,0);RollSites(&p);config.sitesPerContinent=2;assert(!AbandonSite(&p,state.sites[0][0].site,error));assert(state.sites[0].size()==4 && state.abandonUntil==0);config.sitesPerContinent=4;
+ // An earlier continent can refill/repair before the target, without persisting its cooldown.
+ reset();p.level=20;p.map=1;p.zone=14;for(unsigned i=1;i<=8;++i)add(i,10,0,0,0);for(unsigned i=101;i<=108;++i)add(i,10,0,0,1);RollSites(&p);
+ state.sites[0]={{9999,0,-1}};commits.clear();auto abandoned=state.sites[1][0].site;
+ assert(AbandonSite(&p,abandoned,error));assert(dbWrites==1);assert(commits.size()>=2);
+ for(std::size_t i=0;i+1<commits.size();++i)assert(!std::get<1>(commits[i]));
+ assert(std::get<0>(commits.back())==1 && std::get<1>(commits.back()));
+ assert(std::get<2>(commits.back()).size()==4);for(auto a:std::get<2>(commits.back()))assert(a.site!=abandoned);
  // Expired cooldowns allow the next real replacement, not a fabricated site id.
  reset();p.level=20;for(unsigned i=1;i<=8;++i)add(i,10,0,0);RollSites(&p);auto old=state.sites[0][0].site;state.abandonUntil=100;assert(AbandonSite(&p,old,error));for(auto a:state.sites[0])assert(a.site!=old);
 }
@@ -72,7 +82,7 @@ int main() {
 class ExpeditionTest(unittest.TestCase):
     def test_real_assignment_and_abandonment(self):
         source=(ROOT/'src/ArchaeologyData.cpp').read_text()
-        bodies=source[source.index('    void RollSites(Player* player)'):source.index('    void PickProject(Player* player')]
+        bodies=source[source.index('    void RollSites(Player* player,'):source.index('    void PickProject(Player* player')]
         with tempfile.TemporaryDirectory() as d:
             cpp=pathlib.Path(d)/'expeditions.cpp';binary=pathlib.Path(d)/'expeditions'
             cpp.write_text(PREAMBLE+bodies+TESTS)
