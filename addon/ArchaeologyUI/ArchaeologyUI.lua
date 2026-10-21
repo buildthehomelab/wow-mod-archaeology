@@ -14,6 +14,9 @@
 --                    Q:<ms> | Q:0                                 digging started (for ms) | stopped
 --                    F:<race>:<gained>:<total>                    fragments looted
 --                    X:<project>:<item>:<rare>                    project solved
+--                    LN:<item>:<off item>:<next item level>:<next quality>:<held>:<held level>:<held item level>
+--                    L:<rank>:<ranks>:<power>:<next cost>:<item level>:<quality>:<form>:<note>   the relic
+--                      (LN comes first; older servers send only L)
 --
 -- Other files hook in with ArchaeologyUI.On(event, fn). Events: STATE, RACES, SITES, PROJECT (id),
 -- SURVEY (band, angle), OVERFIND (on), DIG (seconds, 0 = stopped), FRAGMENTS (race, gained, total), SOLVED (project, item, rare), POSITION,
@@ -121,7 +124,7 @@ local function split(text, sep)
     return out
 end
 
-local pendingRaces, pendingSites
+local pendingRaces, pendingSites, pendingRelic
 
 local function onMessage(message)
     local command, rest = message:match("^(%u+):?(.*)$")
@@ -259,12 +262,22 @@ local function onMessage(message)
             end
             A.Fire("FRAGMENTS", race, tonumber(gained), total)
         end
+    elseif command == "LN" then
+        local fields = { rest:match("^(%d+):(%d+):(%d+):(%d+):(%d+):(%d+):(%d+)$") }
+        pendingRelic = #fields == 7 and fields or nil
     elseif command == "L" then
         local rank, ranks, power, cost, ilvl, quality, form, note = rest:match("^(%d+):(%d+):(%d+):(%d+):(%d+):(%d+):([^:]*):(.*)$")
         if rank then
+            local more = pendingRelic or {}
+            pendingRelic = nil
             A.relic = {
                 rank = tonumber(rank), ranks = tonumber(ranks), power = tonumber(power), cost = tonumber(cost),
                 itemLevel = tonumber(ilvl), quality = tonumber(quality), form = form, note = note,
+                -- From LN (nil from an older server): the item it holds, the next rank's item level,
+                -- and what keeps the item below its rank (1 level, 2 progression).
+                item = tonumber(more[1]), offItem = tonumber(more[2]),
+                nextItemLevel = tonumber(more[3]), nextQuality = tonumber(more[4]),
+                held = tonumber(more[5]), heldLevel = tonumber(more[6]), heldItemLevel = tonumber(more[7]),
             }
             A.Fire("RELIC")
         end
