@@ -10,6 +10,9 @@ the items that projection picks from:
   kinds   one weapon or shield each (two-hand sword, main-hand dagger, shield, ...)
   forms   what a character chooses: one kind, or a main-hand + off-hand pair of kinds
   items   item_template + item_dbc rows, one per step x kind, at 9505000 + step * 30 + kind
+  looks   the awakened (last) rung's looks, per kind, from data/relic-looks.json: Legion artifact
+          weapons the patch builder converts (tools/build_patch.py); the other rungs use weapon
+          models the client already has
 
 Stats come from a budget per item level fitted to the 3.3.5 raid weapons of each tier (see ANCHOR
 and DPS), split by each kind's stat profile. Change the tables below and run the script again.
@@ -17,10 +20,12 @@ and DPS), split by each kind's stat profile. Change the tables below and run the
 Usage: python3 tools/build_relic.py
 """
 
+import json
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 OUT = ROOT / "data" / "sql" / "db-world" / "mod_archaeology_world_relic.sql"
+LOOKS = ROOT / "data" / "relic-looks.json"
 
 ITEM_BASE, ITEM_LAST, KINDS_PER_STEP = 9505000, 9505999, 30
 
@@ -114,6 +119,7 @@ KINDS = [
     ("Bastion of the Forgotten", ARMOR, SHIELD, T_SHIELD, "shield", 0, 0, "shield", 53532, 4, 1),  # 25 Titansteel Shield Wall
     ("The Unbroken Oath", WEAPON, SWORD2, T_2H, "2h", 3.6, 1.0, "tank2h", 52261, 1, 1),   # 26 Titansteel Deflector
     ("Empire's End", WEAPON, AXE2, T_2H, "2h", 3.6, 1.0, "tank2h", 50965, 1, 1),     # 27
+    ("Oath of the Forgotten", WEAPON, SWORD2, T_2H, "2h", 3.6, 1.0, "str", 53938, 1, 1),       # 28 Titan's Grip main hand, awakened only
 ]
 SLOT_SHARE = {"2h": 1.0, "1h": .47, "ranged": .40, "shield": .55}
 CASTER_2H_SHARE, CASTER_1H_SHARE = 1.0, .44    # caster staves and one-handers: stats on top of their spell power
@@ -145,6 +151,9 @@ FORMS = [
     ("Two-handed sword (Tank)", DK, NEED_NONE, 26, -1),
     ("Two-handed axe (Tank)", DK, NEED_NONE, 27, -1),
 ]
+# A form whose awakened main hand isn't its usual kind's: the Titan's Grip swords' awakened look is
+# the Warswords of the Valarjar in both hands, the Two-handed sword's is Strom'kar.
+AWAKENED_MAIN = {"Pair of two-handed swords (Titan's Grip)": 28}
 
 DESCRIPTION = "Pieced together from your finds. Relic Power from digging and solving raises its rank; how far you have come through the ages sets how far it can grow."
 AWAKENED = "Awakened by every race's history. Relic Power from digging and solving raised it; it has gone as far as the ages allow."
@@ -152,6 +161,28 @@ AWAKENED = "Awakened by every race's history. Relic Power from digging and solvi
 
 def item_id(step, kind):
     return ITEM_BASE + step * KINDS_PER_STEP + kind
+
+
+def form_kinds(form, step):
+    """(main kind, off kind or -1) of a form at a step."""
+    name, _mask, _need, main, off = form
+    if STEPS[step][2] == 6:
+        main = AWAKENED_MAIN.get(name, main)
+    return main, off
+
+
+def awakened_looks():
+    """{kind: ItemDisplayInfo id} of the awakened rung, from data/relic-looks.json."""
+    data = json.loads(LOOKS.read_text(encoding="utf-8"))
+    looks = {look["display"] for look in data["looks"]}
+    kinds = {int(k): v for k, v in data["awakened_kind"].items()}
+    for kind, display in kinds.items():
+        if not 0 <= kind < len(KINDS) or display not in looks:
+            raise SystemExit("%s: kind %d names display %d, which has no look" % (LOOKS.name, kind, display))
+    return kinds
+
+
+AWAKENED_LOOK = awakened_looks()
 
 
 def sql_str(s):
@@ -163,6 +194,7 @@ def item_row(step, kind):
     name, cls, sub, inv, slot, speed, dps_share, profile, display, sheath, material = KINDS[kind]
     if quality == 6:
         name = "Awakened " + name
+        display = AWAKENED_LOOK[kind]
     stats, bonus, spell = PROFILES[profile]
     points = ANCHOR[ilvl] * QUALITY_SCALE[quality]
     share = CASTER_2H_SHARE if spell and slot == "2h" else CASTER_1H_SHARE if spell else SLOT_SHARE[slot]
@@ -187,9 +219,9 @@ def item_row(step, kind):
         if slot == "2h" and ilvl >= THIRD_SOCKET_FROM_ILVL:
             sockets.append(BLUE)
     classes = 0
-    for _n, mask, _need, main, off in FORMS:
-        if kind in (main, off):
-            classes |= mask
+    for form in FORMS:
+        if kind in form_kinds(form, step):
+            classes |= form[1]
 
     stat_cols = []
     for i in range(10):
@@ -232,8 +264,11 @@ def main():
     if max(len(DESCRIPTION), len(AWAKENED)) > 255:
         raise SystemExit("item description over 255 characters")
 
-    used = sorted({k for f in FORMS for k in (f[3], f[4]) if k >= 0})
-    items = [item_row(s, k) for s in range(len(STEPS)) for k in used]
+    used = [sorted({k for f in FORMS for k in form_kinds(f, s) if k >= 0}) for s in range(len(STEPS))]
+    missing = {k for s in range(len(STEPS)) if STEPS[s][2] == 6 for k in used[s]} - set(AWAKENED_LOOK)
+    if missing:
+        raise SystemExit("%s has no awakened look for kinds %s" % (LOOKS.name, sorted(missing)))
+    items = [item_row(s, k) for s in range(len(STEPS)) for k in used[s]]
     eras = [max(i for i, first in enumerate(ERA_FIRST) if first <= s) for s in range(len(STEPS))]
 
     out = [
@@ -280,7 +315,7 @@ def main():
         "DELETE FROM `mod_archaeology_relic_item`;",
         "INSERT INTO `mod_archaeology_relic_item` (`form`, `step`, `main_item`, `off_item`) VALUES",
         values([(i + 1, s, item_id(s, m), item_id(s, o) if o >= 0 else 0)
-                for i, (_n, _c, _need, m, o) in enumerate(FORMS) for s in range(len(STEPS))]) + ";",
+                for i, f in enumerate(FORMS) for s in range(len(STEPS)) for m, o in [form_kinds(f, s)]]) + ";",
         "",
         "DELETE FROM `item_template` WHERE `entry` BETWEEN %d AND %d;" % (ITEM_BASE, ITEM_LAST),
         "INSERT INTO `item_template` (%s) VALUES" % ITEM_COLUMNS,

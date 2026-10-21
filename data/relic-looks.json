@@ -1,0 +1,172 @@
+{
+ "_about": [
+  "The Unearthed Relic's awakened looks (its last rank, Artifact quality): Legion artifact weapons and the Soulrent Outrider's Recurve.",
+  "looks: one 3.3.5 ItemDisplayInfo row each (display), converted by tools/build_patch.py from the retail ItemDisplayInfo (retail_display: its model, skin texture) with the retail icon (icon, a file data id).",
+  "awakened_kind: the look of each kind's awakened item (tools/build_relic.py's KINDS index -> display). Kind 28 is the Titan's Grip swords' awakened main hand."
+ ],
+ "looks": [
+  {
+   "display": 950900,
+   "retail_display": 152886,
+   "icon": 1257950,
+   "source": "Strom'kar, the Warbreaker (item 128910, appearance modifier 0)"
+  },
+  {
+   "display": 950901,
+   "retail_display": 152542,
+   "icon": 1121487,
+   "source": "Maw of the Damned (item 128402, appearance modifier 12)"
+  },
+  {
+   "display": 950902,
+   "retail_display": 158894,
+   "icon": 1122562,
+   "source": "The Silver Hand (item 128823, appearance modifier 9)"
+  },
+  {
+   "display": 950903,
+   "retail_display": 152944,
+   "icon": 1267793,
+   "source": "The Dreadblades (item 128872, appearance modifier 9)"
+  },
+  {
+   "display": 950904,
+   "retail_display": 152597,
+   "icon": 1129695,
+   "source": "Claws of Ursoc (item 128821, appearance modifier 9)"
+  },
+  {
+   "display": 950905,
+   "retail_display": 152629,
+   "icon": 1041991,
+   "source": "Doomhammer (item 128819, appearance modifier 9)"
+  },
+  {
+   "display": 950906,
+   "retail_display": 157834,
+   "icon": 1282282,
+   "source": "Fury of the Stonemother (item 128873, appearance modifier 9)"
+  },
+  {
+   "display": 950907,
+   "retail_display": 152898,
+   "icon": 1259291,
+   "source": "The Kingslayers (item 128870, appearance modifier 9)"
+  },
+  {
+   "display": 950908,
+   "retail_display": 740313,
+   "icon": 1125285,
+   "source": "Blades of the Fallen Prince (item 128292, appearance modifier 9)"
+  },
+  {
+   "display": 950909,
+   "retail_display": 157122,
+   "icon": 1309072,
+   "source": "Aldrachi Warblades (item 128832, appearance modifier 9)"
+  },
+  {
+   "display": 950910,
+   "retail_display": 155540,
+   "icon": 1278409,
+   "source": "Warswords of the Valarjar (item 134553, appearance modifier 9)"
+  },
+  {
+   "display": 950911,
+   "retail_display": 152955,
+   "icon": 1271590,
+   "source": "Light's Wrath (item 128868, appearance modifier 9)"
+  },
+  {
+   "display": 950912,
+   "retail_display": 152838,
+   "icon": 1248965,
+   "source": "Scythe of Elune (item 128858, appearance modifier 9)"
+  },
+  {
+   "display": 950913,
+   "retail_display": 158895,
+   "icon": 1122562,
+   "source": "The Silver Hand (item 128823, appearance modifier 10)"
+  },
+  {
+   "display": 950914,
+   "retail_display": 157728,
+   "icon": 1241177,
+   "source": "Sharas'dal, Scepter of Tides (item 128911, appearance modifier 9)"
+  },
+  {
+   "display": 950915,
+   "retail_display": 190355,
+   "icon": 3621001,
+   "source": "Soulrent Outrider's Recurve (item 186411, appearance modifier 3)"
+  },
+  {
+   "display": 950916,
+   "retail_display": 169226,
+   "icon": 1280945,
+   "source": "Titanstrike (item 128861, appearance modifier 9)"
+  },
+  {
+   "display": 950917,
+   "retail_display": 153010,
+   "icon": 1284791,
+   "source": "Oathseeker (item 128867, appearance modifier 9)"
+  },
+  {
+   "display": 950918,
+   "retail_display": 157089,
+   "icon": 1248972,
+   "source": "The Fist of Ra-den (item 128935, appearance modifier 9)"
+  },
+  {
+   "display": 950919,
+   "retail_display": 152954,
+   "icon": 1272527,
+   "source": "Truthguard (item 128866, appearance modifier 9)"
+  },
+  {
+   "display": 950920,
+   "retail_display": 155634,
+   "icon": 1132294,
+   "source": "Apocalypse (item 128403, appearance modifier 9)"
+  },
+  {
+   "display": 950921,
+   "retail_display": 152499,
+   "icon": 1121487,
+   "source": "Maw of the Damned (item 128402, appearance modifier 0)"
+  }
+ ],
+ "awakened_kind": {
+  "0": 950900,
+  "1": 950901,
+  "2": 950902,
+  "3": 950903,
+  "4": 950903,
+  "5": 950904,
+  "6": 950904,
+  "7": 950905,
+  "8": 950906,
+  "9": 950907,
+  "10": 950907,
+  "11": 950908,
+  "12": 950908,
+  "13": 950909,
+  "14": 950909,
+  "15": 950910,
+  "16": 950901,
+  "17": 950911,
+  "18": 950912,
+  "19": 950913,
+  "20": 950914,
+  "21": 950915,
+  "22": 950916,
+  "23": 950917,
+  "24": 950918,
+  "25": 950919,
+  "26": 950920,
+  "27": 950921,
+  "28": 950910
+ }
+}

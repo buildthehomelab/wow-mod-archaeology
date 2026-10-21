@@ -175,7 +175,7 @@ INSERT INTO `item_dbc` VALUES
 (9504144, 15, 4, -1, 2, 950544, 0, 0),
 (9504145, 15, 4, -1, 2, 950545, 0, 0);
 
-DELETE FROM `itemdisplayinfo_dbc` WHERE `ID` BETWEEN 950410 AND 950412 OR `ID` BETWEEN 950414 AND 950417 OR `ID` BETWEEN 950420 AND 950473 OR `ID` BETWEEN 950475 AND 950479 OR `ID` BETWEEN 950481 AND 950492 OR `ID` BETWEEN 950494 AND 950504 OR `ID` BETWEEN 950506 AND 950526 OR `ID` BETWEEN 950529 AND 950539 OR `ID` BETWEEN 950541 AND 950545;
+DELETE FROM `itemdisplayinfo_dbc` WHERE `ID` BETWEEN 950410 AND 950412 OR `ID` BETWEEN 950414 AND 950417 OR `ID` BETWEEN 950420 AND 950473 OR `ID` BETWEEN 950475 AND 950479 OR `ID` BETWEEN 950481 AND 950492 OR `ID` BETWEEN 950494 AND 950504 OR `ID` BETWEEN 950506 AND 950526 OR `ID` BETWEEN 950529 AND 950539 OR `ID` BETWEEN 950541 AND 950545 OR `ID` BETWEEN 950900 AND 950921;
 INSERT INTO `itemdisplayinfo_dbc` VALUES
 (950410, '', '', '', '', 'trade_archaeology_dwarf_runestone', '', 0, 0, 0, 0, 0, 12, 0, 0, '', '', '', '', '', '', '', '', 0, 0),
 (950411, '', '', '', '', 'trade_archaeology_highborne_scroll', '', 0, 0, 0, 0, 0, 12, 0, 0, '', '', '', '', '', '', '', '', 0, 0),
@@ -302,7 +302,29 @@ INSERT INTO `itemdisplayinfo_dbc` VALUES
 (950542, '', '', '', '', 'trade_archaeology_insect in amber', '', 0, 0, 0, 0, 0, 12, 0, 0, '', '', '', '', '', '', '', '', 0, 0),
 (950543, '', '', '', '', 'inv_misc_archaeology_vrykuldrinkinghorn', '', 0, 0, 0, 0, 0, 12, 0, 0, '', '', '', '', '', '', '', '', 0, 0),
 (950544, '', '', '', '', 'inv_misc_archaeology_babypterrodax', '', 0, 0, 0, 0, 0, 12, 0, 0, '', '', '', '', '', '', '', '', 0, 0),
-(950545, '', '', '', '', 'inv_misc_archaeology_trollgolem', '', 0, 0, 0, 0, 0, 12, 0, 0, '', '', '', '', '', '', '', '', 0, 0);
+(950545, '', '', '', '', 'inv_misc_archaeology_trollgolem', '', 0, 0, 0, 0, 0, 12, 0, 0, '', '', '', '', '', '', '', '', 0, 0),
+(950900, 'ArchRelic_sword_2h_artifactarathor_d_01.mdx', '', 'ArchRelic_sword_2h_artifactarathor_d_01_blue', '', 'inv_sword_2h_artifactarathor_d_01', '', 0, 0, 0, 0, 0, 0, 0, 0, '', '', '', '', '', '', '', '', 0, 0),
+(950901, 'ArchRelic_axe_2h_artifactmaw_d_01.mdx', '', 'ArchRelic_axe_2h_artifactmaw_d_01blue', '', 'inv_axe_2h_artifactmaw_d_01', '', 0, 0, 0, 0, 0, 0, 0, 0, '', '', '', '', '', '', '', '', 0, 0),
+(950902, 'ArchRelic_mace_2h_artifactsilverhand_d_01.mdx', '', 'ArchRelic_mace_2h_artifactsilverhand_d_01yellow', '', 'inv_mace_2h_artifactsilverhand_d_01', '', 0, 0, 0, 0, 0, 0, 0, 0, '', '', '', '', '', '', '', '', 0, 0),
+(950903, 'ArchRelic_sword_1h_artifactskywall_d_01.mdx', '', 'ArchRelic_sword_1h_artifactskywall_d_01_red', '', 'inv_sword_1h_artifactskywall_d_01', '', 0, 0, 0, 0, 0, 0, 0, 0, '', '', '', '', '', '', '', '', 0, 0),
+(950904, 'ArchRelic_hand_1h_artifactursoc_d_01.mdx', '', 'ArchRelic_hand_1h_artifactursoc_d_01_orange', '', 'inv_hand_1h_artifactursoc_d_01', '', 0, 0, 0, 0, 0, 0, 0, 0, '', '', '', '', '', '', '', '', 0, 0),
+(950905, 'ArchRelic_mace_1h_artifactdoomhammer_d_01.mdx', '', 'ArchRelic_mace_1h_artifactdoomhammer_d_01_base', '', 'inv_mace_1h_doomhammer', '', 0, 0, 0, 0, 0, 0, 0, 0, '', '', '', '', '', '', '', '', 0, 0),
+(950906, 'ArchRelic_offhand_1h_artifactdoomhammer_d_01.mdx', '', 'ArchRelic_offhand_1h_artifactdoomhammer_d_01_orange', '', 'inv_offhand_1h_artifactdoomhammer_d_01', '', 0, 0, 0, 0, 0, 0, 0, 0, '', '', '', '', '', '', '', '', 0, 0),
+(950907, 'ArchRelic_knife_1h_artifactgarona_d_01.mdx', '', 'ArchRelic_knife_1h_artifactgarona_d_01_purple', '', 'inv_knife_1h_artifactgarona_d_01', '', 0, 0, 0, 0, 0, 0, 0, 0, '', '', '', '', '', '', '', '', 0, 0),
+(950908, 'ArchRelic_sword_1h_artifactruneblade_d_01.mdx', '', 'ArchRelic_sword_1h_artifactruneblade_d_01_blue', '', 'inv_sword_1h_artifactruneblade_d_01', '', 0, 0, 0, 0, 0, 0, 0, 0, '', '', '', '', '', '', '', '', 0, 0),
+(950909, 'ArchRelic_glaive_1h_artifactaldrochi_d_01.mdx', '', 'ArchRelic_glaive_1h_artifactaldrochi_d_01_gold', '', 'inv_glaive_1h_artifactaldrochi_d_01', '', 0, 0, 0, 0, 0, 0, 0, 0, '', '', '', '', '', '', '', '', 0, 0),
+(950910, 'ArchRelic_sword_1h_artifactvigfus_d_01.mdx', '', 'ArchRelic_sword_1h_artifactvigfus_d_01_base', '', 'inv_sword_1h_artifactvigfus_d_01', '', 0, 0, 0, 0, 0, 0, 0, 0, '', '', '', '', '', '', '', '', 0, 0),
+(950911, 'ArchRelic_staff_2h_artifacttome_d_01.mdx', '', 'ArchRelic_staff_2h_artifacttome_d_01_blue', '', 'inv_staff_2h_artifacttome_d_01', '', 0, 0, 0, 0, 0, 0, 0, 0, '', '', '', '', '', '', '', '', 0, 0),
+(950912, 'ArchRelic_staff_2h_artifactelune_d_01.mdx', '', 'ArchRelic_staff_2h_artifactelune_d_01_blue', '', 'inv_staff_2h_artifactelune_d_01', '', 0, 0, 0, 0, 0, 0, 0, 0, '', '', '', '', '', '', '', '', 0, 0),
+(950913, 'ArchRelic_mace_2h_artifactsilverhand_d_01.mdx', '', 'ArchRelic_mace_2h_artifactsilverhand_d_01green', '', 'inv_mace_2h_artifactsilverhand_d_01', '', 0, 0, 0, 0, 0, 0, 0, 0, '', '', '', '', '', '', '', '', 0, 0),
+(950914, 'ArchRelic_mace_1h_artifactazshara_d_01.mdx', '', 'ArchRelic_mace_1h_artifactazshara_d_01blue', '', 'inv_mace_1h_artifactazshara_d_01', '', 0, 0, 0, 0, 0, 0, 0, 0, '', '', '', '', '', '', '', '', 0, 0),
+(950915, 'ArchRelic_bow_1h_mawraid_d_01.mdx', '', 'ArchRelic_bow_1h_mawraid_d_01_black', '', 'inv_bow_1h_mawraid_d_01', '', 0, 0, 0, 0, 0, 0, 0, 0, '', '', '', '', '', '', '', '', 0, 0),
+(950916, 'ArchRelic_firearm_2h_artifactlegion_d_01.mdx', '', 'ArchRelic_firearm_2h_artifactlegion_d_01blue', '', 'inv_firearm_2h_artifactlegion_d_01', '', 0, 0, 0, 0, 0, 0, 0, 0, '', '', '', '', '', '', '', '', 0, 0),
+(950917, 'ArchRelic_sword_1h_artifactnorgannon_d_01.mdx', '', 'ArchRelic_sword_1h_artifactnorgannon_d_01v1blue', '', 'inv_sword_1h_artifactnorgannon_d_01', '', 0, 0, 0, 0, 0, 0, 0, 0, '', '', '', '', '', '', '', '', 0, 0),
+(950918, 'ArchRelic_hand_1h_artifactstormfist_d_01.mdx', '', 'ArchRelic_hand_1h_artifactstormfist_d_01blue', '', 'inv_hand_1h_artifactstormfist_d_01', '', 0, 0, 0, 0, 0, 0, 0, 0, '', '', '', '', '', '', '', '', 0, 0),
+(950919, 'ArchRelic_shield_1h_artifactnorgannon_d_01.mdx', '', 'ArchRelic_shield_1h_artifactnorgannon_d_01gold', '', 'inv_shield_1h_artifactnorgannon_d_01', '', 0, 0, 0, 0, 0, 0, 0, 0, '', '', '', '', '', '', '', '', 0, 0),
+(950920, 'ArchRelic_sword_2h_artifactsoulrend_d_01.mdx', '', 'ArchRelic_sword_2h_artifactsoulrend_d_01_green', '', 'inv_sword_2h_artifactsoulrend_d_01', '', 0, 0, 0, 0, 0, 0, 0, 0, '', '', '', '', '', '', '', '', 0, 0),
+(950921, 'ArchRelic_axe_2h_artifactmaw_d_01.mdx', '', 'ArchRelic_axe_2h_artifactmaw_d_01red', '', 'inv_axe_2h_artifactmaw_d_01', '', 0, 0, 0, 0, 0, 0, 0, 0, '', '', '', '', '', '', '', '', 0, 0);
 
 DELETE FROM `gameobjectdisplayinfo_dbc` WHERE `ID` BETWEEN 10101 AND 10103;
 INSERT INTO `gameobjectdisplayinfo_dbc` VALUES

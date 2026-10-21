@@ -36,7 +36,11 @@ What the client gets:
   downloaded into --cache and added under Interface\\Icons.
 - Item.dbc rows for the Unearthed Relic's ladder, 9505000-9505999, as tools/build_relic.py wrote
   them in data/sql/db-world/mod_archaeology_world_relic.sql (which gives the server the same
-  rows). They use weapon models the client already has, so no display rows are added.
+  rows). They use weapon models the client already has, so no display rows are added, except
+  for the awakened (last) rank's looks:
+- ItemDisplayInfo.dbc 950900-950999, the relic's awakened looks (data/relic-looks.json): each a
+  retail item display's model converted to 3.3.5 (Item\\ObjectComponents\\Weapon or Shield,
+  ArchRelic_*), its skin texture and its retail icon. --no-models leaves them out.
 - GameObjectDisplayInfo.dbc 10101-10103 (Cataclysm's ids): the survey telescope, green, yellow
   and red, and its three models converted to the 3.3.5 format with wow-mod-retail-creatures'
   converter (RETAIL_CREATURES, or a mod-retail-creatures / wow-mod-retail-creatures checkout
@@ -64,6 +68,7 @@ import csv
 import ctypes
 import glob
 import importlib.util
+import json
 import os
 import re
 import struct
@@ -75,6 +80,10 @@ CATA = os.path.join(ROOT, "tools", "cata-data")
 WORLD_DATA = os.path.join(ROOT, "data", "sql", "db-world", "mod_archaeology_world_data.sql")
 RELIC_DATA = os.path.join(ROOT, "data", "sql", "db-world", "mod_archaeology_world_relic.sql")
 RELIC_FIRST, RELIC_LAST = 9505000, 9505999
+RELIC_LOOKS = os.path.join(ROOT, "data", "relic-looks.json")
+RELIC_LOOK_FIRST, RELIC_LOOK_LAST = 950900, 950999
+RELIC_LOOK_PREFIX = "ArchRelic_"           # model and texture names, so none can meet a stock file
+ITEM_MODEL_DIRS = {"weapon": "Item\\ObjectComponents\\Weapon", "shield": "Item\\ObjectComponents\\Shield"}
 
 SKILL = 794
 SKILL_NAME = "Archaeology"
@@ -735,13 +744,18 @@ def add_items(dbc, items, client, files, cache, retail):
           % (len(items), len(reused), len(shipped)))
 
 
-def add_telescope(dbc, client, files, cache, retail, work, max_texture):
-    godi = {int(r["ID"]): r for r in read_csv("c_GODI.csv")}
+def client_animations(client, work):
+    """The animation ids the client knows (AnimationData.dbc); the converter keeps only those."""
     local = os.path.join(work, "AnimationData.dbc")
     client.extract("DBFilesClient\\AnimationData.dbc", local)
     data = open(local, "rb").read()
     count, fields = struct.unpack_from("<II", data, 4)
-    valid = {struct.unpack_from("<I", data, 20 + i * fields * 4)[0] for i in range(count)}
+    return {struct.unpack_from("<I", data, 20 + i * fields * 4)[0] for i in range(count)}
+
+
+def add_telescope(dbc, client, files, cache, retail, work, max_texture):
+    godi = {int(r["ID"]): r for r in read_csv("c_GODI.csv")}
+    valid = client_animations(client, work)
 
     table = dbc["GameObjectDisplayInfo"]
     texture_names, texture_fdid = {}, {}
@@ -796,6 +810,106 @@ def add_telescope(dbc, client, files, cache, retail, work, max_texture):
         table.put(row, 1, model_name)
         print("GameObjectDisplayInfo.dbc %d %s: %d anims, %d vertices, %d batches"
               % (display, stem, info["sequences"], info["vertices"], info["batches"]))
+
+
+def add_relic_looks(dbc, client, files, cache, retail, work, max_texture):
+    """The relic's awakened looks (data/relic-looks.json): each retail item display's model
+    converted to 3.3.5 under Item\\ObjectComponents\\Weapon (or Shield), with its skin texture and
+    the retail icon, as an ItemDisplayInfo row the awakened items of tools/build_relic.py use."""
+    looks = json.load(open(RELIC_LOOKS, encoding="utf-8"))["looks"]
+    idi = retail.fetch.db2(cache, "ItemDisplayInfo")
+    models, skins = {}, {}
+    for r in retail.fetch.db2_rows(cache, "ModelFileData"):
+        models.setdefault(int(r["ModelResourcesID"]), []).append(int(r["FileDataID"]))
+    for r in retail.fetch.db2_rows(cache, "TextureFileData"):
+        skins.setdefault(int(r["MaterialResourcesID"]), []).append((int(r["UsageType"]), int(r["FileDataID"])))
+    valid = client_animations(client, work)
+    table = dbc["ItemDisplayInfo"]
+    icons = retail.listfile(cache, {look["icon"] for look in looks})
+    in_patch = {n.lower() for n in files}
+    shipped = 0
+    for look in looks:
+        display = look["display"]
+        if not RELIC_LOOK_FIRST <= display <= RELIC_LOOK_LAST:
+            sys.exit("relic look %d is outside %d-%d" % (display, RELIC_LOOK_FIRST, RELIC_LOOK_LAST))
+        source = idi.get(str(look["retail_display"]))
+        if not source:
+            sys.exit("retail ItemDisplayInfo %d (relic look %d) is gone" % (look["retail_display"], display))
+        model_fdid = models[int(source["ModelResourcesID_0"])][0]
+        skin_fdid = min(skins[int(source["ModelMaterialResourcesID_0"])])[1]
+        raw = retail.casc(cache, model_fdid)
+        model = retail.Retail(raw)
+        names = retail.listfile(cache, [model_fdid, skin_fdid] + list(model.txid))
+        model_path = names.get(model_fdid, "").lower()
+        kind = "shield" if "/shield/" in model_path else "weapon" if "/weapon/" in model_path else None
+        if not kind:
+            sys.exit("relic look %d: model %d (%s) isn't an item model" % (display, model_fdid, model_path))
+        folder = ITEM_MODEL_DIRS[kind]
+
+        def file_name(fdid):
+            return RELIC_LOOK_PREFIX + (os.path.splitext(os.path.basename(names.get(fdid, "")))[0] or "T%d" % fdid)
+
+        stem = file_name(model_fdid)
+        anims = {}
+        for a, sub, f in model.afid:
+            if f and a in valid:
+                anims[(a, sub)] = retail.casc(cache, f)
+        conv = retail.Converter(raw, retail.casc(cache, model.sfid[0]), anims, valid, stem)
+        drawn = conv.batch_textures()
+        textures, sources = [], {}
+        for i, (ttype, tflags, _n, _o) in enumerate(model.arr("textures", "<IIII")):
+            fd = model.txid[i] if i < len(model.txid) else 0
+            if i in drawn and ttype == 0 and fd:
+                textures.append((0, tflags, "%s\\%s.blp" % (folder, file_name(fd))))
+                sources[i] = fd
+            elif i in drawn and ttype == 2:   # the item's own skin: ItemDisplayInfo's ModelTexture
+                textures.append((2, tflags, None))
+                sources[i] = skin_fdid
+            else:
+                textures.append((None, tflags, None))
+        m2, skin_out = conv.convert(textures)
+        errors, info = retail.check(m2, skin_out)
+        if errors:
+            sys.exit("relic look %d (%s) fails the 3.3.5 checks: %s" % (display, stem, errors[:5]))
+        for i, use in conv.texture_use.items():
+            if i not in sources:
+                continue
+            name = "%s\\%s.blp" % (folder, file_name(sources[i]))
+            if name.lower() in in_patch:
+                continue
+            blp = retail.shrink_blp(retail.casc(cache, sources[i]), max_texture)
+            if 1 in use and max(use) < 2:   # drawn alpha-keyed only: keep what retail keeps
+                blp = retail.key_alpha_blp(blp)
+            path = os.path.join(work, os.path.basename(name))
+            open(path, "wb").write(blp)
+            files[name] = path
+            in_patch.add(name.lower())
+        for ext, blob in ((".m2", m2), ("00.skin", skin_out)):
+            path = os.path.join(work, stem + ext)
+            open(path, "wb").write(blob)
+            files["%s\\%s%s" % (folder, stem, ext)] = path
+            in_patch.add(("%s\\%s%s" % (folder, stem, ext)).lower())
+
+        icon_path = icons.get(look["icon"], "").replace("/", "\\")
+        if not icon_path.lower().startswith("interface\\icons\\"):
+            sys.exit("relic look %d: icon %d isn't an icon in the listfile" % (display, look["icon"]))
+        icon = os.path.basename(icon_path.replace("\\", "/"))[:-4]
+        archive_name = "Interface\\Icons\\%s.blp" % icon
+        if archive_name.lower() not in in_patch and not client.has(archive_name):
+            files[archive_name] = retail.fetch.casc_path(cache, look["icon"])
+            in_patch.add(archive_name.lower())
+            shipped += 1
+
+        row = [0] * TABLES["ItemDisplayInfo"][0]
+        row[0] = display
+        model_name = stem + ".mdx"
+        row[1] = table.add_string(model_name)
+        row[3] = table.add_string(file_name(skin_fdid))
+        row[5] = table.add_string(icon)
+        table.put(row, 1, model_name)
+        print("ItemDisplayInfo.dbc %d %s: %d vertices, %d batches, %d textures"
+              % (display, stem, info["vertices"], info["batches"], len(sources)))
+    print("relic looks: %d displays, %d icons added" % (len(looks), shipped))
 
 
 def icon_id(dbc, name):
@@ -1013,7 +1127,7 @@ def main():
                     "(data/sql/db-world/mod_archaeology_world_z_rewards_dbc.sql)")
     ap.add_argument("--cache", default=os.path.join(CATA, "cache"), help="downloads (default tools/cata-data/cache)")
     ap.add_argument("--max-texture", type=int, default=512, help="largest telescope texture side (default 512)")
-    ap.add_argument("--no-models", action="store_true", help="leave the telescope out")
+    ap.add_argument("--no-models", action="store_true", help="leave the telescope and the relic's awakened looks out")
     args = ap.parse_args()
     if not args.out and not args.sql and not args.rewards_sql:
         sys.exit("nothing to do: give --out, --sql, --rewards-sql or some of them")
@@ -1068,6 +1182,7 @@ def main():
         rewards = {t: (before[t], len(dbc[t].ours)) for t in tables}
         if not args.no_models:
             add_telescope(dbc, client, files, args.cache, retail, work, args.max_texture)
+            add_relic_looks(dbc, client, files, args.cache, retail, work, args.max_texture)
 
         for table in tables:
             dbc[table].write(unpacked[where[table]]["DBFilesClient\\%s.dbc" % table])
