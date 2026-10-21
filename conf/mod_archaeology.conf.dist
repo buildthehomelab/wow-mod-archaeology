@@ -184,14 +184,16 @@ Archaeology.Relic.CostRate = 1.0
 #    Archaeology.Relic.StateWithoutProgression
 #        Description: Without Archaeology.IndividualProgression.Enable, the progression state the
 #                     relic assumes for every character (18 = no cap; only rank and level count).
+#                     Below 16 it also hides capstone quests whose raid that state hasn't opened.
 #    Archaeology.Relic.CapstoneQuest.Vanilla
 #    Archaeology.Relic.CapstoneQuest.Outland
 #    Archaeology.Relic.CapstoneQuest.Northrend
 #        Description: Quest a character must have done before the last rank of each era, on top of
 #                     solving every rare of that era's races. 0 = no quest needed. The module's own
 #                     (9503501-9503503, from the trainer once the character has the relic and is
-#                     level 60, 70 or 80) ask for Kel'Thuzad (Naxxramas at 40 or at 80), Kil'jaeden
-#                     and the Lich King, slain with the relic equipped. Ranks already earned are kept
+#                     level 60, 70 or 80, and once the progression state opens the raid: 6, 12, 16,
+#                     fixed to mod-individual-progression's states) ask for Kel'Thuzad (Naxxramas
+#                     at 40 or at 80), Kil'jaeden and the Lich King, slain with the relic equipped. Ranks already earned are kept
 #                     whatever these say; a quest only holds back the next rank.
 #    Archaeology.Relic.AwakenNeedsMaxSkill
 #        Description: Awakening (the last rank, Artifact quality) also needs Archaeology.Skill.Max,
@@ -234,6 +236,30 @@ Archaeology.Relic.Traits.Enable = 1
 Archaeology.Relic.Traits.WakeCommons = 10
 Archaeology.Relic.Traits.FirstRankStrength = 0.4
 Archaeology.Relic.Traits.RaceCompleteMultiplier = 2.0
+
+#
+#    Archaeology.DigOrders.Enable
+#        Description: Dig Orders, a daily quest from the archaeology trainer for anyone who knows
+#                     Archaeology. It names one of the character's own dig sites (one not yet dug
+#                     if there is one, on the continent they stand on if there is one); finds dug
+#                     up there count (RequiredNpcOrGoCount1 of quest 9503504, 3), and a site dug
+#                     out fills the orders. The last find uncovers a fragment cache, at most one a
+#                     day. Orders dropped and taken again the same day name the same site. If the
+#                     named site goes away (abandoned), the orders name another.
+#    Archaeology.DigOrders.CacheFragments.Min
+#    Archaeology.DigOrders.CacheFragments.Max
+#        Description: Bonus fragments in the cache, of the dig site's race (up to the fragment cap).
+#    Archaeology.DigOrders.CacheKeystoneChance
+#        Description: Percent chance the cache also holds that race's keystone.
+#    Archaeology.DigOrders.RelicPower
+#        Description: Relic Power for turning the orders in, once the character has the relic.
+#        Default:     1, 15, 25, 50, 50
+
+Archaeology.DigOrders.Enable = 1
+Archaeology.DigOrders.CacheFragments.Min = 15
+Archaeology.DigOrders.CacheFragments.Max = 25
+Archaeology.DigOrders.CacheKeystoneChance = 50
+Archaeology.DigOrders.RelicPower = 50
 
 # Expedition abandonment cooldown, persisted across logins (1..86400 seconds).
 Archaeology.AbandonCooldownSeconds = 1800

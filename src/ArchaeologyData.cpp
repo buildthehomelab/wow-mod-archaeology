@@ -87,6 +87,11 @@ namespace Archaeology
         c.traitWakeCommons = std::max(sConfigMgr->GetOption<uint32>("Archaeology.Relic.Traits.WakeCommons", 10), 1u);
         c.traitFirstRank = std::clamp(sConfigMgr->GetOption<float>("Archaeology.Relic.Traits.FirstRankStrength", 0.4f), 0.0f, 1.0f);
         c.traitCompleteBonus = std::max(sConfigMgr->GetOption<float>("Archaeology.Relic.Traits.RaceCompleteMultiplier", 2.0f), 1.0f);
+        c.digOrdersEnabled = sConfigMgr->GetOption<bool>("Archaeology.DigOrders.Enable", true);
+        c.cacheFragmentsMin = sConfigMgr->GetOption<uint32>("Archaeology.DigOrders.CacheFragments.Min", 15);
+        c.cacheFragmentsMax = std::max(c.cacheFragmentsMin, sConfigMgr->GetOption<uint32>("Archaeology.DigOrders.CacheFragments.Max", 25));
+        c.cacheKeystoneChance = sConfigMgr->GetOption<float>("Archaeology.DigOrders.CacheKeystoneChance", 50.0f);
+        c.digOrdersRelicPower = sConfigMgr->GetOption<uint32>("Archaeology.DigOrders.RelicPower", 50);
         config = c;
     }
 
@@ -279,6 +284,7 @@ namespace Archaeology
         }
 
         LoadRelic(player, s);
+        LoadDigOrders(player, s);
         UpdateTraitWake(player, false);
         QueueTraits(player);   // auras and achievements once the character is in the world
 
@@ -523,6 +529,7 @@ namespace Archaeology
             if (changed && c != deferredContinent)
                 SaveSites(player, c);
         }
+        CheckDigOrders(player);   // the ordered site may be gone
     }
 
     bool AbandonSite(Player* player, uint32 id, std::string& error)

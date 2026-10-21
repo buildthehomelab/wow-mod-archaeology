@@ -20,6 +20,7 @@
 class Creature;
 class GameObject;
 class Player;
+struct Position;
 
 namespace Archaeology
 {
@@ -86,6 +87,13 @@ namespace Archaeology
         uint32 traitWakeCommons = 10;        // common solves of a race that wake its trait
         float traitFirstRank = 0.4f;         // a trait's strength at the first rank (1.0 at full rank)
         float traitCompleteBonus = 2.0f;     // multiplier once every project of the race is solved
+
+        // Dig Orders, the daily quest
+        bool digOrdersEnabled = true;
+        uint32 cacheFragmentsMin = 15;
+        uint32 cacheFragmentsMax = 25;
+        float cacheKeystoneChance = 50.0f;
+        uint32 digOrdersRelicPower = 50;
     };
 
     struct Race
@@ -195,6 +203,12 @@ namespace Archaeology
         uint32 abandonUntil = 0;
         uint32 excludedSite = 0; // transient replacement exclusion
         uint32 innkeeperWaitMs = 0; // transient: summon only after hearth transfer completes
+        uint32 digOrderSite = 0;     // the dig site the Dig Orders of digOrderDay name, 0 = none
+        uint32 digOrderDay = 0;      // daily reset time those orders belong to
+        uint32 digCacheDay = 0;      // daily reset time of the last fragment cache: one a day
+        ObjectGuid digCacheGuid;     // the unopened cache, if any
+        uint8 digCacheRace = 0;
+        uint32 questSweepMs = 0;     // non-archaeologists: time since archaeologist-only quests were last swept
         RelicState relic;
     };
 
@@ -276,6 +290,7 @@ namespace Archaeology
     bool RelicGossipSelect(Player* player, Creature* creature, uint32 sender, uint32 action);
     void RelicQuestRewarded(Player* player, Creature* creature);
     bool IsCapstoneQuest(uint32 questId);
+    bool CapstoneQuestOpen(Player* player, uint32 questId);   // progression reached its rank's state
     void CapstoneBossDied(Creature* boss);
     void CheckRelicAchievements(Player* player);
     uint32 RelicShownStep(Player* player);   // ladder step the relic shows, 0 without one
@@ -290,6 +305,22 @@ namespace Archaeology
     void UpdateQueuedTraits(Player* player);
     void ForgetTraits(Player* player);
     std::string TraitStatusText(Player* player);
+
+    // Dig Orders (ArchaeologyDigOrders.cpp): a daily quest from the trainer to dig up one of your
+    // own dig sites; the last find of the order uncovers a fragment cache.
+    constexpr uint32 DIG_ORDERS_QUEST = 9503504;
+    constexpr uint32 DIG_ORDERS_CREDIT = 9503513;   // kill credit, one per find at the ordered site
+    constexpr uint32 DIG_ORDERS_CACHE = 9503520;    // gameobject
+    bool OffersDigOrders(Player* player);
+    void LoadDigOrders(Player* player, CharState& state);
+    void DigOrdersAccepted(Player* player);
+    void DigOrdersDropped(Player* player);         // abandoned
+    void DigOrdersRewarded(Player* player);
+    void CheckDigOrders(Player* player);           // name another site if the ordered one is gone
+    void DigOrdersFind(Player* player, uint32 site, bool depleted, Position const& where);
+    bool UseDigOrdersCache(Player* player, GameObject* go);
+    void SendDigOrders(Player* player);
+    std::string DigOrdersText(Player* player);
 }
 
 #endif

@@ -163,6 +163,11 @@ local function onMessage(message)
         A.traits = A.pendingTraits or {}
         A.pendingTraits = nil
         A.Fire("COLLECTION")
+    elseif command == "W" then
+        local site, done, need = rest:match("^(%d+):(%d+):(%d+)$")
+        site = tonumber(site or 0)
+        A.digOrder = site > 0 and { site = site, done = tonumber(done), need = tonumber(need) } or nil
+        A.Fire("SITES")
     elseif command == "E" then
         local id, level, challenge = rest:match("^(%d+):(%d+):(%d+)$")
         local site = id and A.sites[tonumber(id)]
