@@ -370,7 +370,8 @@ namespace Archaeology
 
         if (state->skill < cfg.skillPerFindUntil)
             AddSkill(player, 1);
-        AddRelicPower(player, cfg.powerPerFind);
+        if (state->relic.rank)   // finds count once the relic is in hand: a new relic starts at rank 1
+            AddRelicPower(player, cfg.powerPerFind);
 
         std::vector<ActiveSite>& held = state->sites[find.continent];
         for (auto a = held.begin(); a != held.end(); ++a)

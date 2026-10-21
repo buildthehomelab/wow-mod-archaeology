@@ -557,7 +557,7 @@ namespace Archaeology
             r.form, r.rank, r.power, r.earned, r.traits, r.formChanges, r.mainItem, r.offItem);
     }
 
-    // Relic Power is earned from the first find on, so digging before the relic quest still counts.
+    // Solves before the relic quest still count; finds only once the relic is in hand (ArchaeologyDig).
     void AddRelicPower(Player* player, uint32 amount)
     {
         CharState* s = GetState(player);
@@ -795,7 +795,7 @@ namespace Archaeology
         if (!s->relic.rank)
         {
             s->relic.rank = 1;
-            TryRankUp(player, *s);   // Relic Power dug up before the quest counts
+            TryRankUp(player, *s);   // Relic Power from solves before the quest counts
             SaveRelic(player);
         }
         SendRelic(player);
