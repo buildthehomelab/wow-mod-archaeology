@@ -40,7 +40,9 @@ What the client gets:
   for the awakened (last) rank's looks:
 - ItemDisplayInfo.dbc 950900-950999, the relic's awakened looks (data/relic-looks.json): each a
   retail item display's model converted to 3.3.5 (Item\\ObjectComponents\\Weapon or Shield,
-  ArchRelic_*), its skin texture and its retail icon. --no-models leaves them out.
+  ArchRelic_*), its skin texture and its retail icon (added unless Blizzard's client has it), on
+  a copy of the kind's stock display row (missile visual, sounds). --no-models leaves them out,
+  and can't go with --sql.
 - GameObjectDisplayInfo.dbc 10101-10103 (Cataclysm's ids): the survey telescope, green, yellow
   and red, and its three models converted to the 3.3.5 format with wow-mod-retail-creatures'
   converter (RETAIL_CREATURES, or a mod-retail-creatures / wow-mod-retail-creatures checkout
@@ -446,19 +448,27 @@ class Client:
         locale_patches = sorted(glob.glob(os.path.join(loc, "patch-%s*.[mM][pP][qQ]" % locale)),
                                 key=lambda p: os.path.basename(p).lower()[stem:-4])
         self.extra = {os.path.basename(p).lower() for p in extra}   # patches that aren't Blizzard's
+        stock_locale = {("patch-%s%s.mpq" % (locale, n)).lower() for n in ("", "-2", "-3")}
         order = extra[::-1] + locale_patches[::-1]
         order += [os.path.join(data, n) for n in ("patch-3.MPQ", "patch-2.MPQ", "patch.MPQ")]
         order += [os.path.join(loc, n % locale) for n in ("lichking-locale-%s.MPQ", "expansion-locale-%s.MPQ",
                                                            "locale-%s.MPQ")]
         order += [os.path.join(data, n) for n in ("lichking.MPQ", "expansion.MPQ", "common-2.MPQ", "common.MPQ")]
         self.lib, H = stormlib()
-        self.archives = []
+        self.archives, self.stock = [], []
         for path in order:
             if os.path.exists(path):
                 self.archives.append((path, open_mpq(self.lib, H, path)))
+                name = os.path.basename(path).lower()
+                if name not in self.extra and (not name.startswith("patch-%s" % locale.lower()) or name in stock_locale):
+                    self.stock.append(self.archives[-1])
 
     def has(self, name):
         return any(self.lib.SFileHasFile(h, name.encode("latin-1")) for _p, h in self.archives)
+
+    def has_stock(self, name):
+        """Whether Blizzard's own archives have name (not a custom patch the build's client has)."""
+        return any(self.lib.SFileHasFile(h, name.encode("latin-1")) for _p, h in self.stock)
 
     def extract(self, name, dst):
         """The newest copy of name; returns the archive it came from."""
@@ -753,54 +763,96 @@ def client_animations(client, work):
     return {struct.unpack_from("<I", data, 20 + i * fields * 4)[0] for i in range(count)}
 
 
-def add_telescope(dbc, client, files, cache, retail, work, max_texture):
+def convert_model(retail, loaded, valid, stem, place):
+    """Converts one retail model to 3.3.5 with wow-mod-retail-creatures' converter. loaded is what
+    retail.load_model returns (model, skin and animations from one build: it takes them from
+    Blizzard's CDN when wago.tools mixes builds). place(index, type, file data id) says what each drawn texture becomes, or None
+    to leave it out: (type, name in the model or None for an item skin slot, archive name to ship
+    it under or None, file data id). Textures that aren't drawn (particles, extra passes) are left
+    out. Returns (m2, skin, check info, {archive name: (file data id, blend uses)}) for the caller
+    to ship with ship_textures."""
+    raw, model, skin_raw, anims = loaded
+    conv = retail.Converter(raw, skin_raw, anims, valid, stem)
+    drawn = conv.batch_textures()
+    textures, sources = [], {}
+    for i, (ttype, tflags, _n, _o) in enumerate(model.arr("textures", "<IIII")):
+        fd = model.txid[i] if i < len(model.txid) else 0
+        placed = place(i, ttype, fd) if i in drawn else None
+        if placed is None:
+            textures.append((None, tflags, None))
+            continue
+        new_type, name, ship, source = placed
+        textures.append((new_type, tflags, name))
+        if ship:
+            sources[i] = (ship, source)
+    m2, skin_out = conv.convert(textures)
+    errors, info = retail.check(m2, skin_out)
+    if errors:
+        sys.exit("%s fails the 3.3.5 checks: %s" % (stem, errors[:5]))
+    shipped = {}
+    for i, use in conv.texture_use.items():
+        if i in sources:
+            ship, source = sources[i]
+            shipped.setdefault(ship, (source, set()))[1].update(use)
+    return m2, skin_out, info, shipped
+
+
+def ship_textures(files, work, retail, cache, textures, max_texture, warnings):
+    """Adds textures to the patch: {archive name: (file data id, blend uses of every model that
+    draws it)}. A texture drawn only alpha-keyed gets its alpha stretched (retail keeps a texel
+    from alpha 128, the 3.3.5 client only from 224); one drawn both ways is left as it is."""
+    for name, (fdid, use) in sorted(textures.items()):
+        blp = retail.shrink_blp(retail.casc(cache, fdid), max_texture)
+        if 1 in use and max(use) < 2:
+            blp = retail.key_alpha_blp(blp)
+        elif 1 in use:
+            warnings.append("%s is drawn alpha-keyed and blended: not keyed, its cut-outs may look ragged" % name)
+        path = os.path.join(work, os.path.basename(name))
+        with open(path, "wb") as f:
+            f.write(blp)
+        files[name] = path
+
+
+def add_texture_uses(into, textures):
+    for name, (fdid, use) in textures.items():
+        into.setdefault(name, (fdid, set()))[1].update(use)
+
+
+def write_model(files, work, folder, stem, m2, skin_out):
+    for ext, blob in ((".m2", m2), ("00.skin", skin_out)):
+        path = os.path.join(work, stem + ext)
+        with open(path, "wb") as f:
+            f.write(blob)
+        files["%s\\%s%s" % (folder, stem, ext)] = path
+
+
+def add_telescope(dbc, client, files, cache, retail, work, max_texture, warnings):
     godi = {int(r["ID"]): r for r in read_csv("c_GODI.csv")}
     valid = client_animations(client, work)
 
     table = dbc["GameObjectDisplayInfo"]
-    texture_names, texture_fdid = {}, {}
+    texture_names, to_ship = {}, {}
+
+    def place(_i, ttype, fd):
+        if ttype != 0 or not fd:
+            return None
+        if fd not in texture_names:
+            listed = retail.listfile(cache, [fd]).get(fd, "")
+            name = os.path.basename(listed) or "T%d.blp" % fd
+            stock = listed.replace("/", "\\")
+            # A texture the client already has keeps its own path; a new one goes next to the model.
+            texture_names[fd] = stock if stock and client.has(stock) else "%s\\%s" % (TELESCOPE_DIR, name)
+        name = texture_names[fd]
+        return 0, name, name if name.startswith(TELESCOPE_DIR) else None, fd
+
     for display, stem in TELESCOPE:
         src = godi.get(display)
         if not src or os.path.basename(src["ModelName"].replace("\\", "/")).lower() != stem.lower() + ".mdx":
             sys.exit("c_GODI.csv row %d isn't %s" % (display, stem))
-        fdid = int(src["FileDataID"])
-        raw = retail.casc(cache, fdid)
-        model = retail.Retail(raw)
-        skin = retail.casc(cache, model.sfid[0])
-        afiles = {(a, s): retail.casc(cache, f) for a, s, f in model.afid if f}
-        conv = retail.Converter(raw, skin, afiles, valid, stem)
-        drawn = conv.batch_textures()
-        textures = []
-        for i, (ttype, tflags, _n, _o) in enumerate(model.arr("textures", "<IIII")):
-            fd = model.txid[i] if i < len(model.txid) else 0
-            if ttype != 0 or i not in drawn or not fd:
-                textures.append((None, tflags, None))
-                continue
-            if fd not in texture_names:
-                listed = retail.listfile(cache, [fd]).get(fd, "")
-                name = os.path.basename(listed) or "T%d.blp" % fd
-                stock = listed.replace("/", "\\")
-                # A texture the client already has keeps its own path; a new one goes next to the model.
-                texture_names[fd] = stock if stock and client.has(stock) else "%s\\%s" % (TELESCOPE_DIR, name)
-                texture_fdid[texture_names[fd]] = fd
-            textures.append((0, tflags, texture_names[fd]))
-        m2, skin_out = conv.convert(textures)
-        errors, info = retail.check(m2, skin_out)
-        if errors:
-            sys.exit("%s fails the 3.3.5 checks: %s" % (stem, errors[:5]))
-        for i, use in conv.texture_use.items():
-            ttype, _f, name = textures[i]
-            if ttype == 0 and name.startswith(TELESCOPE_DIR) and name not in files:
-                blp = retail.shrink_blp(retail.casc(cache, texture_fdid[name]), max_texture)
-                if 1 in use and max(use) < 2:
-                    blp = retail.key_alpha_blp(blp)
-                path = os.path.join(work, os.path.basename(name))
-                open(path, "wb").write(blp)
-                files[name] = path
-        for ext, blob in ((".m2", m2), ("00.skin", skin_out)):
-            path = os.path.join(work, stem + ext)
-            open(path, "wb").write(blob)
-            files["%s\\%s%s" % (TELESCOPE_DIR, stem, ext)] = path
+        loaded = retail.load_model(cache, int(src["FileDataID"]), stem, warnings)
+        m2, skin_out, info, textures = convert_model(retail, loaded, valid, stem, place)
+        add_texture_uses(to_ship, {n: t for n, t in textures.items() if n not in files})
+        write_model(files, work, TELESCOPE_DIR, stem, m2, skin_out)
         row = [0] * 19
         row[0] = display
         model_name = "%s\\%s.mdx" % (TELESCOPE_DIR, stem)
@@ -810,106 +862,120 @@ def add_telescope(dbc, client, files, cache, retail, work, max_texture):
         table.put(row, 1, model_name)
         print("GameObjectDisplayInfo.dbc %d %s: %d anims, %d vertices, %d batches"
               % (display, stem, info["sequences"], info["vertices"], info["batches"]))
+    ship_textures(files, work, retail, cache, to_ship, max_texture, warnings)
 
 
-def add_relic_looks(dbc, client, files, cache, retail, work, max_texture):
+def relic_look_templates():
+    """{look display: the stock ItemDisplayInfo its kind uses below the awakened rank}, from
+    tools/build_relic.py. A look's row starts as a copy of that one, so it keeps what the
+    model doesn't carry: the missile a bow or gun shoots (SpellVisualID) and the item's sounds."""
+    spec = importlib.util.spec_from_file_location("build_relic", os.path.join(ROOT, "tools", "build_relic.py"))
+    relic = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(relic)
+    templates = {}
+    for kind, look in sorted(relic.AWAKENED_LOOK.items()):
+        if templates.setdefault(look, relic.KINDS[kind][8]) != relic.KINDS[kind][8]:
+            sys.exit("relic look %d is shared by kinds with different stock displays (%d, %d): give each its own look"
+                     % (look, templates[look], relic.KINDS[kind][8]))
+    return templates
+
+
+def add_relic_looks(dbc, client, files, cache, retail, work, max_texture, warnings):
     """The relic's awakened looks (data/relic-looks.json): each retail item display's model
     converted to 3.3.5 under Item\\ObjectComponents\\Weapon (or Shield), with its skin texture and
     the retail icon, as an ItemDisplayInfo row the awakened items of tools/build_relic.py use."""
     looks = json.load(open(RELIC_LOOKS, encoding="utf-8"))["looks"]
+    templates = relic_look_templates()
     idi = retail.fetch.db2(cache, "ItemDisplayInfo")
     models, skins = {}, {}
     for r in retail.fetch.db2_rows(cache, "ModelFileData"):
         models.setdefault(int(r["ModelResourcesID"]), []).append(int(r["FileDataID"]))
     for r in retail.fetch.db2_rows(cache, "TextureFileData"):
         skins.setdefault(int(r["MaterialResourcesID"]), []).append((int(r["UsageType"]), int(r["FileDataID"])))
-    valid = client_animations(client, work)
-    table = dbc["ItemDisplayInfo"]
-    icons = retail.listfile(cache, {look["icon"] for look in looks})
-    in_patch = {n.lower() for n in files}
-    shipped = 0
+
+    # First the files every look needs, so the listfile (millions of lines) is read once.
+    plan = []
     for look in looks:
         display = look["display"]
         if not RELIC_LOOK_FIRST <= display <= RELIC_LOOK_LAST:
             sys.exit("relic look %d is outside %d-%d" % (display, RELIC_LOOK_FIRST, RELIC_LOOK_LAST))
+        if display not in templates:
+            sys.exit("relic look %d isn't any kind's awakened look in %s" % (display, RELIC_LOOKS))
         source = idi.get(str(look["retail_display"]))
         if not source:
             sys.exit("retail ItemDisplayInfo %d (relic look %d) is gone" % (look["retail_display"], display))
-        model_fdid = models[int(source["ModelResourcesID_0"])][0]
-        skin_fdid = min(skins[int(source["ModelMaterialResourcesID_0"])])[1]
-        raw = retail.casc(cache, model_fdid)
-        model = retail.Retail(raw)
-        names = retail.listfile(cache, [model_fdid, skin_fdid] + list(model.txid))
+        model_files = models.get(int(source["ModelResourcesID_0"]), [])
+        material = skins.get(int(source["ModelMaterialResourcesID_0"]), [])
+        if len(model_files) != 1 or not material:
+            sys.exit("retail ItemDisplayInfo %d (relic look %d): %d model files and %d textures, not one and some"
+                     % (look["retail_display"], display, len(model_files), len(material)))
+        second = models.get(int(source["ModelResourcesID_1"]), []) if int(source["ModelResourcesID_1"]) else []
+        model_fdid, skin_fdid = model_files[0], min(material)[1]
+        loaded = retail.load_model(cache, model_fdid, "relic look %d" % display, warnings)
+        plan.append((look, display, model_fdid, skin_fdid, second, loaded))
+    wanted = {look["icon"] for look in looks}
+    for _l, _d, model_fdid, skin_fdid, second, loaded in plan:
+        wanted.update([model_fdid, skin_fdid] + list(second) + list(loaded[1].txid))
+    names = retail.listfile(cache, wanted)
+
+    def file_name(fdid):
+        return RELIC_LOOK_PREFIX + (os.path.splitext(os.path.basename(names.get(fdid, "")))[0] or "T%d" % fdid)
+
+    valid = client_animations(client, work)
+    table = dbc["ItemDisplayInfo"]
+    to_ship, icons_shipped = {}, 0
+    for look, display, model_fdid, skin_fdid, second, loaded in plan:
         model_path = names.get(model_fdid, "").lower()
         kind = "shield" if "/shield/" in model_path else "weapon" if "/weapon/" in model_path else None
         if not kind:
             sys.exit("relic look %d: model %d (%s) isn't an item model" % (display, model_fdid, model_path))
         folder = ITEM_MODEL_DIRS[kind]
+        for fd in second:
+            # 3.3.5 draws one model per weapon; retail's second one (a floating part) can't come along.
+            warnings.append("relic look %d: retail's second model %s isn't drawn"
+                            % (display, os.path.basename(names.get(fd, str(fd)))))
 
-        def file_name(fdid):
-            return RELIC_LOOK_PREFIX + (os.path.splitext(os.path.basename(names.get(fdid, "")))[0] or "T%d" % fdid)
+        def place(_i, ttype, fd):
+            if ttype == 0 and fd:
+                name = "%s\\%s.blp" % (folder, file_name(fd))
+                return 0, name, name, fd
+            if ttype == 2:   # the item's own skin: ItemDisplayInfo's ModelTexture, not named in the model
+                return 2, None, "%s\\%s.blp" % (folder, file_name(skin_fdid)), skin_fdid
+            return None
 
         stem = file_name(model_fdid)
-        anims = {}
-        for a, sub, f in model.afid:
-            if f and a in valid:
-                anims[(a, sub)] = retail.casc(cache, f)
-        conv = retail.Converter(raw, retail.casc(cache, model.sfid[0]), anims, valid, stem)
-        drawn = conv.batch_textures()
-        textures, sources = [], {}
-        for i, (ttype, tflags, _n, _o) in enumerate(model.arr("textures", "<IIII")):
-            fd = model.txid[i] if i < len(model.txid) else 0
-            if i in drawn and ttype == 0 and fd:
-                textures.append((0, tflags, "%s\\%s.blp" % (folder, file_name(fd))))
-                sources[i] = fd
-            elif i in drawn and ttype == 2:   # the item's own skin: ItemDisplayInfo's ModelTexture
-                textures.append((2, tflags, None))
-                sources[i] = skin_fdid
-            else:
-                textures.append((None, tflags, None))
-        m2, skin_out = conv.convert(textures)
-        errors, info = retail.check(m2, skin_out)
-        if errors:
-            sys.exit("relic look %d (%s) fails the 3.3.5 checks: %s" % (display, stem, errors[:5]))
-        for i, use in conv.texture_use.items():
-            if i not in sources:
-                continue
-            name = "%s\\%s.blp" % (folder, file_name(sources[i]))
-            if name.lower() in in_patch:
-                continue
-            blp = retail.shrink_blp(retail.casc(cache, sources[i]), max_texture)
-            if 1 in use and max(use) < 2:   # drawn alpha-keyed only: keep what retail keeps
-                blp = retail.key_alpha_blp(blp)
-            path = os.path.join(work, os.path.basename(name))
-            open(path, "wb").write(blp)
-            files[name] = path
-            in_patch.add(name.lower())
-        for ext, blob in ((".m2", m2), ("00.skin", skin_out)):
-            path = os.path.join(work, stem + ext)
-            open(path, "wb").write(blob)
-            files["%s\\%s%s" % (folder, stem, ext)] = path
-            in_patch.add(("%s\\%s%s" % (folder, stem, ext)).lower())
+        m2, skin_out, info, textures = convert_model(retail, loaded, valid, stem, place)
+        add_texture_uses(to_ship, textures)
+        write_model(files, work, folder, stem, m2, skin_out)
 
-        icon_path = icons.get(look["icon"], "").replace("/", "\\")
+        # The icon goes in the patch unless Blizzard's own client has it: an icon the build's client
+        # has from another custom patch (a Reforged icon pack) isn't on every player's client.
+        icon_path = names.get(look["icon"], "").replace("/", "\\")
         if not icon_path.lower().startswith("interface\\icons\\"):
             sys.exit("relic look %d: icon %d isn't an icon in the listfile" % (display, look["icon"]))
         icon = os.path.basename(icon_path.replace("\\", "/"))[:-4]
         archive_name = "Interface\\Icons\\%s.blp" % icon
-        if archive_name.lower() not in in_patch and not client.has(archive_name):
-            files[archive_name] = retail.fetch.casc_path(cache, look["icon"])
-            in_patch.add(archive_name.lower())
-            shipped += 1
+        if archive_name not in files and not client.has_stock(archive_name):
+            blp = retail.fetch.casc_path(cache, look["icon"])
+            if open(blp, "rb").read(4) != b"BLP2":
+                sys.exit("icon %d isn't a BLP2 file" % look["icon"])
+            files[archive_name] = blp
+            icons_shipped += 1
 
-        row = [0] * TABLES["ItemDisplayInfo"][0]
+        row = dbc["ItemDisplayInfo"].template(templates[display], "the relic kind's stock look")
+        for field in TABLES["ItemDisplayInfo"][1]:
+            row[field] = 0
         row[0] = display
+        row[23] = row[24] = 0   # no ItemVisual (a stock enchant glow) or particle colour on the artifact
         model_name = stem + ".mdx"
         row[1] = table.add_string(model_name)
         row[3] = table.add_string(file_name(skin_fdid))
         row[5] = table.add_string(icon)
         table.put(row, 1, model_name)
         print("ItemDisplayInfo.dbc %d %s: %d vertices, %d batches, %d textures"
-              % (display, stem, info["vertices"], info["batches"], len(sources)))
-    print("relic looks: %d displays, %d icons added" % (len(looks), shipped))
+              % (display, stem, info["vertices"], info["batches"], len(textures)))
+    ship_textures(files, work, retail, cache, to_ship, max_texture, warnings)
+    print("relic looks: %d displays, %d icons added" % (len(plan), icons_shipped))
 
 
 def icon_id(dbc, name):
@@ -1131,8 +1197,12 @@ def main():
     args = ap.parse_args()
     if not args.out and not args.sql and not args.rewards_sql:
         sys.exit("nothing to do: give --out, --sql, --rewards-sql or some of them")
+    if args.sql and args.no_models:
+        sys.exit("--sql needs the models: without them it would drop the telescope's and the relic looks' "
+                 "rows the server keeps (the awakened relic items name those displays)")
 
     retail = load_retail()
+    warnings = []
     items = module_items()
     patches = [args.patch] + ([args.skill_patch] if args.skill_patch else []) + args.also_patch
     skip = {os.path.basename(p).lower() for p in patches}
@@ -1181,8 +1251,8 @@ def main():
         add_rewards(dbc)
         rewards = {t: (before[t], len(dbc[t].ours)) for t in tables}
         if not args.no_models:
-            add_telescope(dbc, client, files, args.cache, retail, work, args.max_texture)
-            add_relic_looks(dbc, client, files, args.cache, retail, work, args.max_texture)
+            add_telescope(dbc, client, files, args.cache, retail, work, args.max_texture, warnings)
+            add_relic_looks(dbc, client, files, args.cache, retail, work, args.max_texture, warnings)
 
         for table in tables:
             dbc[table].write(unpacked[where[table]]["DBFilesClient\\%s.dbc" % table])
@@ -1202,6 +1272,8 @@ def main():
         if args.rewards_sql:
             write_rewards_sql(args.rewards_sql, dbc, rewards)
             print("wrote", os.path.relpath(args.rewards_sql))
+    for warning in warnings:
+        print("warning:", warning)
 
 
 if __name__ == "__main__":
