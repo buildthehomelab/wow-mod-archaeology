@@ -217,3 +217,9 @@ Archaeology.Relic.Traits.Enable = 1
 Archaeology.Relic.Traits.WakeCommons = 10
 Archaeology.Relic.Traits.FirstRankStrength = 0.4
 Archaeology.Relic.Traits.RaceCompleteMultiplier = 2.0
+
+# Expedition abandonment cooldown, persisted across logins (1..86400 seconds).
+Archaeology.AbandonCooldownSeconds = 1800
+# Prefer sites this many levels below the player; keep at most one near-limit
+# site where enough comfortable alternatives exist (0..5). Does not raise eligibility.
+Archaeology.ChallengeLevels = 3

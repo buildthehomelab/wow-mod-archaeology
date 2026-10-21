@@ -11,3 +11,5 @@ DELETE FROM `character_aura` WHERE `spell` BETWEEN 90500 AND 90529;
 DELETE FROM `character_spell` WHERE `spell` BETWEEN 90500 AND 90506;
 DELETE FROM `character_action` WHERE `type` = 0 AND `action` BETWEEN 90500 AND 90506;
 DELETE FROM `character_skills` WHERE `skill` = 794;
+
+DROP TABLE IF EXISTS `mod_archaeology_char_expedition`;

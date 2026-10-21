@@ -37,3 +37,5 @@ DELETE FROM `skilllineability_dbc` WHERE `ID` BETWEEN 90530 AND 90589;
 DELETE FROM `spell_dbc` WHERE `ID` BETWEEN 90530 AND 90589;
 DELETE FROM `mod_forever_journal_toy` WHERE `ItemID` IN (9504063,9504064,9504071,9504079,9504101,9504102,9504119,9504120,9504126,9504129,9504133,9504141,9504142,9504143);
 DELETE FROM `mod_forever_journal_collection_note` WHERE `Sort`=90 AND `Note` LIKE 'Archaeology: solve %';
+
+DROP TABLE IF EXISTS `mod_archaeology_site_access`;

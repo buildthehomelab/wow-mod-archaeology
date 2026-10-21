@@ -1,0 +1,831 @@
+{
+  "9": {
+    "min_level": 19,
+    "reason": "Live 3.3.5 spawn vicinity: 22 maximum level within 65 horizontal/20 vertical yards of a dig spot; minimum raised to enemy level minus 3.",
+    "evidence": [
+      [
+        "Boss Galgosh",
+        22,
+        59
+      ]
+    ]
+  },
+  "10": {
+    "min_level": 23,
+    "reason": "Live 3.3.5 spawn vicinity: 26 maximum level within 65 horizontal/20 vertical yards of a dig spot; minimum raised to enemy level minus 3.",
+    "evidence": [
+      [
+        "Monstrous Ooze",
+        26,
+        14
+      ]
+    ]
+  },
+  "18": {
+    "min_level": 34,
+    "reason": "Live 3.3.5 spawn vicinity: 37 maximum level within 65 horizontal/20 vertical yards of a dig spot; minimum raised to enemy level minus 3.",
+    "evidence": [
+      [
+        "Nimar the Slayer",
+        37,
+        654
+      ]
+    ]
+  },
+  "22": {
+    "min_level": 39,
+    "reason": "Live 3.3.5 spawn vicinity: 42 maximum level within 65 horizontal/20 vertical yards of a dig spot; minimum raised to enemy level minus 3.",
+    "evidence": [
+      [
+        "Mangy Silvermane",
+        42,
+        38
+      ],
+      [
+        "Old Cliff Jumper",
+        42,
+        38
+      ],
+      [
+        "Trained Razorbeak",
+        42,
+        84
+      ]
+    ]
+  },
+  "23": {
+    "min_level": 43,
+    "reason": "Live 3.3.5 spawn vicinity: 46 maximum level within 65 horizontal/20 vertical yards of a dig spot; minimum raised to enemy level minus 3.",
+    "evidence": [
+      [
+        "Witherbark Caller",
+        46,
+        654
+      ]
+    ]
+  },
+  "24": {
+    "min_level": 45,
+    "reason": "Live 3.3.5 spawn vicinity: 48 maximum level within 65 horizontal/20 vertical yards of a dig spot; minimum raised to enemy level minus 3.",
+    "evidence": [
+      [
+        "Retherokk the Berserker",
+        48,
+        795
+      ]
+    ]
+  },
+  "25": {
+    "min_level": 46,
+    "reason": "Live 3.3.5 spawn vicinity: 49 maximum level within 65 horizontal/20 vertical yards of a dig spot; minimum raised to enemy level minus 3.",
+    "evidence": [
+      [
+        "Vilebranch Hideskinner",
+        49,
+        795
+      ],
+      [
+        "Vilebranch Shadow Hunter",
+        49,
+        795
+      ]
+    ]
+  },
+  "26": {
+    "min_level": 49,
+    "reason": "Live 3.3.5 spawn vicinity: 52 maximum level within 65 horizontal/20 vertical yards of a dig spot; minimum raised to enemy level minus 3.",
+    "evidence": [
+      [
+        "Mith'rethis the Enchanter",
+        52,
+        795
+      ]
+    ]
+  },
+  "27": {
+    "min_level": 45,
+    "reason": "Live 3.3.5 spawn vicinity: 48 maximum level within 65 horizontal/20 vertical yards of a dig spot; minimum raised to enemy level minus 3.",
+    "evidence": [
+      [
+        "Jade Ooze",
+        48,
+        14
+      ]
+    ]
+  },
+  "163": {
+    "min_level": 60,
+    "reason": "Live 3.3.5 spawn vicinity: 63 maximum level within 65 horizontal/20 vertical yards of a dig spot; minimum raised to enemy level minus 3.",
+    "evidence": [
+      [
+        "Taerar",
+        63,
+        50
+      ]
+    ]
+  },
+  "165": {
+    "min_level": 27,
+    "reason": "Live 3.3.5 spawn vicinity: 30 maximum level within 65 horizontal/20 vertical yards of a dig spot; minimum raised to enemy level minus 3.",
+    "evidence": [
+      [
+        "Splinter Fist Warrior",
+        30,
+        45
+      ]
+    ]
+  },
+  "173": {
+    "min_level": 21,
+    "reason": "Live 3.3.5 spawn vicinity: 24 maximum level within 65 horizontal/20 vertical yards of a dig spot; minimum raised to enemy level minus 3.",
+    "evidence": [
+      [
+        "Shadethicket Wood Shaper",
+        24,
+        16
+      ]
+    ]
+  },
+  "175": {
+    "min_level": 28,
+    "reason": "Live 3.3.5 spawn vicinity: 31 maximum level within 65 horizontal/20 vertical yards of a dig spot; minimum raised to enemy level minus 3.",
+    "evidence": [
+      [
+        "Ursol'lok",
+        31,
+        44
+      ]
+    ]
+  },
+  "193": {
+    "min_level": 31,
+    "reason": "Live 3.3.5 spawn vicinity: 34 maximum level within 65 horizontal/20 vertical yards of a dig spot; minimum raised to enemy level minus 3.",
+    "evidence": [
+      [
+        "Raging Thunder Lizard",
+        34,
+        14
+      ],
+      [
+        "Slitherblade Warrior",
+        34,
+        74
+      ]
+    ]
+  },
+  "195": {
+    "min_level": 37,
+    "reason": "Live 3.3.5 spawn vicinity: 40 maximum level within 65 horizontal/20 vertical yards of a dig spot; minimum raised to enemy level minus 3.",
+    "evidence": [
+      [
+        "Outcast Necromancer",
+        40,
+        16
+      ]
+    ]
+  },
+  "199": {
+    "min_level": 34,
+    "reason": "Live 3.3.5 spawn vicinity: 37 maximum level within 65 horizontal/20 vertical yards of a dig spot; minimum raised to enemy level minus 3.",
+    "evidence": [
+      [
+        "Ancient Kodo",
+        37,
+        15
+      ],
+      [
+        "Carrion Horror",
+        37,
+        73
+      ]
+    ]
+  },
+  "205": {
+    "min_level": 67,
+    "reason": "Live 3.3.5 spawn vicinity: 70 maximum level within 65 horizontal/20 vertical yards of a dig spot; minimum raised to enemy level minus 3.",
+    "evidence": [
+      [
+        "Necrotic Shard",
+        70,
+        1630
+      ]
+    ]
+  },
+  "211": {
+    "min_level": 54,
+    "reason": "Live 3.3.5 spawn vicinity: 57 maximum level within 65 horizontal/20 vertical yards of a dig spot; minimum raised to enemy level minus 3.",
+    "evidence": [
+      [
+        "Thauris Balgarr",
+        57,
+        54
+      ]
+    ]
+  },
+  "213": {
+    "min_level": 67,
+    "reason": "Live 3.3.5 spawn vicinity: 70 maximum level within 65 horizontal/20 vertical yards of a dig spot; minimum raised to enemy level minus 3.",
+    "evidence": [
+      [
+        "Necrotic Shard",
+        70,
+        1630
+      ]
+    ]
+  },
+  "215": {
+    "min_level": 53,
+    "reason": "Live 3.3.5 spawn vicinity: 56 maximum level within 65 horizontal/20 vertical yards of a dig spot; minimum raised to enemy level minus 3.",
+    "evidence": [
+      [
+        "Malfunctioning Reaver",
+        56,
+        189
+      ]
+    ]
+  },
+  "217": {
+    "min_level": 57,
+    "reason": "Live 3.3.5 spawn vicinity: 60 maximum level within 65 horizontal/20 vertical yards of a dig spot; minimum raised to enemy level minus 3.",
+    "evidence": [
+      [
+        "Infiltrator Hameya",
+        60,
+        37
+      ]
+    ]
+  },
+  "219": {
+    "min_level": 57,
+    "reason": "Live 3.3.5 spawn vicinity: 60 maximum level within 65 horizontal/20 vertical yards of a dig spot; minimum raised to enemy level minus 3.",
+    "evidence": [
+      [
+        "Quel'Lithien Protector",
+        60,
+        84
+      ],
+      [
+        "Ranger",
+        60,
+        1576
+      ],
+      [
+        "Ranger Lord Hawkspear",
+        60,
+        1576
+      ]
+    ]
+  },
+  "223": {
+    "min_level": 34,
+    "reason": "Live 3.3.5 spawn vicinity: 37 maximum level within 65 horizontal/20 vertical yards of a dig spot; minimum raised to enemy level minus 3.",
+    "evidence": [
+      [
+        "Bloodscalp Berserker",
+        37,
+        28
+      ],
+      [
+        "Bloodscalp Headhunter",
+        37,
+        28
+      ],
+      [
+        "Bloodscalp Witch Doctor",
+        37,
+        28
+      ]
+    ]
+  },
+  "225": {
+    "min_level": 38,
+    "reason": "Live 3.3.5 spawn vicinity: 41 maximum level within 65 horizontal/20 vertical yards of a dig spot; minimum raised to enemy level minus 3.",
+    "evidence": [
+      [
+        "Gan'zulah",
+        41,
+        28
+      ]
+    ]
+  },
+  "227": {
+    "min_level": 35,
+    "reason": "Live 3.3.5 spawn vicinity: 38 maximum level within 65 horizontal/20 vertical yards of a dig spot; minimum raised to enemy level minus 3.",
+    "evidence": [
+      [
+        "Elder Saltwater Crocolisk",
+        38,
+        14
+      ]
+    ]
+  },
+  "229": {
+    "min_level": 37,
+    "reason": "Live 3.3.5 spawn vicinity: 40 maximum level within 65 horizontal/20 vertical yards of a dig spot; minimum raised to enemy level minus 3.",
+    "evidence": [
+      [
+        "Skullsplitter Axe Thrower",
+        40,
+        30
+      ],
+      [
+        "Skullsplitter Mystic",
+        40,
+        30
+      ],
+      [
+        "Skullsplitter Warrior",
+        40,
+        30
+      ]
+    ]
+  },
+  "231": {
+    "min_level": 37,
+    "reason": "Live 3.3.5 spawn vicinity: 40 maximum level within 65 horizontal/20 vertical yards of a dig spot; minimum raised to enemy level minus 3.",
+    "evidence": [
+      [
+        "Skullsplitter Axe Thrower",
+        40,
+        30
+      ],
+      [
+        "Skullsplitter Mystic",
+        40,
+        30
+      ],
+      [
+        "Skullsplitter Warrior",
+        40,
+        30
+      ]
+    ]
+  },
+  "233": {
+    "min_level": 41,
+    "reason": "Live 3.3.5 spawn vicinity: 44 maximum level within 65 horizontal/20 vertical yards of a dig spot; minimum raised to enemy level minus 3.",
+    "evidence": [
+      [
+        "Kurzen Mindslave",
+        44,
+        46
+      ],
+      [
+        "Mogh the Undying",
+        44,
+        30
+      ],
+      [
+        "Skullsplitter Berserker",
+        44,
+        30
+      ],
+      [
+        "Skullsplitter Headhunter",
+        44,
+        30
+      ],
+      [
+        "Skullsplitter Spiritchaser",
+        44,
+        30
+      ]
+    ]
+  },
+  "235": {
+    "min_level": 42,
+    "reason": "Live 3.3.5 spawn vicinity: 45 maximum level within 65 horizontal/20 vertical yards of a dig spot; minimum raised to enemy level minus 3.",
+    "evidence": [
+      [
+        "Ana'thek the Cruel",
+        45,
+        30
+      ]
+    ]
+  },
+  "239": {
+    "min_level": 43,
+    "reason": "Live 3.3.5 spawn vicinity: 46 maximum level within 65 horizontal/20 vertical yards of a dig spot; minimum raised to enemy level minus 3.",
+    "evidence": [
+      [
+        "Zanzil the Outcast",
+        46,
+        16
+      ]
+    ]
+  },
+  "241": {
+    "min_level": 41,
+    "reason": "Live 3.3.5 spawn vicinity: 44 maximum level within 65 horizontal/20 vertical yards of a dig spot; minimum raised to enemy level minus 3.",
+    "evidence": [
+      [
+        "Jon-Jon the Crow",
+        44,
+        16
+      ],
+      [
+        "Maury \"Club Foot\" Wilkins",
+        44,
+        16
+      ],
+      [
+        "Zanzil Hunter",
+        44,
+        16
+      ],
+      [
+        "Zanzil Naga",
+        44,
+        16
+      ],
+      [
+        "Zanzil Witch Doctor",
+        44,
+        16
+      ],
+      [
+        "Zanzil Zombie",
+        44,
+        16
+      ]
+    ]
+  },
+  "243": {
+    "min_level": 40,
+    "reason": "Live 3.3.5 spawn vicinity: 43 maximum level within 65 horizontal/20 vertical yards of a dig spot; minimum raised to enemy level minus 3.",
+    "evidence": [
+      [
+        "Tethis",
+        43,
+        48
+      ]
+    ]
+  },
+  "245": {
+    "min_level": 42,
+    "reason": "Live 3.3.5 spawn vicinity: 45 maximum level within 65 horizontal/20 vertical yards of a dig spot; minimum raised to enemy level minus 3.",
+    "evidence": [
+      [
+        "Lord Sakrasis",
+        45,
+        74
+      ]
+    ]
+  },
+  "247": {
+    "min_level": 51,
+    "reason": "Live 3.3.5 spawn vicinity: 54 maximum level within 65 horizontal/20 vertical yards of a dig spot; minimum raised to enemy level minus 3.",
+    "evidence": [
+      [
+        "Jabbering Ghoul",
+        54,
+        21
+      ],
+      [
+        "Scarlet Invoker",
+        54,
+        89
+      ],
+      [
+        "Scarlet Medic",
+        54,
+        89
+      ]
+    ]
+  },
+  "249": {
+    "min_level": 56,
+    "reason": "Live 3.3.5 spawn vicinity: 59 maximum level within 65 horizontal/20 vertical yards of a dig spot; minimum raised to enemy level minus 3.",
+    "evidence": [
+      [
+        "High Protector Tarsen",
+        59,
+        67
+      ]
+    ]
+  },
+  "259": {
+    "min_level": 41,
+    "reason": "Live 3.3.5 spawn vicinity: 44 maximum level within 65 horizontal/20 vertical yards of a dig spot; minimum raised to enemy level minus 3.",
+    "evidence": [
+      [
+        "Firemane Flamecaller",
+        44,
+        103
+      ],
+      [
+        "Firemane Scalebane",
+        44,
+        103
+      ]
+    ]
+  },
+  "261": {
+    "min_level": 42,
+    "reason": "Live 3.3.5 spawn vicinity: 45 maximum level within 65 horizontal/20 vertical yards of a dig spot; minimum raised to enemy level minus 3.",
+    "evidence": [
+      [
+        "Deadmire",
+        45,
+        16
+      ]
+    ]
+  },
+  "279": {
+    "min_level": 51,
+    "reason": "Live 3.3.5 spawn vicinity: 54 maximum level within 65 horizontal/20 vertical yards of a dig spot; minimum raised to enemy level minus 3.",
+    "evidence": [
+      [
+        "Gordok Enforcer",
+        54,
+        45
+      ],
+      [
+        "Gordok Hyena",
+        54,
+        45
+      ]
+    ]
+  },
+  "281": {
+    "min_level": 51,
+    "reason": "Live 3.3.5 spawn vicinity: 54 maximum level within 65 horizontal/20 vertical yards of a dig spot; minimum raised to enemy level minus 3.",
+    "evidence": [
+      [
+        "Gordok Hyena",
+        54,
+        45
+      ],
+      [
+        "Gordok Mauler",
+        54,
+        45
+      ]
+    ]
+  },
+  "283": {
+    "min_level": 47,
+    "reason": "Live 3.3.5 spawn vicinity: 50 maximum level within 65 horizontal/20 vertical yards of a dig spot; minimum raised to enemy level minus 3.",
+    "evidence": [
+      [
+        "Northspring Slayer",
+        50,
+        514
+      ],
+      [
+        "Northspring Windcaller",
+        50,
+        514
+      ]
+    ]
+  },
+  "285": {
+    "min_level": 59,
+    "reason": "Live 3.3.5 spawn vicinity: 62 maximum level within 65 horizontal/20 vertical yards of a dig spot; minimum raised to enemy level minus 3.",
+    "evidence": [
+      [
+        "Jademir Boughguard",
+        62,
+        50
+      ]
+    ]
+  },
+  "287": {
+    "min_level": 40,
+    "reason": "Live 3.3.5 spawn vicinity: 43 maximum level within 65 horizontal/20 vertical yards of a dig spot; minimum raised to enemy level minus 3.",
+    "evidence": [
+      [
+        "Hatecrest Siren",
+        43,
+        74
+      ],
+      [
+        "Hatecrest Warrior",
+        43,
+        74
+      ]
+    ]
+  },
+  "291": {
+    "min_level": 44,
+    "reason": "Live 3.3.5 spawn vicinity: 47 maximum level within 65 horizontal/20 vertical yards of a dig spot; minimum raised to enemy level minus 3.",
+    "evidence": [
+      [
+        "Gordunni Warlord",
+        47,
+        45
+      ]
+    ]
+  },
+  "293": {
+    "min_level": 41,
+    "reason": "Live 3.3.5 spawn vicinity: 44 maximum level within 65 horizontal/20 vertical yards of a dig spot; minimum raised to enemy level minus 3.",
+    "evidence": [
+      [
+        "Gordunni Mauler",
+        44,
+        45
+      ],
+      [
+        "Gordunni Warlock",
+        44,
+        45
+      ]
+    ]
+  },
+  "295": {
+    "min_level": 49,
+    "reason": "Live 3.3.5 spawn vicinity: 52 maximum level within 65 horizontal/20 vertical yards of a dig spot; minimum raised to enemy level minus 3.",
+    "evidence": [
+      [
+        "Jadefire Shadowstalker",
+        52,
+        90
+      ]
+    ]
+  },
+  "297": {
+    "min_level": 46,
+    "reason": "Live 3.3.5 spawn vicinity: 49 maximum level within 65 horizontal/20 vertical yards of a dig spot; minimum raised to enemy level minus 3.",
+    "evidence": [
+      [
+        "Death Howl",
+        49,
+        38
+      ]
+    ]
+  },
+  "299": {
+    "min_level": 51,
+    "reason": "Live 3.3.5 spawn vicinity: 54 maximum level within 65 horizontal/20 vertical yards of a dig spot; minimum raised to enemy level minus 3.",
+    "evidence": [
+      [
+        "Jaedenar Warlock",
+        54,
+        1434
+      ]
+    ]
+  },
+  "301": {
+    "min_level": 51,
+    "reason": "Live 3.3.5 spawn vicinity: 54 maximum level within 65 horizontal/20 vertical yards of a dig spot; minimum raised to enemy level minus 3.",
+    "evidence": [
+      [
+        "Toxic Horror",
+        54,
+        16
+      ]
+    ]
+  },
+  "303": {
+    "min_level": 53,
+    "reason": "Live 3.3.5 spawn vicinity: 56 maximum level within 65 horizontal/20 vertical yards of a dig spot; minimum raised to enemy level minus 3.",
+    "evidence": [
+      [
+        "Anguished Highborne",
+        56,
+        21
+      ]
+    ]
+  },
+  "305": {
+    "min_level": 56,
+    "reason": "Live 3.3.5 spawn vicinity: 59 maximum level within 65 horizontal/20 vertical yards of a dig spot; minimum raised to enemy level minus 3.",
+    "evidence": [
+      [
+        "Berserk Owlbeast",
+        59,
+        16
+      ]
+    ]
+  },
+  "307": {
+    "min_level": 57,
+    "reason": "Live 3.3.5 spawn vicinity: 60 maximum level within 65 horizontal/20 vertical yards of a dig spot; minimum raised to enemy level minus 3.",
+    "evidence": [
+      [
+        "Frostmaul Giant",
+        60,
+        778
+      ],
+      [
+        "Frostmaul Preserver",
+        60,
+        778
+      ],
+      [
+        "Kashoch the Reaver",
+        60,
+        778
+      ]
+    ]
+  },
+  "321": {
+    "min_level": 47,
+    "reason": "Live 3.3.5 spawn vicinity: 50 maximum level within 65 horizontal/20 vertical yards of a dig spot; minimum raised to enemy level minus 3.",
+    "evidence": [
+      [
+        "Omgorn the Lost",
+        50,
+        45
+      ]
+    ]
+  },
+  "323": {
+    "min_level": 46,
+    "reason": "Live 3.3.5 spawn vicinity: 49 maximum level within 65 horizontal/20 vertical yards of a dig spot; minimum raised to enemy level minus 3.",
+    "evidence": [
+      [
+        "Glasshide Petrifier",
+        49,
+        49
+      ],
+      [
+        "Searing Roc",
+        49,
+        73
+      ]
+    ]
+  },
+  "327": {
+    "min_level": 51,
+    "reason": "Live 3.3.5 spawn vicinity: 54 maximum level within 65 horizontal/20 vertical yards of a dig spot; minimum raised to enemy level minus 3.",
+    "evidence": [
+      [
+        "Tar Lord",
+        54,
+        16
+      ],
+      [
+        "Tar Lurker",
+        54,
+        16
+      ]
+    ]
+  },
+  "329": {
+    "min_level": 51,
+    "reason": "Live 3.3.5 spawn vicinity: 54 maximum level within 65 horizontal/20 vertical yards of a dig spot; minimum raised to enemy level minus 3.",
+    "evidence": [
+      [
+        "Tar Lord",
+        54,
+        16
+      ],
+      [
+        "Tar Lurker",
+        54,
+        16
+      ]
+    ]
+  },
+  "331": {
+    "min_level": 54,
+    "reason": "Live 3.3.5 spawn vicinity: 57 maximum level within 65 horizontal/20 vertical yards of a dig spot; minimum raised to enemy level minus 3.",
+    "evidence": [
+      [
+        "Gruff",
+        57,
+        14
+      ]
+    ]
+  },
+  "333": {
+    "min_level": 57,
+    "reason": "Live 3.3.5 spawn vicinity: 60 maximum level within 65 horizontal/20 vertical yards of a dig spot; minimum raised to enemy level minus 3.",
+    "evidence": [
+      [
+        "King Mosh",
+        60,
+        14
+      ]
+    ]
+  },
+  "615": {
+    "min_level": 57,
+    "reason": "Live 3.3.5 spawn vicinity: 60 maximum level within 65 horizontal/20 vertical yards of a dig spot; minimum raised to enemy level minus 3.",
+    "evidence": [
+      [
+        "Plagued Swine",
+        60,
+        7
+      ]
+    ]
+  },
+  "617": {
+    "min_level": 55,
+    "reason": "Live 3.3.5 spawn vicinity: 58 maximum level within 65 horizontal/20 vertical yards of a dig spot; minimum raised to enemy level minus 3.",
+    "evidence": [
+      [
+        "Monstrous Plaguebat",
+        58,
+        14
+      ],
+      [
+        "Stitched Horror",
+        58,
+        21
+      ]
+    ]
+  }
+}

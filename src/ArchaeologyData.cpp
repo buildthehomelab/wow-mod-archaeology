@@ -10,6 +10,7 @@
 #include "DatabaseEnv.h"
 #include "DBCStores.h"
 #include "Log.h"
+#include "GameTime.h"
 #include "Player.h"
 #include "Random.h"
 #include "SpellInfo.h"
@@ -34,6 +35,8 @@ namespace Archaeology
     void LoadConfig()
     {
         Config c;
+        c.abandonSeconds = std::clamp<uint32>(sConfigMgr->GetOption<uint32>("Archaeology.AbandonCooldownSeconds", 1800), 1, 86400);
+        c.challengeLevels = std::min<uint32>(sConfigMgr->GetOption<uint32>("Archaeology.ChallengeLevels", 3), 5);
         c.enabled = sConfigMgr->GetOption<bool>("Archaeology.Enable", true);
         c.sitesPerContinent = std::clamp<uint32>(sConfigMgr->GetOption<uint32>("Archaeology.SitesPerContinent", 4), 1, 8);
         c.findsPerSite = std::max<uint32>(sConfigMgr->GetOption<uint32>("Archaeology.FindsPerSite", 3), 1);
@@ -107,7 +110,7 @@ namespace Archaeology
             } while (result->NextRow());
         }
 
-        if (QueryResult result = WorldDatabase.Query("SELECT `id`, `map`, `race`, `name`, `min_skill`, `min_level` FROM `mod_archaeology_site` WHERE `enabled` = 1"))
+        if (QueryResult result = WorldDatabase.Query("SELECT s.`id`, s.`map`, s.`race`, s.`name`, s.`min_skill`, s.`min_level`, COALESCE(a.`team`, 0), COALESCE(a.`starter_zone`, 0) FROM `mod_archaeology_site` s LEFT JOIN `mod_archaeology_site_access` a ON a.`site` = s.`id` WHERE s.`enabled` = 1"))
         {
             do
             {
@@ -119,6 +122,8 @@ namespace Archaeology
                 s.name = f[3].Get<std::string>();
                 s.minSkill = f[4].Get<uint32>();
                 s.minLevel = f[5].Get<uint32>();
+                s.team = f[6].Get<uint8>();
+                s.starterZone = f[7].Get<uint32>();
                 sites[s.id] = s;
             } while (result->NextRow());
         }
@@ -235,6 +240,8 @@ namespace Archaeology
             return;
         s.skill = skill->Fetch()[0].Get<uint32>();
         s.maxSkill = skill->Fetch()[1].Get<uint32>();
+        if (QueryResult cooldown = CharacterDatabase.Query("SELECT `until_time` FROM `mod_archaeology_char_expedition` WHERE `guid` = {}", guid))
+            s.abandonUntil = cooldown->Fetch()[0].Get<uint32>();
 
         if (QueryResult result = CharacterDatabase.Query("SELECT `continent`, `site`, `finds` FROM `mod_archaeology_char_site` WHERE `guid` = {} ORDER BY `continent`, `slot`", guid))
         {
@@ -296,13 +303,15 @@ namespace Archaeology
             player->GetGUID().GetCounter(), s->skill, s->maxSkill);
     }
 
-    void SaveSites(Player* player, uint32 continent)
+    void SaveSites(Player* player, uint32 continent, bool persistAbandonCooldown)
     {
         CharState* s = GetState(player);
         if (!s || continent >= CONTINENTS.size())
             return;
         ObjectGuid::LowType guid = player->GetGUID().GetCounter();
         CharacterDatabaseTransaction trans = CharacterDatabase.BeginTransaction();
+        if (persistAbandonCooldown)
+            trans->Append("REPLACE INTO `mod_archaeology_char_expedition` (`guid`, `until_time`) VALUES ({}, {})", guid, s->abandonUntil);
         trans->Append("DELETE FROM `mod_archaeology_char_site` WHERE `guid` = {} AND `continent` = {}", guid, continent);
         uint32 slot = 0;
         for (ActiveSite const& a : s->sites[continent])
@@ -432,7 +441,7 @@ namespace Archaeology
         return s && s->skill && s->skill >= race.unlockSkill;
     }
 
-    void RollSites(Player* player)
+    void RollSites(Player* player, uint32 deferredContinent)
     {
         CharState* s = GetState(player);
         if (!s || !s->skill)
@@ -443,15 +452,32 @@ namespace Archaeology
             if (!CanDigContinent(player, c))
                 continue;
             std::vector<ActiveSite>& held = s->sites[c];
+            auto end = std::remove_if(held.begin(), held.end(), [player, s, c](ActiveSite const& a)
+            {
+                Site const* site = GetSite(a.site);
+                return !site || site->map != CONTINENTS[c] || site->minSkill > s->skill || site->minLevel > player->GetLevel() || (site->team && site->team != uint8(player->GetTeamId()) + 1);
+            });
+            if (end != held.end())
+            {
+                ForgetFinds(player);
+                held.erase(end, held.end());
+                if (c != deferredContinent)
+                    SaveSites(player, c);
+            }
             if (held.size() >= config.sitesPerContinent)
                 continue;
 
+            bool localStarterPool = player->GetLevel() < 10 && std::any_of(sitesByMap[CONTINENTS[c]].begin(), sitesByMap[CONTINENTS[c]].end(),
+                [player](uint32 id) { Site const& site = sites[id]; return site.starterZone == player->GetZoneId() && site.starterZone &&
+                    (!site.team || site.team == uint8(player->GetTeamId()) + 1); });
             std::vector<uint32> pool;
             std::vector<double> weights;
             for (uint32 id : sitesByMap[CONTINENTS[c]])
             {
                 Site const& site = sites[id];
-                if (site.minSkill > s->skill || site.minLevel > player->GetLevel())
+                if (id == s->excludedSite || site.minSkill > s->skill || site.minLevel > player->GetLevel() || (site.team && site.team != uint8(player->GetTeamId()) + 1))
+                    continue;
+                if (localStarterPool && !s->excludedSite && site.starterZone && site.starterZone != player->GetZoneId())
                     continue;
                 if (std::any_of(held.begin(), held.end(), [id](ActiveSite const& a) { return a.site == id; }))
                     continue;
@@ -461,21 +487,77 @@ namespace Archaeology
                     if (projects[pid].rare && !s->solved.count(pid))
                         raresLeft = true;
                 pool.push_back(id);
-                weights.push_back(raresLeft ? 4.0 : 1.0);
+                double weight = raresLeft ? 4.0 : 1.0;
+                if (player->GetMapId() == site.map)
+                {
+                    float dx = player->GetPositionX() - site.center.x;
+                    float dy = player->GetPositionY() - site.center.y;
+                    weight *= 1.0 + 4.0 / (1.0 + (dx * dx + dy * dy) / 1000000.0);
+                }
+                if (site.starterZone && site.starterZone == player->GetZoneId())
+                    weight *= 20.0;
+                weights.push_back(weight);
             }
 
             bool changed = false;
             while (held.size() < config.sitesPerContinent && !pool.empty())
             {
-                std::size_t pick = Acore::Containers::SelectRandomWeightedContainerElement(pool, weights) - pool.begin();
+                std::vector<double> eligible = weights;
+                bool hasComfortable = std::any_of(pool.begin(), pool.end(), [player](uint32 id)
+                { return sites[id].minLevel <= 1 || sites[id].minLevel + config.challengeLevels <= player->GetLevel(); });
+                bool hasChallenge = std::any_of(held.begin(), held.end(), [player](ActiveSite const& a)
+                { return sites[a.site].minLevel > 1 && sites[a.site].minLevel + config.challengeLevels > player->GetLevel(); });
+                if (hasComfortable && (held.size() + 1 < config.sitesPerContinent || hasChallenge))
+                    for (std::size_t i = 0; i < pool.size(); ++i)
+                        if (sites[pool[i]].minLevel > 1 && sites[pool[i]].minLevel + config.challengeLevels > player->GetLevel())
+                            eligible[i] = 0.0;
+                std::size_t pick = Acore::Containers::SelectRandomWeightedContainerElement(pool, eligible) - pool.begin();
                 held.push_back({ pool[pick], 0, -1 });
                 pool.erase(pool.begin() + pick);
                 weights.erase(weights.begin() + pick);
                 changed = true;
             }
-            if (changed)
+            if (changed && c != deferredContinent)
                 SaveSites(player, c);
         }
+    }
+
+    bool AbandonSite(Player* player, uint32 id, std::string& error)
+    {
+        CharState* s = GetState(player);
+        if (!s || !s->skill) { error = "Learn Archaeology first."; return false; }
+        uint32 now = uint32(GameTime::GetGameTime().count());
+        if (now < s->abandonUntil)
+        { error = Acore::StringFormat("You can abandon another expedition in {} seconds.", s->abandonUntil - now); return false; }
+        for (uint32 c = 0; c < CONTINENTS.size(); ++c)
+        {
+            auto& held = s->sites[c];
+            auto it = std::find_if(held.begin(), held.end(), [id](ActiveSite const& a) { return a.site == id; });
+            if (it == held.end()) continue;
+            if (held.size() > config.sitesPerContinent)
+            { error = "Finish your extra expeditions before abandoning another."; return false; }
+            bool alternative = false;
+            for (uint32 other : sitesByMap[CONTINENTS[c]])
+                if (other != id && sites[other].minSkill <= s->skill && sites[other].minLevel <= player->GetLevel() && (!sites[other].team || sites[other].team == uint8(player->GetTeamId()) + 1) &&
+                    std::none_of(held.begin(), held.end(), [other](ActiveSite const& a) { return a.site == other; }))
+                    alternative = true;
+            if (!CanDigContinent(player, c) || !alternative)
+            { error = "No alternative expedition is available on this continent yet."; return false; }
+            ForgetFinds(player);
+            held.erase(it);
+            s->excludedSite = id;
+            s->abandonUntil = now + config.abandonSeconds;
+            // Other continents may repair/refill first. Only this final transaction
+            // may persist the new cooldown; defer every intermediate save for c.
+            RollSites(player, c);
+            SaveSites(player, c, true);
+            s->excludedSite = 0;
+            SendSites(player);
+            Notify(player, "Expedition abandoned. A replacement has been revealed; no rewards were granted.");
+            return true;
+        }
+        error = "That expedition is not assigned to you.";
+        return false;
     }
 
     void PickProject(Player* player, uint8 race)

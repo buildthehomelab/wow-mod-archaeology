@@ -32,6 +32,7 @@ OUT = ROOT / "data" / "sql" / "db-world" / "mod_archaeology_world_data.sql"
 MAPS = {0, 1, 530, 571}
 SKIP_BRANCHES = {7, 29}
 MAX_SITE_SKILL = 449
+LEVEL_OVERRIDES = json.loads((ROOT / "tools" / "site-level-overrides.json").read_text())
 # Known incompatible sites and conservative terrain holds; see docs/wotlk-digsites.md.
 DISABLED_SITES = json.loads((ROOT / "tools" / "wotlk-disabled-sites.json").read_text())
 
@@ -109,6 +110,7 @@ def main():
     race_min_skill = {}
     for sid in sorted(site_data):
         branch, skill, level = site_data[sid]
+        level = LEVEL_OVERRIDES.get(str(sid), {}).get("min_level", level)
         site = sites.get(sid)
         if not site or branch in SKIP_BRANCHES or skill > MAX_SITE_SKILL:
             continue

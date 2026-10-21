@@ -3,7 +3,7 @@
  * player/world hooks that load and drop state.
  *
  * Addon wire format, both directions: an addon whisper to yourself, "ARCH\t<COMMAND>[:...]".
- *   client -> server  HELLO, SITES, RACES, PROJ:<id>, SURVEY, SOLVE:<race>:<keystones>
+ *   client -> server  HELLO, SITES, RACES, PROJ:<id>, SURVEY, SOLVE:<race>:<keystones>, COLLECTION, TRAITS, ABANDON:<site>
  *   server -> client  S:<skill>:<max skill>               skill (0 = not learned)
  *                     R:<race>,<name>,<fragments>,<cap>,<project>,<cost>,<sockets>,<rare>,<keystones owned>,<unlocked>;...  REND
  *                     T:<site>,<map>,<race>,<finds left>,<name>;...  TEND   your dig sites
@@ -43,7 +43,7 @@ namespace
     constexpr Milliseconds REQUEST_COOLDOWN = 1s;
     constexpr uint32 TRAINER_TEXT = 9503500;
 
-    enum Request : uint8 { REQUEST_HELLO, REQUEST_SITES, REQUEST_RACES, REQUEST_PROJ, REQUEST_SOLVE, REQUEST_COUNT };
+    enum Request : uint8 { REQUEST_HELLO, REQUEST_SITES, REQUEST_RACES, REQUEST_PROJ, REQUEST_SOLVE, REQUEST_COLLECTION, REQUEST_TRAITS, REQUEST_ABANDON, REQUEST_COUNT };
     std::unordered_map<ObjectGuid::LowType, std::array<Milliseconds, REQUEST_COUNT>> lastRequest;
 
     bool Throttled(Player* player, Request request)
@@ -129,7 +129,7 @@ namespace
         for (uint32 c = 0; c < CONTINENTS.size(); ++c)
             for (ActiveSite const& a : s->sites[c])
                 if (Site const* site = GetSite(a.site))
-                    text += Acore::StringFormat("\n  {} ({}, {} of {} finds left)", site->name, GetRace(site->race)->name,
+                    text += Acore::StringFormat("\n  {} [site {}, recommended level {}] ({}, {} of {} finds left)", site->name, site->id, site->minLevel, GetRace(site->race)->name,
                         GetConfig().findsPerSite - a.finds, GetConfig().findsPerSite);
         return text;
     }
@@ -203,6 +203,30 @@ namespace Archaeology
             SendRows(player, Acore::StringFormat("G:{}", site->id), points, "");
         }
         SendAddon(player, "TEND");
+        for (Site const* site : held)
+            SendAddon(player, Acore::StringFormat("E:{}:{}:{}", site->id, site->minLevel,
+                site->minLevel > 1 && site->minLevel + GetConfig().challengeLevels > player->GetLevel() ? 1 : 0));
+    }
+
+    void SendCollection(Player* player)
+    {
+        CharState* s = GetState(player);
+        if (!s || !s->skill) return;
+        SendAddon(player, "CBEGIN");
+        for (Race const& race : AllRaces())
+        {
+            uint32 continent = (race.id == 2 || race.id == 6) ? 2 : (race.id == 5 || race.id == 27) ? 3 : 0;
+            uint32 state = GetConfig().ipEnabled ? (continent == 2 ? GetConfig().ipOutlandState : continent == 3 ? GetConfig().ipNorthrendState : 0) : 0;
+            SendAddon(player, Acore::StringFormat("U:{}:{}:{}:{}", race.id, race.unlockSkill, state, CanDigContinent(player, continent) ? 1 : 0));
+            for (uint32 id : ProjectsOfRace(race.id))
+                if (Project const* p = GetProject(id))
+                {
+                    auto it = s->solved.find(id);
+                    SendAddon(player, Acore::StringFormat("C:{}:{}:{}:{}:{}:{}", p->id, p->race, p->rare ? 1 : 0,
+                        p->item, it == s->solved.end() ? 0 : it->second, Clean(p->name).substr(0, 150)));
+                }
+        }
+        SendAddon(player, "CEND");
     }
 
     void SendProject(Player* player, uint32 projectId)
@@ -251,6 +275,7 @@ public:
         CharacterDatabase.Execute("DELETE FROM `mod_archaeology_char` WHERE `guid` = {}", low);
         CharacterDatabase.Execute("DELETE FROM `mod_archaeology_char_site` WHERE `guid` = {}", low);
         CharacterDatabase.Execute("DELETE FROM `mod_archaeology_char_race` WHERE `guid` = {}", low);
+        CharacterDatabase.Execute("DELETE FROM `mod_archaeology_char_expedition` WHERE `guid` = {}", low);
         CharacterDatabase.Execute("DELETE FROM `mod_archaeology_char_history` WHERE `guid` = {}", low);
         CharacterDatabase.Execute("DELETE FROM `mod_archaeology_char_relic` WHERE `guid` = {}", low);
     }
@@ -332,6 +357,21 @@ public:
                 SendSites(player);
                 SendRelic(player);
             }
+        }
+        else if (command == "TRAITS")
+        {
+            if (!Throttled(player, REQUEST_TRAITS)) SendTraits(player);
+        }
+        else if (command == "COLLECTION")
+        {
+            if (!Throttled(player, REQUEST_COLLECTION))
+            { SendCollection(player); SendTraits(player); }
+        }
+        else if (command.substr(0, 8) == "ABANDON:")
+        {
+            if (!Throttled(player, REQUEST_ABANDON))
+                if (Optional<uint32> id = Acore::StringTo<uint32>(command.substr(8)))
+                { std::string error; if (!AbandonSite(player, *id, error)) Notify(player, error); }
         }
         else if (command == "SITES")
         {
@@ -487,6 +527,7 @@ public:
         {
             { "relic",  relicCommands },
             { "",       HandleStatus, SEC_PLAYER,        Console::No },
+            { "abandon", HandleAbandon, SEC_PLAYER, Console::No },
             { "survey", HandleSurvey, SEC_PLAYER,        Console::No },
             { "solve",  HandleSolve,  SEC_PLAYER,        Console::No },
             { "skill",  HandleSkill,  SEC_GAMEMASTER,    Console::No },
@@ -502,6 +543,14 @@ public:
     static bool HandleStatus(ChatHandler* handler)
     {
         handler->SendSysMessage(StatusText(handler->GetPlayer()));
+        return true;
+    }
+
+    static bool HandleAbandon(ChatHandler* handler, uint32 site)
+    {
+        std::string error;
+        if (!AbandonSite(handler->GetPlayer(), site, error))
+        { handler->SendErrorMessage("{}", error); return false; }
         return true;
     }
 
