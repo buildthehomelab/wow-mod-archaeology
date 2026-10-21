@@ -310,6 +310,8 @@ namespace Archaeology
             return;
         ObjectGuid::LowType guid = player->GetGUID().GetCounter();
         CharacterDatabaseTransaction trans = CharacterDatabase.BeginTransaction();
+        if (s->abandonUntil)
+            trans->Append("REPLACE INTO `mod_archaeology_char_expedition` (`guid`, `until_time`) VALUES ({}, {})", guid, s->abandonUntil);
         trans->Append("DELETE FROM `mod_archaeology_char_site` WHERE `guid` = {} AND `continent` = {}", guid, continent);
         uint32 slot = 0;
         for (ActiveSite const& a : s->sites[continent])
@@ -531,6 +533,8 @@ namespace Archaeology
             auto& held = s->sites[c];
             auto it = std::find_if(held.begin(), held.end(), [id](ActiveSite const& a) { return a.site == id; });
             if (it == held.end()) continue;
+            if (held.size() > config.sitesPerContinent)
+            { error = "Finish your extra expeditions before abandoning another."; return false; }
             bool alternative = false;
             for (uint32 other : sitesByMap[CONTINENTS[c]])
                 if (other != id && sites[other].minSkill <= s->skill && sites[other].minLevel <= player->GetLevel() && (!sites[other].team || sites[other].team == uint8(player->GetTeamId()) + 1) &&
@@ -542,8 +546,7 @@ namespace Archaeology
             held.erase(it);
             s->excludedSite = id;
             s->abandonUntil = now + config.abandonSeconds;
-            CharacterDatabase.Execute("REPLACE INTO `mod_archaeology_char_expedition` (`guid`, `until_time`) VALUES ({}, {})", player->GetGUID().GetCounter(), s->abandonUntil);
-            SaveSites(player, c);
+            // RollSites saves the final replacement and cooldown in one transaction.
             RollSites(player);
             s->excludedSite = 0;
             SendSites(player);

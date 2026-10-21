@@ -327,7 +327,7 @@ end)
 
 local hint = page:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
 hint:SetPoint("BOTTOMLEFT", 4, 34)
-hint:SetPoint("RIGHT", solve, "LEFT", -8, 0)
+hint:SetPoint("BOTTOMRIGHT", -4, 34)
 hint:SetJustifyH("LEFT")
 
 -- A race as a line of a host's list column (Hosted.lua, HostedRetail.lua): its icon, name and

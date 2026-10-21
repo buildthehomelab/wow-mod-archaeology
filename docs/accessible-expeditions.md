@@ -44,6 +44,7 @@ it does not duplicate points or re-enable an operator-disabled site. A full norm
 base-data reimport retains the module's existing destructive world-catalog replacement
 semantics; run the access SQL afterwards. Character discoveries/fragments are untouched.
 
+The cooldown and final replacement assignment are committed in one SaveSites transaction.
 The separate character cooldown table prevents relogging from bypassing expedition
 abandonment. Existing installations need the world and character migrations before
 running the new module binary. Removing assignments never removes discovery history.

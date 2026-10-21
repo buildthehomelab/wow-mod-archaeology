@@ -34,7 +34,7 @@ CharState* GetState(Player*) {return &state;}
 Site const* GetSite(uint32 id) {auto i=sites.find(id);return i==sites.end()?nullptr:&i->second;}
 bool CanDigContinent(Player*,uint32 c) {return c<2 || expansionOpen;}
 void ForgetFinds(Player*) {++forgotten;}
-void SaveSites(Player*,uint32) {++saves;}
+void SaveSites(Player*,uint32) {++saves;if(state.abandonUntil)++dbWrites;}
 void SendSites(Player*) {}
 void Notify(Player*,std::string const&) {++notifications;}
 struct DB {template<class... T>void Execute(char const*,T...){++dbWrites;}} CharacterDatabase;
@@ -62,6 +62,8 @@ int main() {
  assert(!AbandonSite(&p,9999,error));
  // Enough comfortable choices reserve a baseline even with numerous challenge candidates.
  for(unsigned run=0;run<200;++run){reset();p.level=20;for(unsigned i=1;i<=8;++i)add(i,10,0,0);for(unsigned i=9;i<=20;++i)add(i,19,0,0);RollSites(&p);unsigned hard=0;for(auto a:state.sites[0])hard+=sites[a.site].minLevel>17;assert(hard<=1);}
+ // A reduced slot cap must not consume an expedition without a replacement.
+ reset();p.level=20;for(unsigned i=1;i<=8;++i)add(i,10,0,0);RollSites(&p);config.sitesPerContinent=2;assert(!AbandonSite(&p,state.sites[0][0].site,error));assert(state.sites[0].size()==4 && state.abandonUntil==0);config.sitesPerContinent=4;
  // Expired cooldowns allow the next real replacement, not a fabricated site id.
  reset();p.level=20;for(unsigned i=1;i<=8;++i)add(i,10,0,0);RollSites(&p);auto old=state.sites[0][0].site;state.abandonUntil=100;assert(AbandonSite(&p,old,error));for(auto a:state.sites[0])assert(a.site!=old);
 }
