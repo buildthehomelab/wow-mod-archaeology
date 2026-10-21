@@ -50,7 +50,7 @@ namespace Archaeology
         c.digYards = sConfigMgr->GetOption<float>("Archaeology.Survey.DigYards", 8.0f);
         c.minSpotYards = sConfigMgr->GetOption<float>("Archaeology.Survey.MinSpotYards", 40.0f);
         c.shovelDig = sConfigMgr->GetOption<bool>("Archaeology.Dig.Shovel", true);
-        c.shovelYards = std::max(0.5f, sConfigMgr->GetOption<float>("Archaeology.Dig.ShovelYards", 1.0f));
+        c.shovelYards = std::max(0.5f, sConfigMgr->GetOption<float>("Archaeology.Dig.ShovelYards", 3.0f));
         c.digMs = sConfigMgr->GetOption<uint32>("Archaeology.Dig.Ms", 1500);
         c.surveyCooldownMs = sConfigMgr->GetOption<uint32>("Archaeology.Survey.CooldownMs", 3000);
         c.skillPerFindUntil = sConfigMgr->GetOption<uint32>("Archaeology.Skill.FindsUntil", 50);
