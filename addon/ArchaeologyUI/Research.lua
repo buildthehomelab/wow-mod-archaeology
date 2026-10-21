@@ -326,7 +326,7 @@ solve:SetScript("OnClick", function()
 end)
 
 local hint = page:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
-hint:SetPoint("BOTTOMLEFT", 4, 10)
+hint:SetPoint("BOTTOMLEFT", 4, 34)
 hint:SetPoint("RIGHT", solve, "LEFT", -8, 0)
 hint:SetJustifyH("LEFT")
 

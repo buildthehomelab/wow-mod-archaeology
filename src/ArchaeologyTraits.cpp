@@ -22,6 +22,7 @@
 #include "SpellMgr.h"
 #include "SpellScript.h"
 #include "SpellScriptLoader.h"
+#include <algorithm>
 #include <atomic>
 #include <cmath>
 #include <mutex>
@@ -614,6 +615,45 @@ namespace Archaeology
         std::lock_guard<std::mutex> lock(queueLock);
         if (queued.erase(player->GetGUID()))
             --queuedCount;
+    }
+
+    void SendTraits(Player* player)
+    {
+        CharState* s = GetState(player);
+        if (!s || !s->skill) return;
+        SendAddon(player, "JBEGIN");
+        for (Trait const& t : traits)
+        {
+            bool rare = false;
+            uint32 commons = CommonSolves(*s, t.race, rare);
+            bool awake = (s->relic.traits & (1u << t.race)) != 0;
+            float bonus = IsRaceComplete(*s, t.race) ? GetConfig().traitCompleteBonus : 1.0f;
+            float strength = RankFactor(player) * (t.kind == TRAIT_MERCY ? 1.0f : bonus);
+            std::string status = !TraitsOn() ? "Disabled by realm settings" : !awake ? "Locked" :
+                !s->relic.rank ? "Obtain your Unearthed Relic" : !IsRelicEquipped(player) ? "Equip your Unearthed Relic" :
+                !player->IsAlive() ? "Inactive while dead" : player->HasAura(t.aura) ? "Active" : "Waiting for aura refresh";
+            std::string name = t.name;
+            std::replace(name.begin(), name.end(), ':', ' ');
+            SendAddon(player, Acore::StringFormat("J:{}:{}:{}:{}:{}:{}:{}:{}:{}", t.race, t.aura, awake ? 1 : 0,
+                commons, GetConfig().traitWakeCommons, int32(std::lround(strength * 100.0f)),
+                GetConfig().traitCompleteBonus, status, name.substr(0, 80)));
+            float value = t.value * strength;
+            std::string effect;
+            switch (t.kind)
+            {
+                case TRAIT_EMBER: effect = Acore::StringFormat("Hits can add Fire damage equal to {:g}% of attack or spell power.", value); break;
+                case TRAIT_FOCUS: effect = Acore::StringFormat("Hits and spells can restore {:g}% mana, {:g} rage/runic power or {:g} energy.", value, t.value2 * strength, 2 * t.value2 * strength); break;
+                case TRAIT_VIGOR: effect = Acore::StringFormat("Hits and spells can grant {:g}% haste.", value); break;
+                case TRAIT_AMBER: effect = Acore::StringFormat("Being struck can shield you for {:g}% of maximum health.", value); break;
+                case TRAIT_NAARU: effect = Acore::StringFormat("Hits and heals can heal you or an ally within {:g} yards for {:g}% of maximum health.", t.value2, value); break;
+                case TRAIT_HORDE: effect = Acore::StringFormat("Up to {:g}% more damage as health falls; full bonus at {:g}% health.", value, t.value2); break;
+                case TRAIT_VENOM: effect = Acore::StringFormat("Hits can poison for {:g}% of attack or spell power per stack, up to 5 stacks.", value); break;
+                case TRAIT_MERCY: effect = Acore::StringFormat("A killing blow can leave {:g}% health; recovery {:g} seconds. Collection completion shortens recovery.", value, t.cooldownMs / (1000.0f * bonus)); break;
+                default: effect = "Trait unavailable."; break;
+            }
+            SendAddon(player, Acore::StringFormat("K:{}:{}", t.race, effect));
+        }
+        SendAddon(player, "JEND");
     }
 
     std::string TraitStatusText(Player* player)

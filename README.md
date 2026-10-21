@@ -264,3 +264,51 @@ The source and generated model can be checked locally, but the server build and 
 ### Keystone reagent bank
 
 With the matching mod-reagent-bank-account keystone inclusions, all seven keystones can be deposited through the bank’s existing manual and periodic deposit flows. In the research page, click the **Bank** keystone slot, enter a quantity (defaults to one), and press **Withdraw**. The server transfers available keystones into your bags, subject to bag space. Artifact sockets still select keystones from your bags; solving does not consume banked items directly. Fossil has no keystone slot. This requires the updated bank SQL and a server restart to reload deposit inclusions; no client patch change is needed.
+
+## Accessible expeditions and collection journal
+
+The archaeology research page (including its DragonUI/RetailProfessions host) has a
+**Collection & Bonuses** button. `/arch collection` and `/arch bonuses` open the same
+view. Every race, including locked ones, has a catalogue with collected/missing filters,
+unique and rare discovery counts, repeat solve counts, reward inspection and artifact
+lore. A discovery is a positive saved solve count, independent of item ownership.
+Race completion requires all of that race's unique projects; repeated commons only
+advance their solve counter and trait unlock, not catalogue completion.
+
+Race bonuses show their configured unlock target, current relic strength, actual
+active/inactive status and completion multiplier. They remain server-owned relic
+auras, not learned spellbook spells: open archaeology through the professions entry
+to inspect them. Val'kyr's Mercy's completion bonus shortens recovery rather than
+multiplying the health saved. The catalogue is fetched on demand; the visible journal
+refreshes lightweight trait state every five seconds and discovery history after solves.
+
+New assignments respect faction restrictions and prefer nearby regions. Characters
+below level 10 in one of the six supported starter zones receive their local starter
+pool on that continent. There are 24 native beginner sites (four each in Northshire,
+Coldridge, Deathknell, Shadowglen, Red Cloud Mesa and Valley of Trials). Their exact
+find XYZ comes from the test realm's actual low-level creature spawns; polygons are
+custom bounds. These placements are **provisional until surveyed in the game client**.
+They do not add sites to the Blood Elf or Draenei starter islands; those characters
+can use their faction's mainland sites after travelling there.
+
+59 imported old-world sites have conservatively raised minimum levels based on the
+3.3.5 spawn vicinity, including Broken Commons (0 -> 51). Outland/Northrend requirements
+and progression gates are retained. With enough comfortable alternatives, new rolls
+reserve all but at most one slot for sites at least `Archaeology.ChallengeLevels`
+(default 3) below the player. Level-one training sites always count as comfortable.
+This is an allocation rule, not enemy scaling or a guarantee of a safe travel route.
+Existing eligible partial digs survive; saved assignments that no longer meet level,
+skill or faction requirements are replaced on the next roll/login.
+
+Right-click a map digsite to abandon it, or use `.arch abandon <site id>` (IDs are
+listed by `.arch`). Abandoning loses partial site progress, grants no rewards, excludes
+that site from the immediate replacement and starts a persistent character cooldown
+(default 1,800 seconds). If no alternative exists, it leaves the assignment and cooldown
+untouched. The realm may configure a different cooldown.
+
+Apply normal module SQL including `mod_archaeology_char_expedition.sql` and
+`mod_archaeology_world_zz_access.sql`, rebuild the module, and distribute ArchaeologyUI
+0.6.0 together. No new client DBC/MPQ patch is required for these UI/access changes.
+The existing archaeology patch is still required by the module's skill/items/auras.
+The upgrade preserves operator-disabled sites. See [the access audit](docs/accessible-expeditions.md)
+for provenance, generation, tests and the remaining client validation checklist.

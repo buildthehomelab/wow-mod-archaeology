@@ -34,8 +34,19 @@ local function pinTooltip(self)
     GameTooltip:SetText(site.name)
     GameTooltip:AddLine((race and race.name or "Unknown") .. " dig site", 1, 1, 1)
     GameTooltip:AddLine(site.finds .. (site.finds == 1 and " find left" or " finds left"), 0.8, 0.8, 0.8)
+    if site.level then
+        GameTooltip:AddLine("Recommended level: " .. site.level, 1, 1, 1)
+        if site.challenge then GameTooltip:AddLine("Challenging expedition", 1, 0.65, 0.2) end
+    end
+    GameTooltip:AddLine("Right-click to abandon (30-minute realm default cooldown).", 0.8, 0.8, 0.8, true)
     GameTooltip:Show()
 end
+
+StaticPopupDialogs["ARCH_ABANDON_EXPEDITION"] = {
+    text = "Abandon %s? Partial site progress is lost. No rewards are granted. A realm cooldown applies.",
+    button1 = ACCEPT, button2 = CANCEL, timeout = 0, whileDead = true, hideOnEscape = true,
+    OnAccept = function(self) A.Send("ABANDON:" .. self.data) end,
+}
 
 local function pin()
     pinsUsed = pinsUsed + 1
@@ -49,6 +60,12 @@ local function pin()
         p.icon:SetTexture(A.SHOVEL)
         p.icon:SetTexCoord(0.08, 0.92, 0.08, 0.92)
         p:EnableMouse(true)
+        p:SetScript("OnMouseUp", function(self, button)
+            if button == "RightButton" then
+                local dialog = StaticPopup_Show("ARCH_ABANDON_EXPEDITION", self.site.name)
+                if dialog then dialog.data = self.site.id end
+            end
+        end)
         p:SetScript("OnEnter", pinTooltip)
         p:SetScript("OnLeave", function() GameTooltip:Hide() end)
         pins[pinsUsed] = p

@@ -38,6 +38,8 @@ namespace Archaeology
     {
         bool enabled = true;
         uint32 sitesPerContinent = 4;
+        uint32 abandonSeconds = 1800;
+        uint32 challengeLevels = 3;
         uint32 findsPerSite = 3;
         uint32 fragmentsMin = 5;
         uint32 fragmentsMax = 9;
@@ -103,6 +105,8 @@ namespace Archaeology
         std::string name;
         uint32 minSkill = 0;
         uint32 minLevel = 0;
+        uint8 team = 0;
+        uint32 starterZone = 0;
         std::vector<Point> polygon;
         std::vector<Spot> spots;
         Point center { 0.0f, 0.0f };
@@ -182,6 +186,8 @@ namespace Archaeology
         std::unordered_map<uint32, uint32> solved;   // project id -> times solved
         uint32 shovelCheckMs = 0;
         uint32 lastSurveyMs = 0;
+        uint32 abandonUntil = 0;
+        uint32 excludedSite = 0; // transient replacement exclusion
         uint32 innkeeperWaitMs = 0; // transient: summon only after hearth transfer completes
         RelicState relic;
     };
@@ -212,6 +218,9 @@ namespace Archaeology
     uint32 IpState(Player* player);
     bool CanDigContinent(Player* player, uint32 continentIndex);
     void RollSites(Player* player);
+    bool AbandonSite(Player* player, uint32 site, std::string& error);
+    void SendCollection(Player* player);
+    void SendTraits(Player* player);
     void PickProject(Player* player, uint8 race);
     bool IsRaceUnlocked(Player* player, Race const& race);
 

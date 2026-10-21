@@ -1,0 +1,573 @@
+{
+  "source": "Evermore acore_world.creature / creature_template read-only snapshot 2026-10-21. Conservative vicinity audit; ignores native friendly guard/civilian factions and neutral faction 35, NPCs and critters. Does not certify pathfinding or combat reaction.",
+  "sites": [
+    {
+      "id": 9,
+      "name": "Ironband's Excavation Site",
+      "old_min_level": 10,
+      "min_level": 19,
+      "nearby_max_level": 22,
+      "nearby_creatures": 39
+    },
+    {
+      "id": 10,
+      "name": "Ironbeard's Tomb",
+      "old_min_level": 20,
+      "min_level": 23,
+      "nearby_max_level": 26,
+      "nearby_creatures": 28
+    },
+    {
+      "id": 18,
+      "name": "Witherbark Digsite",
+      "old_min_level": 25,
+      "min_level": 34,
+      "nearby_max_level": 37,
+      "nearby_creatures": 65
+    },
+    {
+      "id": 19,
+      "name": "Thandol Span",
+      "old_min_level": 25,
+      "min_level": 25,
+      "nearby_max_level": 25,
+      "nearby_creatures": 0
+    },
+    {
+      "id": 22,
+      "name": "Aerie Peak Digsite",
+      "old_min_level": 30,
+      "min_level": 39,
+      "nearby_max_level": 42,
+      "nearby_creatures": 17
+    },
+    {
+      "id": 23,
+      "name": "Shadra'Alor Digsite",
+      "old_min_level": 30,
+      "min_level": 43,
+      "nearby_max_level": 46,
+      "nearby_creatures": 33
+    },
+    {
+      "id": 24,
+      "name": "Altar of Zul Digsite",
+      "old_min_level": 30,
+      "min_level": 45,
+      "nearby_max_level": 48,
+      "nearby_creatures": 34
+    },
+    {
+      "id": 25,
+      "name": "Jintha'Alor Lower City Digsite",
+      "old_min_level": 30,
+      "min_level": 46,
+      "nearby_max_level": 49,
+      "nearby_creatures": 76
+    },
+    {
+      "id": 26,
+      "name": "Jintha'Alor Upper City Digsite",
+      "old_min_level": 30,
+      "min_level": 49,
+      "nearby_max_level": 52,
+      "nearby_creatures": 76
+    },
+    {
+      "id": 27,
+      "name": "Agol'watha Digsite",
+      "old_min_level": 30,
+      "min_level": 45,
+      "nearby_max_level": 48,
+      "nearby_creatures": 23
+    },
+    {
+      "id": 163,
+      "name": "Twilight Grove Digsite",
+      "old_min_level": 20,
+      "min_level": 60,
+      "nearby_max_level": 63,
+      "nearby_creatures": 3
+    },
+    {
+      "id": 165,
+      "name": "Vul'Gol Fossil Bank",
+      "old_min_level": 20,
+      "min_level": 27,
+      "nearby_max_level": 30,
+      "nearby_creatures": 29
+    },
+    {
+      "id": 169,
+      "name": "Zoram Strand Digsite",
+      "old_min_level": 20,
+      "min_level": 20,
+      "nearby_max_level": 22,
+      "nearby_creatures": 47
+    },
+    {
+      "id": 171,
+      "name": "Ruins of Ordil'Aran",
+      "old_min_level": 20,
+      "min_level": 20,
+      "nearby_max_level": 21,
+      "nearby_creatures": 23
+    },
+    {
+      "id": 173,
+      "name": "Ruins of Stardust",
+      "old_min_level": 20,
+      "min_level": 21,
+      "nearby_max_level": 24,
+      "nearby_creatures": 20
+    },
+    {
+      "id": 175,
+      "name": "Forest Song Digsite",
+      "old_min_level": 20,
+      "min_level": 28,
+      "nearby_max_level": 31,
+      "nearby_creatures": 7
+    },
+    {
+      "id": 193,
+      "name": "Ethel Rethor Digsite",
+      "old_min_level": 30,
+      "min_level": 31,
+      "nearby_max_level": 34,
+      "nearby_creatures": 7
+    },
+    {
+      "id": 195,
+      "name": "Valley of Bones",
+      "old_min_level": 30,
+      "min_level": 37,
+      "nearby_max_level": 40,
+      "nearby_creatures": 29
+    },
+    {
+      "id": 199,
+      "name": "Kodo Graveyard",
+      "old_min_level": 30,
+      "min_level": 34,
+      "nearby_max_level": 37,
+      "nearby_creatures": 25
+    },
+    {
+      "id": 201,
+      "name": "Sargeron Digsite",
+      "old_min_level": 30,
+      "min_level": 30,
+      "nearby_max_level": 33,
+      "nearby_creatures": 48
+    },
+    {
+      "id": 205,
+      "name": "Dreadmaul Fossil Field",
+      "old_min_level": 54,
+      "min_level": 67,
+      "nearby_max_level": 70,
+      "nearby_creatures": 80
+    },
+    {
+      "id": 207,
+      "name": "Grimsilt Digsite",
+      "old_min_level": 47,
+      "min_level": 47,
+      "nearby_max_level": 47,
+      "nearby_creatures": 16
+    },
+    {
+      "id": 209,
+      "name": "Pyrox Flats Digsite",
+      "old_min_level": 47,
+      "min_level": 47,
+      "nearby_max_level": 50,
+      "nearby_creatures": 34
+    },
+    {
+      "id": 211,
+      "name": "Western Ruins of Thaurissan",
+      "old_min_level": 49,
+      "min_level": 54,
+      "nearby_max_level": 57,
+      "nearby_creatures": 17
+    },
+    {
+      "id": 213,
+      "name": "Eastern Ruins of Thaurissan",
+      "old_min_level": 49,
+      "min_level": 67,
+      "nearby_max_level": 70,
+      "nearby_creatures": 59
+    },
+    {
+      "id": 215,
+      "name": "Terror Wing Fossil Field",
+      "old_min_level": 49,
+      "min_level": 53,
+      "nearby_max_level": 56,
+      "nearby_creatures": 15
+    },
+    {
+      "id": 217,
+      "name": "Zul'Mashar Digsite",
+      "old_min_level": 40,
+      "min_level": 57,
+      "nearby_max_level": 60,
+      "nearby_creatures": 37
+    },
+    {
+      "id": 219,
+      "name": "Quel'Lithien Lodge Digsite",
+      "old_min_level": 40,
+      "min_level": 57,
+      "nearby_max_level": 60,
+      "nearby_creatures": 26
+    },
+    {
+      "id": 223,
+      "name": "Eastern Zul'Kunda Digsite",
+      "old_min_level": 25,
+      "min_level": 34,
+      "nearby_max_level": 37,
+      "nearby_creatures": 77
+    },
+    {
+      "id": 225,
+      "name": "Western Zul'Kunda Digsite",
+      "old_min_level": 25,
+      "min_level": 38,
+      "nearby_max_level": 41,
+      "nearby_creatures": 88
+    },
+    {
+      "id": 227,
+      "name": "Bal'lal Ruins Digsite",
+      "old_min_level": 25,
+      "min_level": 35,
+      "nearby_max_level": 38,
+      "nearby_creatures": 22
+    },
+    {
+      "id": 229,
+      "name": "Balia'mah Digsite",
+      "old_min_level": 25,
+      "min_level": 37,
+      "nearby_max_level": 40,
+      "nearby_creatures": 18
+    },
+    {
+      "id": 231,
+      "name": "Ziata'jai Digsite",
+      "old_min_level": 25,
+      "min_level": 37,
+      "nearby_max_level": 40,
+      "nearby_creatures": 15
+    },
+    {
+      "id": 233,
+      "name": "Eastern Zul'Mamwe Digsite",
+      "old_min_level": 25,
+      "min_level": 41,
+      "nearby_max_level": 44,
+      "nearby_creatures": 35
+    },
+    {
+      "id": 235,
+      "name": "Western Zul'Mamwe Digsite",
+      "old_min_level": 25,
+      "min_level": 42,
+      "nearby_max_level": 45,
+      "nearby_creatures": 38
+    },
+    {
+      "id": 239,
+      "name": "Ruins of Aboraz",
+      "old_min_level": 30,
+      "min_level": 43,
+      "nearby_max_level": 46,
+      "nearby_creatures": 20
+    },
+    {
+      "id": 241,
+      "name": "Ruins of Jubuwal",
+      "old_min_level": 30,
+      "min_level": 41,
+      "nearby_max_level": 44,
+      "nearby_creatures": 12
+    },
+    {
+      "id": 243,
+      "name": "Gurubashi Arena Digsite",
+      "old_min_level": 30,
+      "min_level": 40,
+      "nearby_max_level": 43,
+      "nearby_creatures": 16
+    },
+    {
+      "id": 245,
+      "name": "Nek'mani Wellspring Digsite",
+      "old_min_level": 30,
+      "min_level": 42,
+      "nearby_max_level": 45,
+      "nearby_creatures": 11
+    },
+    {
+      "id": 247,
+      "name": "Felstone Fossil Field",
+      "old_min_level": 35,
+      "min_level": 51,
+      "nearby_max_level": 54,
+      "nearby_creatures": 60
+    },
+    {
+      "id": 249,
+      "name": "Northridge Fossil Field",
+      "old_min_level": 35,
+      "min_level": 56,
+      "nearby_max_level": 59,
+      "nearby_creatures": 46
+    },
+    {
+      "id": 251,
+      "name": "Andorhal Fossil Bank",
+      "old_min_level": 35,
+      "min_level": 35,
+      "nearby_max_level": 35,
+      "nearby_creatures": 0
+    },
+    {
+      "id": 259,
+      "name": "Wyrmbog Fossil Field",
+      "old_min_level": 35,
+      "min_level": 41,
+      "nearby_max_level": 44,
+      "nearby_creatures": 34
+    },
+    {
+      "id": 261,
+      "name": "Quagmire Fossil Field",
+      "old_min_level": 35,
+      "min_level": 42,
+      "nearby_max_level": 45,
+      "nearby_creatures": 28
+    },
+    {
+      "id": 279,
+      "name": "Dire Maul Digsite",
+      "old_min_level": 35,
+      "min_level": 51,
+      "nearby_max_level": 54,
+      "nearby_creatures": 17
+    },
+    {
+      "id": 281,
+      "name": "Broken Commons Digsite",
+      "old_min_level": 0,
+      "min_level": 51,
+      "nearby_max_level": 54,
+      "nearby_creatures": 33
+    },
+    {
+      "id": 283,
+      "name": "Ravenwind Digsite",
+      "old_min_level": 35,
+      "min_level": 47,
+      "nearby_max_level": 50,
+      "nearby_creatures": 32
+    },
+    {
+      "id": 285,
+      "name": "Oneiros Digsite",
+      "old_min_level": 35,
+      "min_level": 59,
+      "nearby_max_level": 62,
+      "nearby_creatures": 12
+    },
+    {
+      "id": 287,
+      "name": "Solarsal Digsite",
+      "old_min_level": 35,
+      "min_level": 40,
+      "nearby_max_level": 43,
+      "nearby_creatures": 32
+    },
+    {
+      "id": 291,
+      "name": "South Isildien Digsite",
+      "old_min_level": 35,
+      "min_level": 44,
+      "nearby_max_level": 47,
+      "nearby_creatures": 55
+    },
+    {
+      "id": 293,
+      "name": "North Isildien Digsite",
+      "old_min_level": 35,
+      "min_level": 41,
+      "nearby_max_level": 44,
+      "nearby_creatures": 22
+    },
+    {
+      "id": 295,
+      "name": "Constellas Digsite",
+      "old_min_level": 45,
+      "min_level": 49,
+      "nearby_max_level": 52,
+      "nearby_creatures": 26
+    },
+    {
+      "id": 297,
+      "name": "Morlos'Aran Digsite",
+      "old_min_level": 45,
+      "min_level": 46,
+      "nearby_max_level": 49,
+      "nearby_creatures": 8
+    },
+    {
+      "id": 299,
+      "name": "Jaedenar Digsite",
+      "old_min_level": 45,
+      "min_level": 51,
+      "nearby_max_level": 54,
+      "nearby_creatures": 34
+    },
+    {
+      "id": 301,
+      "name": "Ironwood Digsite",
+      "old_min_level": 45,
+      "min_level": 51,
+      "nearby_max_level": 54,
+      "nearby_creatures": 7
+    },
+    {
+      "id": 303,
+      "name": "Lake Kel'Theril Digsite",
+      "old_min_level": 50,
+      "min_level": 53,
+      "nearby_max_level": 56,
+      "nearby_creatures": 35
+    },
+    {
+      "id": 305,
+      "name": "Owl Wing Thicket Digsite",
+      "old_min_level": 50,
+      "min_level": 56,
+      "nearby_max_level": 59,
+      "nearby_creatures": 19
+    },
+    {
+      "id": 307,
+      "name": "Frostwhisper Gorge Digsite",
+      "old_min_level": 50,
+      "min_level": 57,
+      "nearby_max_level": 60,
+      "nearby_creatures": 12
+    },
+    {
+      "id": 313,
+      "name": "Nightmare Scar Digsite",
+      "old_min_level": 30,
+      "min_level": 30,
+      "nearby_max_level": 19,
+      "nearby_creatures": 10
+    },
+    {
+      "id": 315,
+      "name": "Zul'Farrak Digsite",
+      "old_min_level": 45,
+      "min_level": 45,
+      "nearby_max_level": 45,
+      "nearby_creatures": 10
+    },
+    {
+      "id": 317,
+      "name": "Broken Pillar Digsite",
+      "old_min_level": 45,
+      "min_level": 45,
+      "nearby_max_level": 45,
+      "nearby_creatures": 7
+    },
+    {
+      "id": 321,
+      "name": "Southmoon Ruins Digsite",
+      "old_min_level": 45,
+      "min_level": 47,
+      "nearby_max_level": 50,
+      "nearby_creatures": 21
+    },
+    {
+      "id": 323,
+      "name": "Dunemaul Fossil Ridge",
+      "old_min_level": 45,
+      "min_level": 46,
+      "nearby_max_level": 49,
+      "nearby_creatures": 39
+    },
+    {
+      "id": 327,
+      "name": "Lower Lakkari Tar Pits",
+      "old_min_level": 50,
+      "min_level": 51,
+      "nearby_max_level": 54,
+      "nearby_creatures": 35
+    },
+    {
+      "id": 329,
+      "name": "Upper Lakkari Tar Pits",
+      "old_min_level": 50,
+      "min_level": 51,
+      "nearby_max_level": 54,
+      "nearby_creatures": 33
+    },
+    {
+      "id": 331,
+      "name": "Terror Run Fossil Field",
+      "old_min_level": 50,
+      "min_level": 54,
+      "nearby_max_level": 57,
+      "nearby_creatures": 29
+    },
+    {
+      "id": 333,
+      "name": "Screaming Reaches Fossil Field",
+      "old_min_level": 50,
+      "min_level": 57,
+      "nearby_max_level": 60,
+      "nearby_creatures": 21
+    },
+    {
+      "id": 335,
+      "name": "Marshlands Fossil Bank",
+      "old_min_level": 50,
+      "min_level": 50,
+      "nearby_max_level": 51,
+      "nearby_creatures": 28
+    },
+    {
+      "id": 337,
+      "name": "Southwind Village Digsite",
+      "old_min_level": 55,
+      "min_level": 55,
+      "nearby_max_level": 58,
+      "nearby_creatures": 42
+    },
+    {
+      "id": 615,
+      "name": "Terrorweb Tunnel Digsite",
+      "old_min_level": 40,
+      "min_level": 57,
+      "nearby_max_level": 60,
+      "nearby_creatures": 19
+    },
+    {
+      "id": 617,
+      "name": "Plaguewood Digsite",
+      "old_min_level": 40,
+      "min_level": 55,
+      "nearby_max_level": 58,
+      "nearby_creatures": 14
+    }
+  ]
+}

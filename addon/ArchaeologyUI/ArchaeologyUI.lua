@@ -3,7 +3,7 @@
 -- minimap and survey button can draw them.
 --
 -- Wire format, both directions: an addon whisper to yourself, prefix "ARCH".
---   to the server    HELLO, SITES, RACES, PROJ:<id>, SURVEY, SOLVE:<race>:<keystones>
+--   to the server    HELLO, SITES, RACES, PROJ:<id>, SURVEY, SOLVE:<race>:<keystones>, COLLECTION, TRAITS, ABANDON:<site>
 --   from the server  S:<skill>:<max skill>                       (0 = not learned)
 --                    R:<race>,<name>,<fragments>,<cap>,<project>,<cost>,<sockets>,<rare>,<keystones owned>,<unlocked>;... ... REND
 --                    T:<site>,<map>,<race>,<finds left>,<name>;... then G:<site>:<x>,<y>;... (outline,
@@ -124,6 +124,40 @@ local function onMessage(message)
         A.connected = true
         A.skill, A.maxSkill = tonumber(skill) or 0, tonumber(maxSkill) or 0
         A.Fire("STATE")
+    elseif command == "CBEGIN" then
+        A.pendingCollection = {}
+    elseif command == "C" then
+        local id, race, rare, item, solves, name = rest:match("^(%d+):(%d+):(%d+):(%d+):(%d+):(.*)$")
+        if id and A.pendingCollection then
+            A.pendingCollection[tonumber(id)] = {id=tonumber(id), race=tonumber(race), rare=rare=="1", item=tonumber(item), solves=tonumber(solves), name=name}
+        end
+    elseif command == "CEND" then
+        A.collection = A.pendingCollection or {}
+        A.pendingCollection = nil
+        A.Fire("COLLECTION")
+    elseif command == "U" then
+        local race, skill, state, era = rest:match("^(%d+):(%d+):(%d+):(%d+)$")
+        A.unlocks = A.unlocks or {}
+        if race then A.unlocks[tonumber(race)] = {skill=tonumber(skill), state=tonumber(state), era=era=="1"} end
+    elseif command == "JBEGIN" then
+        A.pendingTraits = {}
+    elseif command == "J" then
+        local race, aura, awake, commons, need, strength, bonus, status, name = rest:match("^(%d+):(%d+):(%d+):(%d+):(%d+):(%d+):([^:]+):([^:]+):(.*)$")
+        if race and A.pendingTraits then
+            A.pendingTraits[tonumber(race)] = {aura=tonumber(aura), awake=awake=="1", commons=tonumber(commons), need=tonumber(need), strength=tonumber(strength), bonus=tonumber(bonus), status=status, name=name}
+        end
+    elseif command == "K" then
+        local race, effect = rest:match("^(%d+):(.*)$")
+        local trait = race and A.pendingTraits and A.pendingTraits[tonumber(race)]
+        if trait then trait.effect = effect end
+    elseif command == "JEND" then
+        A.traits = A.pendingTraits or {}
+        A.pendingTraits = nil
+        A.Fire("COLLECTION")
+    elseif command == "E" then
+        local id, level, challenge = rest:match("^(%d+):(%d+):(%d+)$")
+        local site = id and A.sites[tonumber(id)]
+        if site then site.level, site.challenge = tonumber(level), challenge=="1" end
     elseif command == "R" then
         pendingRaces = pendingRaces or {}
         for _, row in ipairs(split(rest, ";")) do
@@ -361,6 +395,8 @@ SlashCmdList.ARCHAEOLOGYUI = function(msg)
         A.Send("HELLO")
     elseif msg == "minimap" then
         A.ToggleMinimap()
+    elseif msg == "collection" or msg == "bonuses" then
+        if A.OpenCollection then A.OpenCollection() end
     elseif msg == "options" then
         if A.OpenOptions then
             A.OpenOptions()
