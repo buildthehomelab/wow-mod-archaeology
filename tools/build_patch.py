@@ -921,9 +921,12 @@ def write_sql(path, dbc, items, rewards=None):
             continue
         # The relic's item_dbc rows are in mod_archaeology_world_relic.sql already, and the rare
         # rewards' rows (ours[start:end], rewards[table] = (start, end)) in
-        # mod_archaeology_world_z_rewards_dbc.sql.
+        # mod_archaeology_world_z_rewards_dbc.sql. A row the rewards replace (a reward item's
+        # equipment class and display) stays out too: the server applies this file again
+        # whenever it changes, and it must not put back what the rewards file changed.
         start, end = (rewards or {}).get(table, (0, 0))
-        ours = t.ours[:start] + t.ours[end:]
+        theirs = {r[0] for r in t.ours[start:end]}
+        ours = [r for r in t.ours[:start] + t.ours[end:] if r[0] not in theirs]
         rows = sorted({r[0]: r for r in ours if table != "Item" or not RELIC_FIRST <= r[0] <= RELIC_LAST}.values(),
                       key=lambda r: r[0])
         if not rows:
