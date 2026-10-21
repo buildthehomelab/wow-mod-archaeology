@@ -231,10 +231,11 @@ A patch MPQ replaces whole files and the highest patch wins, so the tool edits t
 
 ```
 python3 tools/build_patch.py --patch <your spell/item patch>.MPQ --skill-patch <your patch with SkillRaceClassInfo>.MPQ \
-    --client <WoW folder> --out <folder> --sql data/sql/db-world/mod_archaeology_world_dbc.sql
+    --client <WoW folder> --out <folder> --sql data/sql/db-world/mod_archaeology_world_dbc.sql \
+    --rewards-sql data/sql/db-world/mod_archaeology_world_z_rewards_dbc.sql
 ```
 
-`--patch` is the patch with your Spell, SkillLineAbility, SpellIcon, Item and ItemDisplayInfo DBCs. `--skill-patch` is the one with SkillRaceClassInfo.dbc, if that is another patch. `--also-patch` (repeatable) adds any other patch carrying a DBC the tool edits, such as Achievement.dbc. A DBC neither ships (often SkillLine and GameObjectDisplayInfo) comes from the client's newest copy and goes into `--patch`. Each patch that changed is written to `--out` under its own name, with every other file in it unchanged. It also reads `c_Item.csv`, `c_GODI.csv` (Cataclysm Classic GameObjectDisplayInfo), `c_ResearchBranch.csv`, `c_ResearchProject.csv` and `listfile_archaeology.csv` from `tools/cata-data/`. Models and icons come from [wago.tools](https://wago.tools), cached in `tools/cata-data/cache`. Running it again on its own output changes nothing.
+`--patch` is the patch with your Spell, SkillLineAbility, SpellIcon, Item and ItemDisplayInfo DBCs. `--skill-patch` is the one with SkillRaceClassInfo.dbc, if that is another patch. `--also-patch` (repeatable) adds any other patch carrying a DBC the tool edits, such as Achievement.dbc. A DBC neither ships (often SkillLine and GameObjectDisplayInfo) comes from the client's newest copy and goes into `--patch`. Each patch that changed is written to `--out` under its own name, with every other file in it unchanged. It also reads `c_Item.csv`, `c_GODI.csv` (Cataclysm Classic GameObjectDisplayInfo), `c_ResearchBranch.csv`, `c_ResearchProject.csv` and `listfile_archaeology.csv` from `tools/cata-data/`. Models and icons come from [wago.tools](https://wago.tools), cached in `tools/cata-data/cache`. Running it again on its own output changes nothing. `--sql` gets every row but the rare rewards'; `--rewards-sql` writes those, the same file `tools/reward_patch.py` writes, so one run keeps both SQL files in step with the patch.
 
 The survey shows Cataclysm's telescope (gameobjects 9503500-9503502, displays 10101-10103) in the colour of the distance band. A client without the patch doesn't see it; set `Archaeology.Telescope.Green/Yellow/Red` to 9503503 (the excavation banner) until the patch is out. How the module uses the patch's spells:
 
