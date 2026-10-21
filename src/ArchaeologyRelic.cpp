@@ -636,6 +636,31 @@ namespace Archaeology
         RelicForm const* form = GetForm(r.form);
         std::string note;
         uint32 ilvl = 0, quality = 0;
+        // LN goes first, so the addon has it when L redraws: the item it holds (main and off half),
+        // the next rank's step, and what holds the item back (1 level, 2 progression) from which step.
+        uint32 item = 0, offItem = 0, nextIlvl = 0, nextQuality = 0, held = 0, heldLevel = 0, heldIlvl = 0;
+        if (r.rank)
+        {
+            uint32 shown = ShownStep(player, r);
+            if (form && shown < form->items.size())
+            {
+                item = form->items[shown].first;
+                offItem = form->items[shown].second;
+            }
+            if (r.rank < RankCount())
+            {
+                nextIlvl = steps[r.rank].itemLevel;
+                nextQuality = steps[r.rank].quality;
+            }
+            if (shown + 1 < std::min<uint32>(r.rank, RankCount()))
+            {
+                RelicStep const& next = steps[shown + 1];
+                held = player->GetLevel() < next.level ? 1 : 2;
+                heldLevel = next.level;
+                heldIlvl = next.itemLevel;
+            }
+        }
+        SendAddon(player, Acore::StringFormat("LN:{}:{}:{}:{}:{}:{}:{}", item, offItem, nextIlvl, nextQuality, held, heldLevel, heldIlvl));
         if (!r.rank)
             note = s->skill >= GetConfig().relicSkill ? "Ask an archaeology trainer about A Weapon in Pieces."
                 : Acore::StringFormat("At {} Archaeology a trainer can help you piece it together.", GetConfig().relicSkill);

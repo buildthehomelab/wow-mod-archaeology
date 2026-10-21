@@ -33,13 +33,13 @@ local function layout(hasRelic)
     local relic = panel.relic
     if hasRelic then
         relic:Show()
-        relic.line:Show()
+        relic.row:Show()
     else
         relic:Hide()
-        relic.line:Hide()
+        relic.row:Hide()
     end
     panel.races:ClearAllPoints()
-    panel.races:SetPoint("TOPLEFT", panel.list, "TOPLEFT", AREA_X, hasRelic and AREA_Y - HEADER_H - 30 or AREA_Y)
+    panel.races:SetPoint("TOPLEFT", panel.list, "TOPLEFT", AREA_X, hasRelic and AREA_Y - HEADER_H - 32 or AREA_Y)
     panel.races:SetPoint("RIGHT", panel.list, "RIGHT", -AREA_X, 0)
 end
 
@@ -60,20 +60,7 @@ local function build(p)
     local relic = p.Header(list, "Unearthed Relic")
     relic:SetPoint("TOPLEFT", list, "TOPLEFT", AREA_X, AREA_Y)
     relic:SetPoint("RIGHT", list, "RIGHT", -AREA_X, 0)
-    relic:EnableMouse(true)
-    relic:SetScript("OnEnter", function(self)
-        if not self.tip then return end
-        GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
-        GameTooltip:SetText("Unearthed Relic")
-        GameTooltip:AddLine(self.tip, 1, 1, 1, true)
-        GameTooltip:Show()
-    end)
-    relic:SetScript("OnLeave", function() GameTooltip:Hide() end)
-    relic.line = list:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
-    relic.line:SetPoint("TOPLEFT", relic, "BOTTOMLEFT", 8, -6)
-    relic.line:SetPoint("RIGHT", relic, "RIGHT", -8, 0)
-    relic.line:SetJustifyH("LEFT")
-    relic.line:SetWordWrap(false)
+    R.NewRelicRow(list, relic)
     p.relic = relic
     p.races = p.Header(list, "Races")
     layout(false)
@@ -111,25 +98,7 @@ local function drawRelic(text)
         layout(false)
         return
     end
-    local relic = panel.relic
-    local color = r.rank > 0 and ITEM_QUALITY_COLORS and ITEM_QUALITY_COLORS[r.quality]
-    if color then
-        relic.label:SetTextColor(color.r, color.g, color.b)
-    else
-        relic.label:SetTextColor(0.9, 0.8, 0.5)
-    end
-    local power = r.cost > 0 and string.format("Relic Power %d/%d", r.power, r.cost)
-        or string.format("Relic Power %d", r.power)
-    if r.rank > 0 then
-        relic.note:SetText(string.format("Rank %d/%d", r.rank, r.ranks))
-        relic.line:SetText(string.format("Item level %d  -  %s", r.itemLevel, power))
-    else
-        relic.note:SetText("")
-        relic.line:SetText(power)
-    end
-    -- The server's note (how to get it, what holds it back) is too long for the column.
-    relic.tip = r.note ~= "" and r.note or nil
-    if relic.tip and r.rank == 0 then relic.line:SetText(power .. "  -  " .. r.note) end
+    R.DrawRelicRow(panel.relic)
     layout(true)
 end
 
