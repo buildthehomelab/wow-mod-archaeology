@@ -224,6 +224,7 @@ The 3.3.5 client has no Archaeology. `tools/build_patch.py` adds what it needs t
 - Achievement.dbc 9240-9245 and Achievement_Criteria.dbc 19240, the relic achievements (category Professions).
 - Item.dbc and ItemDisplayInfo.dbc rows with the Cataclysm icon of every keystone and artifact. Without them the items show a question mark. Icons the client lacks are added to the patch.
 - Item.dbc rows for the relic's 812 items (9505000-9505999), from `mod_archaeology_world_relic.sql`. They use models the client has, so they need no display rows; the server already has the same rows in that file.
+- `Interface\Archeology\` art for the collection view: every race's crest (small and big), every rare artifact's sketch, the book page and the progress bar, Cataclysm's own textures (45 files, from `c_ResearchBranch.csv`, `c_ResearchProject.csv` and the listfile). Only ArchaeologyUI 0.7.0 and later draws them.
 - The survey telescope: GameObjectDisplayInfo 10101-10103 (green, yellow, red) and Cataclysm's three models, converted to the 3.3.5 format by [wow-mod-retail-creatures](https://github.com/buildthehomelab/wow-mod-retail-creatures) (clone it next to this repo, or set `RETAIL_CREATURES`).
 
 A patch MPQ replaces whole files and the highest patch wins, so the tool edits the copies your realm already ships:
@@ -234,7 +235,7 @@ python3 tools/build_patch.py --patch <your spell/item patch>.MPQ --skill-patch <
     --rewards-sql data/sql/db-world/mod_archaeology_world_z_rewards_dbc.sql
 ```
 
-`--patch` is the patch with your Spell, SkillLineAbility, SpellIcon, Item and ItemDisplayInfo DBCs. `--skill-patch` is the one with SkillRaceClassInfo.dbc, if that is another patch. `--also-patch` (repeatable) adds any other patch carrying a DBC the tool edits, such as Achievement.dbc. A DBC neither ships (often SkillLine and GameObjectDisplayInfo) comes from the client's newest copy and goes into `--patch`. Each patch that changed is written to `--out` under its own name, with every other file in it unchanged. It also reads `c_Item.csv`, `c_GODI.csv` (Cataclysm Classic GameObjectDisplayInfo) and `listfile_archaeology.csv` from `tools/cata-data/`. Models and icons come from [wago.tools](https://wago.tools), cached in `tools/cata-data/cache`. Running it again on its own output changes nothing. `--sql` gets every row but the rare rewards'; `--rewards-sql` writes those, the same file `tools/reward_patch.py` writes, so one run keeps both SQL files in step with the patch.
+`--patch` is the patch with your Spell, SkillLineAbility, SpellIcon, Item and ItemDisplayInfo DBCs. `--skill-patch` is the one with SkillRaceClassInfo.dbc, if that is another patch. `--also-patch` (repeatable) adds any other patch carrying a DBC the tool edits, such as Achievement.dbc. A DBC neither ships (often SkillLine and GameObjectDisplayInfo) comes from the client's newest copy and goes into `--patch`. Each patch that changed is written to `--out` under its own name, with every other file in it unchanged. It also reads `c_Item.csv`, `c_GODI.csv` (Cataclysm Classic GameObjectDisplayInfo), `c_ResearchBranch.csv`, `c_ResearchProject.csv` and `listfile_archaeology.csv` from `tools/cata-data/`. Models and icons come from [wago.tools](https://wago.tools), cached in `tools/cata-data/cache`. Running it again on its own output changes nothing. `--sql` gets every row but the rare rewards'; `--rewards-sql` writes those, the same file `tools/reward_patch.py` writes, so one run keeps both SQL files in step with the patch.
 
 The survey shows Cataclysm's telescope (gameobjects 9503500-9503502, displays 10101-10103) in the colour of the distance band. A client without the patch doesn't see it; set `Archaeology.Telescope.Green/Yellow/Red` to 9503503 (the excavation banner) until the patch is out. How the module uses the patch's spells:
 
@@ -275,6 +276,15 @@ unique and rare discovery counts, repeat solve counts, reward inspection and art
 lore. A discovery is a positive saved solve count, independent of item ownership.
 Race completion requires all of that race's unique projects; repeated commons only
 advance their solve counter and trait unlock, not catalogue completion.
+
+The view looks like Cataclysm's: each race's crest in the race list and, big, at the top
+of its page; a click on an artifact shows its lore and, for a rare, its sketch. With
+DragonUI's professions window it is a second page of that window under the Archaeology
+tab (races in the list column, the race's page on the recipe card, artifacts found on
+the rank bar, **Back to Research** under the races). Otherwise it is a window of its own,
+with Cataclysm's book page behind the race's page. The art comes from the client patch
+(see [Client patch](#client-patch)); without it the crests are the race icons and the
+page has no sketches or book.
 
 Race bonuses show their configured unlock target, current relic strength, actual
 active/inactive status and completion multiplier. They remain server-owned relic

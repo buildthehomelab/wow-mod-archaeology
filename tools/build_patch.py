@@ -41,6 +41,9 @@ What the client gets:
   and red, and its three models converted to the 3.3.5 format with wow-mod-retail-creatures'
   converter (RETAIL_CREATURES, or a mod-retail-creatures / wow-mod-retail-creatures checkout
   next to this one). --no-models leaves the telescope out.
+- Interface\\Archeology\\*.blp, Cataclysm's research art that ArchaeologyUI's collection view
+  draws: each race's crest, small and big (ResearchBranch TextureFileID and BigTextureFileID),
+  each rare artifact's sketch (ResearchProject TextureFileID), the book page and progress bar.
 
 --sql writes the server's rows (skillline_dbc, skillraceclassinfo_dbc, skilllineability_dbc,
 spell_dbc, item_dbc, itemdisplayinfo_dbc, gameobjectdisplayinfo_dbc, achievement_dbc,
@@ -49,7 +52,8 @@ client and server can't disagree, and sets the items' display id in item_templat
 rewards' rows (tools/reward_patch.py's add_rewards) are left out of it: --rewards-sql writes them,
 the file tools/reward_patch.py writes too (mod_archaeology_world_z_rewards_dbc.sql).
 
-Inputs from tools/cata-data/ (see the README): c_Item.csv, c_GODI.csv, listfile_archaeology.csv,
+Inputs from tools/cata-data/ (see the README): c_Item.csv, c_GODI.csv, c_ResearchBranch.csv,
+c_ResearchProject.csv, listfile_archaeology.csv,
 and data/sql/db-world/mod_archaeology_world_data.sql for the item map. Models and icons come from
 wago.tools by file data id. Running it again on its own output changes nothing. Needs Python 3
 and StormLib (`STORMLIB`, default /usr/local/lib/libstorm.dylib).
@@ -543,6 +547,55 @@ def icon_paths(fdids, cache, retail):
     return paths
 
 
+# The collection view's book page and progress bar (Cataclysm's ArchaeologyFrame), by listfile name.
+RESEARCH_ART = ("arch-bookcompletedleft", "arch-bookcompletedright", "arch-progress-bg", "arch-progress-fill")
+
+
+def module_projects():
+    """[(project, race, rare)] from the generated world data."""
+    text = open(WORLD_DATA, encoding="utf-8").read()
+    block = text[text.index("INSERT INTO `mod_archaeology_project`"):]
+    block = block[:block.find(";\n")]
+    return [(int(m.group(1)), int(m.group(2)), m.group(3) == "1") for m in
+            re.finditer(r"^\((\d+), (\d+), '(?:[^']|'')*', '(?:[^']|'')*', (\d+),", block, re.M)]
+
+
+def add_research_art(files, cache, retail):
+    """The races' crests, the rares' sketches and the book art, under Interface\\Archeology."""
+    projects = module_projects()
+    branches = {int(r["ID"]): r for r in read_csv("c_ResearchBranch.csv")}
+    cata = {int(r["ID"]): r for r in read_csv("c_ResearchProject.csv")}
+    fdids = set()
+    for race in sorted({race for _p, race, _r in projects}):
+        if race not in branches:
+            sys.exit("race %d isn't in c_ResearchBranch.csv" % race)
+        fdids.update(int(branches[race][k]) for k in ("TextureFileID", "BigTextureFileID"))
+    for project, _race, rare in projects:
+        if rare:
+            if project not in cata or not int(cata[project]["TextureFileID"]):
+                sys.exit("rare project %d has no sketch in c_ResearchProject.csv" % project)
+            fdids.add(int(cata[project]["TextureFileID"]))
+    names = {}
+    for line in open(os.path.join(CATA, "listfile_archaeology.csv"), encoding="utf-8"):
+        i, _, path = line.strip().partition(";")
+        names[path.lower()] = int(i) if i.isdigit() else None
+    for art in RESEARCH_ART:
+        fdid = names.get("interface/archeology/%s.blp" % art)
+        if not fdid:
+            sys.exit("%s isn't in listfile_archaeology.csv" % art)
+        fdids.add(fdid)
+    paths = icon_paths(fdids, cache, retail)
+    for fdid in sorted(fdids):
+        path = paths.get(fdid, "").replace("/", "\\")
+        if not path.lower().startswith("interface\\archeology\\") or not path.lower().endswith(".blp"):
+            sys.exit("research art %d is %r, not Interface\\Archeology art" % (fdid, path))
+        blp = retail.fetch.casc_path(cache, fdid)
+        if open(blp, "rb").read(4) != b"BLP2":
+            sys.exit("research art %d isn't a BLP2 file" % fdid)
+        files["Interface\\Archeology\\" + os.path.basename(path.replace("\\", "/"))] = blp
+    print("Interface\\Archeology: %d textures (crests, sketches, book)" % len(fdids))
+
+
 # --- the rows ----------------------------------------------------------------------------------
 
 def add_skill(dbc):
@@ -1007,6 +1060,7 @@ def main():
         files = unpacked[0]
         files["Interface\\Icons\\%s.blp" % ICON] = retail.fetch.casc_path(args.cache, ICON_FDID)
         add_items(dbc, items, client, files, args.cache, retail)
+        add_research_art(files, args.cache, retail)
         add_relic(dbc, relic_items())
         from reward_patch import add_rewards, write_sql as write_rewards_sql
         before = {t: len(dbc[t].ours) for t in tables}
