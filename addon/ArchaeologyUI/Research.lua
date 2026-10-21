@@ -230,7 +230,9 @@ StaticPopupDialogs["ARCHAEOLOGY_WITHDRAW_KEYSTONE"] = {
             or amount ~= math.floor(amount) or amount > 4294967295 then
             return
         end
-        SendChatMessage(".rbank withdraw item " .. item .. " exact " .. string.format("%.0f", amount), "SAY")
+        -- "withdraw needed" answers with the transaction only; "withdraw item" also sends the
+        -- bank's whole view, which pops the Reagent Bank window open.
+        SendChatMessage(".rbank withdraw needed " .. item .. " " .. string.format("%.0f", amount), "SAY")
     end,
 }
 local bankSlot = CreateFrame("Button", nil, page)
