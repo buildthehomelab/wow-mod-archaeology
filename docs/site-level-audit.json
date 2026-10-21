@@ -1,5 +1,5 @@
 {
-  "source": "Evermore acore_world.creature / creature_template read-only snapshot 2026-10-21. Conservative vicinity audit; ignores native friendly guard/civilian factions and neutral faction 35, NPCs and critters. Does not certify pathfinding or combat reaction.",
+  "source": "3.3.5 world database creature / creature_template read-only snapshot 2026-10-21. Conservative vicinity audit; ignores native friendly guard/civilian factions and neutral faction 35, NPCs and critters. Does not certify pathfinding or combat reaction.",
   "sites": [
     {
       "id": 9,
