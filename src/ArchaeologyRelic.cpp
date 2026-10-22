@@ -350,10 +350,21 @@ namespace
     bool Sync(Player* player, CharState& s, bool give, Settle const& settle = nullptr)
     {
         RelicState& r = s.relic;
-        TryRankUp(player, s);
+        bool rankedUp = TryRankUp(player, s);
+        // A rank, or a new progression ceiling (a raid cleared), with no item to swap: the row and
+        // the addon still need to hear about it.
+        auto report = [&]()
+        {
+            if (rankedUp)
+                SaveRelic(player);
+            SendRelic(player);
+        };
         RelicForm const* form = GetForm(r.form);
         if (!r.rank || !form || steps.empty() || form->items.size() != steps.size())
+        {
+            report();
             return true;
+        }
         auto [wantMain, wantOff] = form->items[ShownStep(player, r)];
 
         std::vector<Held> found = FindRelics(player);
@@ -407,7 +418,10 @@ namespace
         if (settle)
             settle(changed, failed);
         else if (!changed)
+        {
+            report();
             return !failed;
+        }
         if (changed)
             player->AutoUnequipOffhandIfNeed();
         // Save the swap and the relic row together, so a crash can't leave the row pointing at

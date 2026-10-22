@@ -288,7 +288,7 @@ public:
         PLAYERHOOK_ON_LOGIN, PLAYERHOOK_ON_LOGOUT, PLAYERHOOK_ON_DELETE, PLAYERHOOK_ON_LEVEL_CHANGED,
         PLAYERHOOK_CAN_PLAYER_USE_PRIVATE_CHAT, PLAYERHOOK_ON_UPDATE, PLAYERHOOK_ON_MAP_CHANGED, PLAYERHOOK_ON_EQUIP,
         PLAYERHOOK_ON_UNEQUIP_ITEM, PLAYERHOOK_ON_BEFORE_QUEST_COMPLETE, PLAYERHOOK_ON_PLAYER_RESURRECT,
-        PLAYERHOOK_ON_PLAYER_QUEST_ACCEPT, PLAYERHOOK_ON_QUEST_ABANDON }) { }
+        PLAYERHOOK_ON_PLAYER_QUEST_ACCEPT, PLAYERHOOK_ON_QUEST_ABANDON, PLAYERHOOK_ON_PLAYER_COMPLETE_QUEST }) { }
 
     void OnPlayerLogin(Player* player) override
     {
@@ -405,6 +405,22 @@ public:
     {
         if (questId == DIG_ORDERS_QUEST)
             DigOrdersDropped(player);
+    }
+
+    // Individual progression raises its state by rewarding a quest (a raid cleared): the relic's
+    // ceiling and the continents open to dig move with it, without waiting for a zone change.
+    void OnPlayerCompleteQuest(Player* player, Quest const* quest) override
+    {
+        Config const& cfg = GetConfig();
+        uint32 questId = quest->GetQuestId();
+        if (!cfg.ipEnabled || questId <= cfg.ipQuestBase || questId > cfg.ipQuestBase + cfg.ipMaxState)
+            return;
+        QueueRelic(player);
+        if (IsLearned(player))
+        {
+            RollSites(player);
+            SendSites(player);
+        }
     }
 
     // CMSG_MESSAGECHAT runs on the world thread.
