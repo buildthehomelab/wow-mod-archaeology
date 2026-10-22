@@ -8,17 +8,9 @@ The server owns all of it: skill, dig sites, fragments, the survey and the solve
 
 The dig loop is done, and so is the relic: ranks, forms, item ladder, traits, capstone quests, achievements and its awakened looks. Looks from the Cataclysm rare weapons are not in yet.
 
-| Piece | State |
-| --- | --- |
-| Dig sites, survey, finds, fragments, keystones, solving, skill | Done (this module) |
-| 8 races: Dwarf, Night Elf, Troll, Fossil, Draenei, Orc, Nerubian, Vrykul | Data imported; Tol'vir is left out |
-| ArchaeologyUI addon (map dig sites, research window, survey button) | First version in `addon/ArchaeologyUI`, not yet tried in the game client |
-| Client patch (skill line, telescope model, item icons) | Built by `tools/build_patch.py`; Survey, the rank spells and the telescope are used (see [Client patch](#client-patch)) |
-| Rare rewards | All 26 implemented: 5 pets/mounts, 14 toys/utilities and 7 usable equipment rewards; matching patch required |
-| Unearthed Relic: ranks, forms, item ladder, quest | Done; not yet tried in the game client |
-| Relic traits, capstone raid quests, relic achievements | Done; not yet tried in the game client |
-| Relic awakened looks (Legion artifact weapons, one per form) | Done; not yet tried in the game client |
-| Relic looks from the Cataclysm rare weapons, in Transmog-Plus | Not started |
+Not started: the relic's Cataclysm looks (rare weapons, in Transmog-Plus). Tol'vir is left out of the eight researchable races.
+
+Not yet tried in a game client: the ArchaeologyUI addon, the Unearthed Relic (ranks, forms, item ladder, quest), its traits, the capstone raid quests, the relic achievements and the awakened looks (Legion artifact weapons, one per form).
 
 Everything also works without the addon, through `.arch` chat commands.
 
@@ -52,7 +44,7 @@ Outland races open at skill 300, Northrend races at 375. With mod-individual-pro
 
 ## Rare rewards
 
-All 26 rares now have functional reward items. See [the complete behavior, balance and delivery matrix](docs/rare-rewards.md). The current Retail Collection port contains mounts and pets; these Archaeology toys are implemented here and registered in Journal. The full reward update requires rebuilt module, SQL and a matching spell/item client patch.
+All 26 rares now have functional reward items. See [the complete behavior, balance and delivery matrix](docs/rare-rewards.md). The current Retail Collection port contains mounts and pets; these Archaeology toys are implemented here and registered in Journal. The rewards need the module, its SQL and the matching spell/item client patch.
 
 ### Fossilized Hatchling reward
 
@@ -61,17 +53,14 @@ it to learn the **Fossilized Hatchling** companion, then summon it from the Pets
 tab (or Journal). It teaches Retail Collection's existing spell **410266**, so
 it shares ownership with that module's teaching item rather than making a second pet.
 
-This reward requires **mod-retail-collection** and its existing client patch
-(and Retail Library assets). Evermore already pins those modules. The Hatchling alone reuses those existing assets; the complete reward update needs the matching spell/item patch. No addon update is required. The remaining rare rewards are implemented in the complete reward catalog below.
+This reward requires **mod-retail-collection**, its client patch and the Retail Library assets.
+Hatchlings awarded before the reward was implemented use the same item template, including ones
+in bags or the bank: no re-solve or replacement item is needed. The item script initializes the
+zero charges stored by older placeholder items on use, then lets the core handle companion
+learning and consumption.
 
-Previously awarded Hatchling items use the same item template, including ones
-in bags or the bank: no re-solve, replacement item or character database edit
-is needed. The item script initializes the zero charges stored by older placeholder
-items on use, then lets the core handle normal companion learning and consumption.
-Deploy the SQL **and rebuilt module**, then restart the server. Refresh
-the client item cache; Evermore's cache-version module/launcher normally handles
-this after the world item data changes. In-game learning, item consumption,
-duplicate ownership, summoning and existing-item behavior still need validation.
+Not yet tried in a game client: learning the Hatchling from the item, item consumption, duplicate
+ownership, summoning and the behaviour of items awarded earlier.
 
 `mod_archaeology_world_z_rewards.sql` applies the upgrade on existing databases.
 `tools/build_data.py` also appends those overrides to regenerated base data, so
@@ -285,17 +274,14 @@ The survey shows Cataclysm's telescope (gameobjects 9503500-9503502, displays 10
 
 `tools/cata-data/` is not committed. Dig sites in Cataclysm-only zones (skill 450) and all Tol'vir rows are dropped. Old-world coordinates are not automatically WotLK compatible. `tools/wotlk-disabled-sites.json` holds known incompatible sites and conservative terrain holds; the generator writes their `enabled = 0` flags explicitly. The matching `mod_archaeology_world_z_wotlk_sites.sql` disables them on existing installations after base data import. See [the WotLK terrain audit](docs/wotlk-digsites.md) and its complete site inventory. Remaining sites are provisional until their individual points and approaches are checked on 3.3.5 terrain.
 
-## License
 
-MIT. Game data derived from World of Warcraft belongs to Blizzard Entertainment.
-
-## Overhead shovel delivery and validation
+## Overhead shovel
 
 Spell 90522 is a hidden, cosmetic dummy aura, checked every 200 ms against the existing buried spot. It does not select spots, survey, spawn finds or grant rewards. The indicator uses `Archaeology.Dig.ShovelYards` (3 yards) horizontally and a 3-yard ground-height tolerance to avoid showing on another floor; the same test decides where you can dig (`O:1` tells the addon), so the shovel above your head and the Dig button always agree. It clears on leaving the spot, revealing a find, death, map change or logout.
 
 Rebuild the archaeology client patch with `tools/build_patch.py` for its matching Spell row, SpellVisual, SpellVisualKit, SpellVisualEffectName and billboard M2/skin. Pass every realm patch carrying these visual tables with `--also-patch`, including the visible-bags/torch patches as applicable, to preserve their rows. IDs 90522 in those three visual tables are reserved here. The ordinary shovel icon already exists in the 3.3.5 client. Ship the client patch alongside the module and SQL; no addon update is needed.
 
-The source and generated model can be checked locally, but the server build and actual head placement, billboard orientation, sizing across races, cleanup and floor checks must be verified in the 3.3.5 client before deployment. The full patch requires the realm's current MPQs and source data, which are not in this workspace. Review the change before merging, and deploy the merged commit.
+Not yet tried in a game client: head placement, billboard orientation, sizing across races, cleanup and the floor check.
 
 ### Keystone reagent bank
 
@@ -331,8 +317,8 @@ New assignments respect faction restrictions and prefer nearby regions. Characte
 below level 10 in one of the six supported starter zones receive their local starter
 pool on that continent. There are 24 native beginner sites (four each in Northshire,
 Coldridge, Deathknell, Shadowglen, Red Cloud Mesa and Valley of Trials). Their exact
-find XYZ comes from the test realm's actual low-level creature spawns; polygons are
-custom bounds. These placements are **provisional until surveyed in the game client**.
+find XYZ comes from low-level creature spawns in the world database; polygons are
+custom bounds. Not yet surveyed in a game client.
 They do not add sites to the Blood Elf or Draenei starter islands; those characters
 can use their faction's mainland sites after travelling there.
 
@@ -353,7 +339,11 @@ untouched. The realm may configure a different cooldown.
 
 Apply normal module SQL including `mod_archaeology_char_expedition.sql` and
 `mod_archaeology_world_zz_access.sql`, rebuild the module, and distribute ArchaeologyUI
-0.6.0 together. No new client DBC/MPQ patch is required for these UI/access changes.
+0.6.0 or later together. No new client DBC/MPQ patch is required for these UI/access changes.
 The existing archaeology patch is still required by the module's skill/items/auras.
 The upgrade preserves operator-disabled sites. See [the access audit](docs/accessible-expeditions.md)
-for provenance, generation, tests and the remaining client validation checklist.
+for how the site data is generated, the journal protocol and the tests.
+
+## License
+
+MIT. Game data derived from World of Warcraft belongs to Blizzard Entertainment.

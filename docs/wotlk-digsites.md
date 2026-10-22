@@ -1,6 +1,6 @@
 # WotLK digsite terrain audit
 
-Target: Evermore's 3.3.5a terrain, including ground access in Eastern Kingdoms
+Target: the 3.3.5a terrain, including ground access in Eastern Kingdoms
 and Kalimdor. Archaeology itself is backported; there is no original WotLK
 archaeology location dataset to substitute for the Cataclysm dataset.
 
@@ -33,7 +33,7 @@ and spawn set can be verified. All eight races retain enabled sites overall.
 ## Evidence
 
 - [Darkmist Ruins](https://warcraft.wiki.gg/wiki/Darkmist_Ruins) and the
-  Evermore player's report of an unavailable cave approach.
+  a player's report of an unavailable cave approach.
 - [Cataclysm Stonetalon exploration](https://warcraft.blizzplanet.com/blog/comments/cataclysm_stonetalon_mountains_spoilers)
   directly describes Eldre'Thar's new canyon and the Unearthed Grounds.
 - [Red Reaches](https://wowwiki-archive.fandom.com/wiki/Red_Reaches)
@@ -64,19 +64,15 @@ and solve history are untouched. No character database migration is needed.
 Do not apply this while expecting already loaded character state to refresh.
 
 Before re-enabling a held site, validate **every** polygon and spawn against
-Evermore's actual 3.3.5a maps/vmaps/mmaps and client patches. Enter from normal
+the realm's actual 3.3.5a maps/vmaps/mmaps and client patches. Enter from normal
 paths without GM movement or old-world flying; confirm the correct floor,
 water depth, cave entrance, survey indicator and successful dig. Check that all
 spawn points lie inside the usable survey polygon. Remap or replace the site
 using those verified WotLK coordinates, update the policy and audit, and repeat
-the same review. The WotLK map assets and live game client were unavailable
-for this source audit, so that validation remains pending.
+the same review. This audit used wiki geography, not collision data; no held site
+has been checked in a game client yet.
 
 Local verification: `python3 tools/check_wotlk_sites.py` checks all 156 flags,
 the complete inventory, starting pools, race availability and the existing-world
 upgrade (including repeat application and unrelated local holds). Full data
 regeneration needs the uncommitted source exports and was not performed.
-
-Delivery requires a reviewed module PR, then a reviewed wow-server pin PR to
-the actual merged module commit. SQL application, restart and live deployment
-are separate, unperformed steps.

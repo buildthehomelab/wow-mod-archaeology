@@ -1,11 +1,6 @@
 # Accessible expeditions and discovery journal
 
-## Verified source data versus validation limits
-
-The October 21, 2026 audit used authenticated, read-only queries against the available
-Evermore test realm world database. No server configuration, database rows or running
-services were changed. The restart announced during the task was respected; read-only
-queries resumed after a successful availability check.
+## Site levels and starter sites
 
 `site-level-audit.json` inventories 71 enabled imported old-world sites. Nearby
 non-NPC/non-critter creature spawn levels were compared within 65 horizontal and 20
@@ -63,7 +58,7 @@ reparenting paths. `/arch collection` is an additional entry even if a host is a
 Existing `T` site rows are unchanged; new `E` rows append recommended level/challenge
 metadata after `TEND`, maintaining compatibility with older addons.
 
-## Tests and remaining deployment checks
+## Tests
 
 - `python3 -m unittest discover -s test -p 'test_*.py'`: real C++ assignment/abandonment
   bodies under ASan/UBSan, world migration/idempotence/provenance and reward regressions.
@@ -73,16 +68,10 @@ metadata after `TEND`, maintaining compatibility with older addons.
 - `python3 tools/check_wotlk_sites.py`: existing terrain holds/race coverage.
 - `./test/run-rewards.sh`: existing companion-item regression.
 
-The frame fixture verifies behavior, not pixels or a real WoW client. Before deployment
-acceptance, run the rebuilt module and updated addon on the test realm and walk every
-starter site without GM flight. Verify survey direction/height, all finds, normal
-entry paths, low-level hostile encounters, faction restrictions, depletion and reroll.
-Check collection layout in standalone, DragonUI and RetailProfessions views, reward/lore
-tooltips, a sold reward's collected status, each trait asleep/awake/equipped/unequipped,
-completion multipliers and cooldown persistence across relogs. No live deployment or
-in-client verification is claimed by these automated checks.
+The frame fixture verifies behavior, not pixels or a real WoW client.
 
-Delivery requires independent and final-revision formal Codex review of the module PR,
-then a separately reviewed wow-server pin to its actual merged main commit. That pin
-cannot name an actual merge until the implementation merges. SQL/addon distribution,
-rebuild and restart remain separate deployment actions.
+Not yet tried in a game client: walking every starter site without GM flight (survey direction
+and height, all finds, entry paths, low-level hostile encounters, faction restrictions, depletion
+and reroll), the collection layout in the standalone, DragonUI and RetailProfessions views,
+reward and lore tooltips, a sold reward's collected status, each trait asleep, awake, equipped
+and unequipped, completion multipliers, and cooldown persistence across relogs.

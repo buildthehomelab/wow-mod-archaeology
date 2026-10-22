@@ -1,6 +1,6 @@
 # Functional rare Archaeology rewards
 
-All 26 rare projects award functional items. These are 3.3.5 adaptations; the original Cataclysm level-85 equipment budgets and toy combat effects are not copied. Full client/server deployment and in-game validation remain required.
+All 26 rare projects award functional items. These are 3.3.5 adaptations; the original Cataclysm level-85 equipment budgets and toy combat effects are not copied. Not yet tried in a game client: the rewards (pets and mounts, each toy, cooldowns, interrupted casts, movement and progression restrictions, gear equip, stats and models, Journal ownership and sources).
 
 ## Collectibles
 
@@ -26,7 +26,7 @@ The Gnome uses the stock clockwork-gnome model; Pterrordax Hatchling is a small 
 | The Last Relic of Argus | 9504102 | Teleports you to a random refuge in an era you have unlocked. Cannot be used while in combat, flying, travelling or inside an instance. | 1200 sec |
 | Blessing of the Old God | 9504119 | Take the appearance of a faceless one for 20 seconds. | 600 sec |
 | Puzzle Box of Yogg-Saron | 9504120 | Attempts to open the puzzle box. Something whispers back. | 60 sec |
-| The Innkeeper's Daughter | 9504126 | Returns you to your home. Shares the ordinary Hearthstone cooldown. Sometimes a spectral innkeeper appears. | Hearthstone shared (Evermore: 5 min) |
+| The Innkeeper's Daughter | 9504126 | Returns you to your home. Shares the ordinary Hearthstone cooldown. Sometimes a spectral innkeeper appears. | Hearthstone shared (5 min on the target realm) |
 | Bones of Transformation | 9504129 | Take the appearance of a naga for 20 seconds. | 600 sec |
 | Wisp Amulet | 9504133 | Take the appearance of a wisp for 10 minutes. Does not grant flight or invisibility. | 900 sec |
 | Haunted War Drum | 9504141 | Places a haunted drum and plays a spectral drumbeat for 30 seconds. | 60 sec |
@@ -39,7 +39,7 @@ Argus destinations are Ratchet, Booty Bay, Gadgetzan, Moonglade, Shattrath and D
 
 ## Equipment
 
-Usable gear as requested, capped at early Wrath item level 200. Earlier rewards have Classic/TBC level requirements. Items retain their archaeology IDs, soulbinding and icons; the client patch supplies real equipment types and stock meshes. Gear has no durability, so previously awarded placeholders do not become broken when converted.
+Usable gear, capped at early Wrath item level 200. Earlier rewards have Classic/TBC level requirements. Items retain their archaeology IDs, soulbinding and icons; the client patch supplies real equipment types and stock meshes. Gear has no durability, so previously awarded placeholders do not become broken when converted.
 
 | Reward | Item | Level / item level | Type |
 | --- | --- | --- | --- |
@@ -53,15 +53,12 @@ Usable gear as requested, capped at early Wrath item level 200. Earlier rewards 
 
 Tyrande's Favorite Doll grants Intellect/spell power and restores 1800 mana on use every 2 minutes while equipped. This is a level-80 adaptation rather than Cataclysm's original mana-storage/damage mechanic. Models are stock equivalents, with the original Zin'rokh sword appearance used for the sword. Budget and appearance are implemented facts; balance and fitting are untested in-game.
 
-## Generation and delivery
+## Generation
 
 1. Edit `data/rare-rewards.json`, run `python3 tools/build_rewards.py`; `tools/build_data.py` includes these overrides in regenerated world data.
 2. Rebuild the authoritative spell/item patch with `tools/build_patch.py`, or apply `tools/reward_patch.py --patch CURRENT.MPQ --out CANDIDATE.MPQ --sql data/sql/db-world/mod_archaeology_world_z_rewards_dbc.sql`. The smaller builder preserves all unrelated patch files and DBC rows and requires no Cataclysm source CSVs. Never overwrite the input.
-3. Deploy rebuilt module, generated world SQL and matching spell/item MPQ together. Keep all other pending realm patch changes during the authoritative rebuild, update the launcher hash through the reviewed server workflow and refresh item caches.
+3. Deploy the rebuilt module, the generated world SQL and the matching spell/item patch together, and refresh item caches.
 4. Journal must include its companion seed-preservation change so its initial/reapplied built-in toy seed does not delete these custom rows. Archaeology registers toys and source notes; Journal discovers the pets/mounts from the learning items and source notes.
-5. Verify old and newly solved items; all pets/mounts, each toy, cooldowns, interrupted casts, movement/progression restrictions, gear equip/stats/models and Journal ownership/sources.
-
-Module merge, exact merged-commit server pin PR(s), publication/restart and live verification are separate delivery steps. A candidate MPQ is not a deployed patch.
 
 ## Checks
 

@@ -1,4 +1,4 @@
-"""Minimal 3.3.5 icon model writer, adapted from Evermore visible-bags m2conv.py."""
+"""Minimal 3.3.5 icon model writer, adapted from wow-mod-visible-bags m2conv.py."""
 import math
 import struct
 HEADER_SIZE = 0x130

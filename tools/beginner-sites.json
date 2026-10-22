@@ -1,5 +1,5 @@
 {
-  "source": "Evermore read-only acore_world.creature snapshot, 2026-10-21; exact spawn XYZ, custom bounding rectangles. All surrounding non-NPC/non-critter spawns above level 4 within bounds + 40-yard radius and 15 vertical yards excluded. Ground paths/client survey remain untested. Native friendly guard/civilian faction templates 11,12,35,55,57,68,71,79,80,85,104,105 were excluded from danger screening; faction restrictions prevent assigning these camps to the opposing team.",
+  "source": "Read-only world database creature snapshot, 2026-10-21; exact spawn XYZ, custom bounding rectangles. All surrounding non-NPC/non-critter spawns above level 4 within bounds + 40-yard radius and 15 vertical yards excluded. Ground paths/client survey remain untested. Native friendly guard/civilian faction templates 11,12,35,55,57,68,71,79,80,85,104,105 were excluded from danger screening; faction restrictions prevent assigning these camps to the opposing team.",
   "sites": [
     {
       "id": 1000,
