@@ -69,7 +69,7 @@ namespace Archaeology
         uint32 ipMaxState = 18;
         std::array<uint32, 3> telescopeEntry = { 9503502, 9503501, 9503500 };   // by SurveyBand: red, yellow, green
         uint32 telescopeSeconds = 6;
-        uint32 findSeconds = 180;
+        uint32 findSeconds = 15;        // how long the unearthed artifact stands there (already collected)
 
         // The Unearthed Relic
         bool relicEnabled = true;
@@ -250,7 +250,6 @@ namespace Archaeology
     void Dig(Player* player);
     void UpdateFindShovel(Player* player, uint32 diff);
     void UpdateRewardCosmetics(Player* player, uint32 diff);
-    bool UseFind(Player* player, GameObject* go);
     void ForgetFinds(Player* player);
     bool Solve(Player* player, uint8 race, uint32 keystones, std::string& error);
 

@@ -69,7 +69,7 @@ namespace Archaeology
         c.telescopeEntry[BAND_YELLOW] = sConfigMgr->GetOption<uint32>("Archaeology.Telescope.Yellow", 9503501);
         c.telescopeEntry[BAND_GREEN] = sConfigMgr->GetOption<uint32>("Archaeology.Telescope.Green", 9503500);
         c.telescopeSeconds = sConfigMgr->GetOption<uint32>("Archaeology.Telescope.Seconds", 6);
-        c.findSeconds = sConfigMgr->GetOption<uint32>("Archaeology.Find.Seconds", 180);
+        c.findSeconds = sConfigMgr->GetOption<uint32>("Archaeology.Find.Seconds", 15);
         c.relicEnabled = sConfigMgr->GetOption<bool>("Archaeology.Relic.Enable", true);
         c.relicSkill = sConfigMgr->GetOption<uint32>("Archaeology.Relic.Skill", 50);
         c.powerPerFind = sConfigMgr->GetOption<uint32>("Archaeology.Relic.PowerPerFind", 10);
