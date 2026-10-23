@@ -26,6 +26,15 @@ Archaeology.MinLevel = 1
 Archaeology.SitesPerContinent = 4
 
 #
+#    Archaeology.StarterSites.MaxSkill
+#        Description: Skill up to which the beginner sites (the training digs of the six starter
+#                     zones) can come up. Past it they are retired, one still held included, and
+#                     replaced at the next roll. 0 = always.
+#        Default:     50
+
+Archaeology.StarterSites.MaxSkill = 50
+
+#
 #    Archaeology.FindsPerSite
 #        Description: Finds before a dig site is depleted and a new one is revealed (Cataclysm: 3).
 #        Default:     3
@@ -86,7 +95,9 @@ Archaeology.Survey.CooldownMs = 3000
 #    Archaeology.Dig.ShovelYards
 #        Description: How close to the find counts as standing on it (the overhead shovel too).
 #    Archaeology.Dig.Ms
-#        Description: How long digging takes. Moving, a fight or mounting stops it.
+#        Description: How long digging takes. Moving, a fight or mounting stops it. Digging
+#                     while mounted gets you off the mount first; there is no digging or
+#                     surveying in the air (a flight path, a flying mount or form).
 #        Default:     1, 3, 1500
 
 Archaeology.Dig.Shovel = 1
@@ -141,14 +152,15 @@ Archaeology.IndividualProgression.MaxState = 18
 #                     client patch (GameObjectDisplayInfo 10101-10103); without it set all three to
 #                     9503503, the excavation banner.
 #    Archaeology.Find.Seconds
-#        Description: How long an uncovered find waits to be dug up.
-#        Default:     9503500, 9503501, 9503502, 6, 180
+#        Description: How long the unearthed artifact stands on the ground to look at. Its
+#                     fragments are yours the moment it comes up; there is nothing to click.
+#        Default:     9503500, 9503501, 9503502, 6, 15
 
 Archaeology.Telescope.Green = 9503500
 Archaeology.Telescope.Yellow = 9503501
 Archaeology.Telescope.Red = 9503502
 Archaeology.Telescope.Seconds = 6
-Archaeology.Find.Seconds = 180
+Archaeology.Find.Seconds = 15
 
 #
 #    Archaeology.Relic.Enable

@@ -231,7 +231,7 @@ A.On("SURVEY", function(band, angle)
         clearSurvey()
         border:SetVertexColor(0.2, 1, 0.2, 0.7)
         border:Show()
-        UIErrorsFrame:AddMessage("You found an artifact! Click it to collect it.", 0.2, 1, 0.2)
+        UIErrorsFrame:AddMessage("You found an artifact!", 0.2, 1, 0.2)
     else
         clearSurvey()
     end

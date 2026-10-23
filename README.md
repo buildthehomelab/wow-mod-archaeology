@@ -32,7 +32,7 @@ Everything also works without the addon, through `.arch` chat commands.
 1. Talk to the trainer (Harrison Jones) to learn Apprentice Archaeology. Higher ranks need skill and level: Journeyman 50/20, Expert 125/20, Artisan 200/35, Master 275/50, Grand Master 350/65.
 2. You hold 4 dig sites per continent. `.arch` lists them.
 3. Inside a dig site, `.arch survey`. A marker points toward the find, and chat says how far (red, yellow, green) and which way.
-4. Close to the find, a survey says how many yards away it is. Standing on it (within 3 yards) shows a shovel above your head, and the survey button turns into a glowing shovel: click it (or `.arch dig`) to dig. After a moment of digging (moving, a fight or mounting stops it) the find comes up; click it for fragments, sometimes a keystone, and skill. The overhead shovel needs the matching client patch; the Dig button and `.arch dig` work without it. With `Archaeology.Dig.Shovel = 0` a survey within 8 yards uncovers the find instead, as before.
+4. Close to the find, a survey says how many yards away it is. Standing on it (within 3 yards) shows a shovel above your head, and the survey button turns into a glowing shovel: click it (or `.arch dig`) to dig. Digging while mounted gets you off the mount first; there is no digging or surveying in the air (a flight path, a flying mount or form). After a moment of digging (moving, a fight or mounting stops it) the find comes up and is yours at once: fragments, sometimes a keystone, and skill. The artifact stands on the ground a moment to look at (`Archaeology.Find.Seconds`), nothing to click. The overhead shovel needs the matching client patch; the Dig button and `.arch dig` work without it. With `Archaeology.Dig.Shovel = 0` a survey within 8 yards uncovers the find instead, as before.
 5. After 3 finds the site is depleted and a new one is revealed.
 6. `.arch solve <race> [keystones]` solves the current project for that race when you have enough fragments. Each keystone counts as 12 fragments.
 
@@ -170,7 +170,7 @@ One weapon per character, pieced together from its finds. It never leaves the ch
 - **The last rank of an era** (16, 21, 28) needs every rare of that era's races solved: Dwarf, Night Elf, Troll and Fossil; Draenei and Orc; Nerubian and Vrykul. It also needs that era's capstone quest (`Archaeology.Relic.CapstoneQuest.*`, see below).
 - **Awakening** (29) needs every project of every race solved, and the top skill (`AwakenNeedsMaxSkill`).
 
-Ranks are never lost. When rank, level or progression changes what the relic should be, the module swaps the item for that step in the same place (equipped or in a bag), out of combat. Its enchant, temporary enchant (poisons, oils) and the gems of sockets the new item also has carry over, as does a transmogrified look (stored per slot). A relic in the bank is swapped when it is equipped. Sockets start at rank 17: one on one-handers, shields and ranged weapons, two on two-handers, and a third from rank 26.
+Ranks are never lost. When rank, level or progression changes what the relic should be, the module swaps the item for that step in the same place (equipped, in a bag or in the bank), out of combat. Its enchant, temporary enchant (poisons, oils) and the gems of sockets the new item also has carry over, as does a transmogrified look (stored per slot). Sockets start at rank 17: one on one-handers, shields and ranged weapons, two on two-handers, and a third from rank 26.
 
 **Capstone quests.** The last rank of each era waits for a quest from the trainer that takes the relic into the era's last raid:
 
@@ -207,7 +207,7 @@ Procs come from melee and ranged hits and from spells (helpful ones too, for the
 
 - **World map and zone map:** each of your dig sites is shaded over its area, with a shovel in the middle. The tooltip gives the race and the finds left. The site your Dig Orders name has a bigger gold shovel and its progress in the tooltip (the minimap pin too).
 - **Minimap:** a shovel pin for each dig site on your continent. Sites out of range wait on the minimap's edge, faded, in their direction. Works with Rotate Minimap and with square minimaps (`GetMinimapShape`). To turn the pins off: right-click one, `/arch minimap`, the key binding, or the checkbox under Interface, AddOns, ArchaeologyUI. The choice is saved for all your characters; the world map keeps its dig sites either way.
-- **Survey button:** shows while you stand in one of your dig sites. Click it (or bind a key under Key Bindings, ArchaeologyUI) to survey. The border turns red, yellow or green, and an arrow above the button points toward the find as you turn. Standing on the find, it turns from the spyglass into a pulsing green shovel marked **Dig!**: the same click or key digs, the dig time runs on the button, and the find comes up to click. Shift-drag moves the button; right-click opens the research window.
+- **Survey button:** shows while you stand in one of your dig sites. Click it (or bind a key under Key Bindings, ArchaeologyUI) to survey. The border turns red, yellow or green, and an arrow above the button points toward the find as you turn. Standing on the find, it turns from the spyglass into a pulsing green shovel marked **Dig!**: the same click or key digs, the dig time runs on the button, and the find comes up, collected. Shift-drag moves the button; right-click opens the research window.
 - **Research window** (`/arch`): a tab per race you can research, with the current project's name, lore and artifact, your fragments against its cost, a socket per keystone the project takes (click to put one in or take it out), and Solve.
 - **In DragonUI's professions window:** with DragonUI 2.12 or later (its professions window on), the research window is a page of that window instead, with an Archaeology side tab after your profession tabs once you know Archaeology: races in the list column, the project on the recipe card, your skill on the rank bar. `/arch` and everything else that opens the research window opens that page. Retail Professions also lists Archaeology in its professions book and Training column.
 - **In Retail Professions' window:** without DragonUI's window, Retail Professions 1.17 or later takes the research view the same way: its Archaeology side tab opens it as a page of its profession window, the other tabs staying, with the relic and races in the list column, the project on the card and your skill on the skill bar. `/arch` and everything else that opens the research window opens that page too (with the window closed, it opens on it). With `/prof classic`, or without Retail Professions, the research window is used.
@@ -315,7 +315,9 @@ refreshes lightweight trait state every five seconds and discovery history after
 
 New assignments respect faction restrictions and prefer nearby regions. Characters
 below level 10 in one of the six supported starter zones receive their local starter
-pool on that continent. There are 24 native beginner sites (four each in Northshire,
+pool on that continent. Beginner sites come up only while the skill is at most
+`Archaeology.StarterSites.MaxSkill` (default 50): past it, one still held is retired and
+replaced at the next roll. There are 24 native beginner sites (four each in Northshire,
 Coldridge, Deathknell, Shadowglen, Red Cloud Mesa and Valley of Trials). Their exact
 find XYZ comes from low-level creature spawns in the world database; polygons are
 custom bounds. Not yet surveyed in a game client.

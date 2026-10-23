@@ -22,7 +22,7 @@ struct Point {float x=0,y=0;};
 struct Site {uint32 id=0,map=0;uint8 race=1;uint32 minSkill=0,minLevel=1;uint8 team=0;uint32 starterZone=0;Point center;};
 struct ActiveSite {uint32 site=0,finds=0;int32 spot=-1;};
 struct CharState {uint32 skill=1,abandonUntil=0,excludedSite=0;std::array<std::vector<ActiveSite>,4> sites;std::unordered_map<uint32,uint32> solved;};
-struct Config {uint32 sitesPerContinent=4,challengeLevels=3,abandonSeconds=1800;} config;
+struct Config {uint32 sitesPerContinent=4,challengeLevels=3,starterSitesMaxSkill=50,abandonSeconds=1800;} config;
 struct Guid {uint32 GetCounter() const {return 1;}};
 struct Player {uint32 level=1,map=0,zone=12,team=0;uint32 GetLevel(){return level;}uint32 GetMapId(){return map;}uint32 GetZoneId(){return zone;}uint32 GetTeamId(){return team;}float GetPositionX(){return 0;}float GetPositionY(){return 0;}Guid GetGUID(){return {};}};
 CharState state; unsigned forgotten=0,saves=0,notifications=0,dbWrites=0;bool expansionOpen=false;
@@ -77,13 +77,19 @@ int main() {
  assert(std::get<2>(commits.back()).size()==4);for(auto a:std::get<2>(commits.back()))assert(a.site!=abandoned);
  // Expired cooldowns allow the next real replacement, not a fabricated site id.
  reset();p.level=20;for(unsigned i=1;i<=8;++i)add(i,10,0,0);RollSites(&p);auto old=state.sites[0][0].site;state.abandonUntil=100;assert(AbandonSite(&p,old,error));for(auto a:state.sites[0])assert(a.site!=old);
+ // Beginner (starter-zone) sites only up to the skill cap: not rolled past it, one held is retired, 0 = always.
+ reset();state.skill=60;for(unsigned i=1;i<=4;++i)add(i);add(21,1,0,0);RollSites(&p);assert(state.sites[0].size()==1 && state.sites[0][0].site==21);
+ state.sites[0]={{1,1,-1},{21,0,-1}};RollSites(&p);assert(forgotten==1 && state.sites[0].size()==1 && state.sites[0][0].site==21);
+ assert(!AbandonSite(&p,21,error));
+ state.skill=50;RollSites(&p);assert(state.sites[0].size()==4);
+ config.starterSitesMaxSkill=0;state.skill=300;RollSites(&p);assert(forgotten==1 && state.sites[0].size()==4);config.starterSitesMaxSkill=50;
 }
 '''
 
 class ExpeditionTest(unittest.TestCase):
     def test_real_assignment_and_abandonment(self):
         source=(ROOT/'src/ArchaeologyData.cpp').read_text()
-        bodies=source[source.index('    void RollSites(Player* player,'):source.index('    void PickProject(Player* player')]
+        bodies=source[source.index('    static bool SiteOpen(Player* player,'):source.index('    void PickProject(Player* player')]
         with tempfile.TemporaryDirectory() as d:
             cpp=pathlib.Path(d)/'expeditions.cpp';binary=pathlib.Path(d)/'expeditions'
             cpp.write_text(PREAMBLE+bodies+TESTS)
