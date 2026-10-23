@@ -205,7 +205,7 @@ namespace
     }
 
     // Every relic item the character holds: equipped, in bags or in the bank.
-    struct Held { Item* item; bool off; bool bank; };
+    struct Held { Item* item; bool off; };
 
     // The rank (1-based) that finishes each era, and the awakened one; 0 = none in the ladder.
     uint32 GateRank(uint8 gate, uint8 era)
@@ -227,26 +227,26 @@ namespace
     std::vector<Held> FindRelics(Player* player)
     {
         std::vector<Held> found;
-        auto check = [&](Item* item, bool bank)
+        auto check = [&](Item* item)
         {
             if (!item)
                 return;
             if (mainItems.count(item->GetEntry()))
-                found.push_back({ item, false, bank });
+                found.push_back({ item, false });
             else if (offItems.count(item->GetEntry()))
-                found.push_back({ item, true, bank });
+                found.push_back({ item, true });
         };
         for (uint8 slot = EQUIPMENT_SLOT_START; slot < INVENTORY_SLOT_ITEM_END; ++slot)
-            check(player->GetItemByPos(INVENTORY_SLOT_BAG_0, slot), false);
+            check(player->GetItemByPos(INVENTORY_SLOT_BAG_0, slot));
         for (uint8 slot = BANK_SLOT_ITEM_START; slot < BANK_SLOT_ITEM_END; ++slot)
-            check(player->GetItemByPos(INVENTORY_SLOT_BAG_0, slot), true);
+            check(player->GetItemByPos(INVENTORY_SLOT_BAG_0, slot));
         for (uint8 bagSlot = INVENTORY_SLOT_BAG_START; bagSlot < BANK_SLOT_BAG_END; ++bagSlot)
         {
             if (bagSlot == INVENTORY_SLOT_BAG_END)
                 bagSlot = BANK_SLOT_BAG_START;
             if (Bag* bag = player->GetBagByPos(bagSlot))
                 for (uint32 i = 0; i < bag->GetBagSize(); ++i)
-                    check(bag->GetItemByPos(uint8(i)), bagSlot >= BANK_SLOT_BAG_START);
+                    check(bag->GetItemByPos(uint8(i)));
         }
         return found;
     }
@@ -270,8 +270,9 @@ namespace
         return keep;
     }
 
-    // Replace a relic item with another step's or form's, in the same place (or in the bags when it
-    // can't go back in that slot), keeping the gems of sockets the new item also has. The enchant
+    // Replace a relic item with another step's or form's, in the same place (equipped, a bag or the
+    // bank; or in the bags when it can't go back in that slot), keeping the gems of sockets the new
+    // item also has. The enchant
     // and temporary enchant (poisons, oils) stay only on the same kind of weapon: a staff enchant
     // can't move to a one-hander. Returns nullptr, with the old item untouched, when the new one has
     // nowhere to go.
@@ -382,7 +383,7 @@ namespace
             r.offItem = 0;
             changed = true;
         }
-        else if (offItem && offItem->GetEntry() != wantOff && !off->bank)
+        else if (offItem && offItem->GetEntry() != wantOff)
         {
             if (Item* item = Replace(player, offItem, wantOff))
             {
@@ -392,7 +393,7 @@ namespace
             else
                 failed = true;
         }
-        if (mainItem && mainItem->GetEntry() != wantMain && !main->bank)
+        if (mainItem && mainItem->GetEntry() != wantMain)
         {
             if (Item* item = Replace(player, mainItem, wantMain))
             {
@@ -819,7 +820,7 @@ namespace Archaeology
             return true;
         if (r.form != form->id)
         {
-            Notify(player, "Take your relic out of the bank first.");
+            Notify(player, "Your relic couldn't be reshaped; nothing was charged.");
             return true;
         }
         creature->Whisper(first ? "There. It's barely holding together, but it's yours, and it will grow with every find."

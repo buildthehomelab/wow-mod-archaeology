@@ -340,8 +340,8 @@ public:
             QueueTraits(player);   // entering an arena takes buffs off
     }
 
-    // A relic taken out of the bank may be an older step. Any weapon put on may push the relic
-    // off, so the traits look again either way.
+    // A relic whose last swap found no room may be an older step. Any weapon put on may push the
+    // relic off, so the traits look again either way.
     void OnPlayerEquip(Player* player, Item* item, uint8 bag, uint8 slot, bool /*update*/) override
     {
         if (item && IsRelicItem(item->GetEntry()))
