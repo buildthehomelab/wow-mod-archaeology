@@ -84,6 +84,14 @@ local function rowFor(list, i)
     return row
 end
 
+-- The rows are made when the page is built and whenever the races come in, not on the first
+-- open: a frame made while the window is in the middle of showing (inside an OnShow) draws
+-- nothing until the window is hidden and shown again, which left the list empty the first time.
+local function ensureRows()
+    if not holder then return end
+    for i = 1, #(A.raceOrder or {}) do rowFor(holder.list, i):Hide() end
+end
+
 -- The crafting page's rank bar: its fill (Forever's default blue) and "<what> n/max" on it.
 local function rankBar(parent, P)
     local Art = P.Art
@@ -164,6 +172,7 @@ local function buildCollection(H, P, D, parent)
     page:SetPoint("TOPLEFT", card, "TOPLEFT", 18, -18)
     page:SetPoint("BOTTOMRIGHT", card, "BOTTOMRIGHT", -16, 14)
     local raceList = C.list
+    C.EnsureRaceRows(#(A.raceOrder or {}))
     raceList:SetParent(list)
     raceList:ClearAllPoints()
     raceList:SetPoint("TOPLEFT", races, "BOTTOMLEFT", INDENT, -4)
@@ -208,6 +217,7 @@ local function build(H, P, D, parent)
     holder.relic = relic
     holder.races = header(list, P, D, "Races")
     layout(false)
+    ensureRows()
 
     -- The project, on the recipe card's parchment in its inside frame, with the crafting card's
     -- drawing under the reagents.
@@ -348,3 +358,4 @@ local function start()
 end
 
 A.On("LOGIN", start)
+A.On("RACES", ensureRows)
