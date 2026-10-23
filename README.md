@@ -170,7 +170,7 @@ One weapon per character, pieced together from its finds. It never leaves the ch
 - **The last rank of an era** (16, 21, 28) needs every rare of that era's races solved: Dwarf, Night Elf, Troll and Fossil; Draenei and Orc; Nerubian and Vrykul. It also needs that era's capstone quest (`Archaeology.Relic.CapstoneQuest.*`, see below).
 - **Awakening** (29) needs every project of every race solved, and the top skill (`AwakenNeedsMaxSkill`).
 
-Ranks are never lost. When rank, level or progression changes what the relic should be, the module swaps the item for that step in the same place (equipped or in a bag), out of combat. Its enchant, temporary enchant (poisons, oils) and the gems of sockets the new item also has carry over, as does a transmogrified look (stored per slot). A relic in the bank is swapped when it is equipped. Sockets start at rank 17: one on one-handers, shields and ranged weapons, two on two-handers, and a third from rank 26.
+Ranks are never lost. When rank, level or progression changes what the relic should be, the module swaps the item for that step in the same place (equipped, in a bag or in the bank), out of combat. Its enchant, temporary enchant (poisons, oils) and the gems of sockets the new item also has carry over, as does a transmogrified look (stored per slot). Sockets start at rank 17: one on one-handers, shields and ranged weapons, two on two-handers, and a third from rank 26.
 
 **Capstone quests.** The last rank of each era waits for a quest from the trainer that takes the relic into the era's last raid:
 
