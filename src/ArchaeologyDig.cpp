@@ -23,14 +23,11 @@ namespace
 {
     using namespace Archaeology;
 
-    // A find spawned by a survey, waiting for its owner to dig it up.
-    struct PendingFind
+    // Not on the ground: a flight path, a flying mount or form, or falling.
+    bool Airborne(Player* player)
     {
-        ObjectGuid owner;
-        uint32 continent;
-        uint32 site;
-    };
-    std::unordered_map<ObjectGuid, PendingFind> pendingFinds;
+        return player->IsInFlight() || player->IsFlying() || player->IsFalling();
+    }
 
     int32 ContinentIndex(uint32 map)
     {
@@ -111,22 +108,61 @@ namespace
         return std::abs(player->GetPositionZ() - GroundZ(player, spot)) <= 3.0f ? active : nullptr;
     }
 
-    // The find comes up at its spot; the next survey hides another.
-    void RevealFind(Player* player, ActiveSite& active, uint32 continent)
+    // The find comes up at its spot and is yours at once: fragments, sometimes a keystone, skill
+    // and Relic Power. The artifact stands on the ground a moment to look at (Archaeology.Find.Seconds),
+    // nothing to click. The next survey hides another find.
+    void CollectFind(Player* player, CharState& state, ActiveSite& active, uint32 continent)
     {
-        Site const* site = GetSite(active.site);
+        Config const& cfg = GetConfig();
+        uint32 siteId = active.site;
+        Site const* site = GetSite(siteId);
         Spot const& spot = site->spots[active.spot];
         Race const* race = GetRace(site->race);
         float ang = player->GetAngle(spot.x, spot.y);
         if (GameObject* go = player->SummonGameObject(race->findGo, spot.x, spot.y, GroundZ(player, spot), ang, 0.0f, 0.0f,
-            std::sin(ang / 2.0f), std::cos(ang / 2.0f), GetConfig().findSeconds))
+            std::sin(ang / 2.0f), std::cos(ang / 2.0f), cfg.findSeconds))
+            go->SetGameObjectFlag(GO_FLAG_NOT_SELECTABLE);
+        active.spot = -1;
+        player->RemoveAurasDueToSpell(SHOVEL_SPELL);
+        Notify(player, Acore::StringFormat("|cff20ff20You've found a {} artifact!|r", race->name));
+        SendAddon(player, "V:FOUND");
+
+        RaceProgress& progress = state.races[race->id];
+        uint32 gained = urand(cfg.fragmentsMin, cfg.fragmentsMax);
+        uint32 before = progress.fragments;
+        progress.fragments = std::min(progress.fragments + gained, cfg.fragmentCap);
+        if (!progress.project)
+            PickProject(player, race->id);
+        SaveRace(player, race->id);
+        Notify(player, Acore::StringFormat("You receive {} {} fragments ({}/{}).", progress.fragments - before, race->name,
+            progress.fragments, cfg.fragmentCap));
+        SendAddon(player, Acore::StringFormat("F:{}:{}:{}", race->id, progress.fragments - before, progress.fragments));
+
+        if (race->keystoneItem && roll_chance_f(cfg.keystoneChance))
+            player->AddItem(race->keystoneItem, 1);
+
+        if (state.skill < cfg.skillPerFindUntil)
+            AddSkill(player, 1);
+        if (state.relic.rank)   // finds count once the relic is in hand: a new relic starts at rank 1
+            AddRelicPower(player, cfg.powerPerFind);
+
+        // `active` lives in this vector: nothing touches it past here.
+        std::vector<ActiveSite>& held = state.sites[continent];
+        for (auto a = held.begin(); a != held.end(); ++a)
         {
-            pendingFinds[go->GetGUID()] = { player->GetGUID(), continent, active.site };
-            active.spot = -1;
-            player->RemoveAurasDueToSpell(SHOVEL_SPELL);
-            Notify(player, Acore::StringFormat("|cff20ff20You've found a {} artifact!|r", race->name));
-            SendAddon(player, "V:FOUND");
+            if (a->site != siteId)
+                continue;
+            if (++a->finds >= cfg.findsPerSite)
+            {
+                held.erase(a);
+                Notify(player, Acore::StringFormat("{} has been depleted. A new dig site has been revealed.", site->name));
+                RollSites(player);
+            }
+            break;
         }
+        SaveSites(player, continent);
+        SendRaces(player);
+        SendSites(player);
     }
 
     void StopDig(Player* player, CharState& state, char const* why)
@@ -138,7 +174,7 @@ namespace
             Notify(player, why);
     }
 
-    // A dig in progress: moving, a fight, mounting or dying stops it; at the end the find comes up.
+    // A dig in progress: moving, a fight, mounting or dying stops it; at the end the find is yours.
     void UpdateDig(Player* player, CharState& state, uint32 diff)
     {
         if (!player->IsAlive() || player->IsInCombat() || player->IsMounted() || player->IsInFlight() ||
@@ -155,7 +191,7 @@ namespace
         StopDig(player, state, nullptr);
         uint32 continent = 0;
         if (ActiveSite* active = OverFind(player, state, continent))
-            RevealFind(player, *active, continent);
+            CollectFind(player, state, *active, continent);
         else
             Notify(player, "There is nothing buried here.");
     }
@@ -193,8 +229,8 @@ namespace Archaeology
             player->AddAura(SHOVEL_SPELL, player);
     }
 
-    // Dig where you stand: on the find (the shovel above your head) it comes up after
-    // Archaeology.Dig.Ms of digging.
+    // Dig where you stand: on the find (the shovel above your head) it comes up, and is yours, after
+    // Archaeology.Dig.Ms of digging. Mounted on the ground, you get off first; not in the air.
     void Dig(Player* player)
     {
         Config const& cfg = GetConfig();
@@ -206,21 +242,27 @@ namespace Archaeology
         }
         if (state->digMs)
             return;
-        if (player->IsInCombat() || player->IsMounted() || player->IsInFlight() || player->GetTransport())
+        if (player->IsInCombat() || player->GetTransport() || Airborne(player))
         {
             Notify(player, "You can't dig right now.");
             return;
         }
         uint32 continent = 0;
-        if (!OverFind(player, *state, continent))
+        ActiveSite* active = OverFind(player, *state, continent);
+        if (!active)
         {
             Notify(player, "There is nothing buried here. Survey to find the spot, then stand where the shovel shows.");
             return;
         }
+        if (player->IsMounted())
+        {
+            player->RemoveAurasByType(SPELL_AURA_MOUNTED);
+            if (player->IsMounted())
+                player->Dismount();
+        }
         if (!cfg.digMs)
         {
-            if (ActiveSite* active = OverFind(player, *state, continent))
-                RevealFind(player, *active, continent);
+            CollectFind(player, *state, *active, continent);
             return;
         }
         state->digMs = cfg.digMs;
@@ -239,7 +281,7 @@ namespace Archaeology
             Notify(player, "You don't know Archaeology. Find an archaeology trainer to learn it.");
             return;
         }
-        if (player->IsInCombat() || player->IsMounted() || player->IsInFlight() || player->GetTransport())
+        if (player->IsInCombat() || player->IsMounted() || player->GetTransport() || Airborne(player))
         {
             Notify(player, "You can't survey right now.");
             return;
@@ -287,7 +329,7 @@ namespace Archaeology
 
         if (dist <= cfg.digYards && !cfg.shovelDig)
         {
-            RevealFind(player, *active, continent);
+            CollectFind(player, *state, *active, continent);
             return;
         }
         if (cfg.shovelDig && OverFind(player, *state, continent))
@@ -327,72 +369,6 @@ namespace Archaeology
                 StopDig(player, *state, nullptr);
             state->overFind = false;
         }
-        for (auto itr = pendingFinds.begin(); itr != pendingFinds.end();)
-            itr = itr->second.owner == player->GetGUID() ? pendingFinds.erase(itr) : std::next(itr);
-    }
-
-    bool UseFind(Player* player, GameObject* go)
-    {
-        auto itr = pendingFinds.find(go->GetGUID());
-        if (itr == pendingFinds.end())
-            return false;
-        if (itr->second.owner != player->GetGUID())
-        {
-            Notify(player, "Someone else uncovered this find.");
-            return true;
-        }
-
-        Config const& cfg = GetConfig();
-        PendingFind find = itr->second;
-        pendingFinds.erase(itr);
-        Position const where = go->GetPosition();
-        // DespawnOrUnsummon would only reset a summon whose timer is still running; delete it outright.
-        player->RemoveGameObject(go, true);
-
-        CharState* state = GetState(player);
-        Site const* site = GetSite(find.site);
-        Race const* race = site ? GetRace(site->race) : nullptr;
-        if (!state || !race)
-            return true;
-
-        RaceProgress& progress = state->races[race->id];
-        uint32 gained = urand(cfg.fragmentsMin, cfg.fragmentsMax);
-        uint32 before = progress.fragments;
-        progress.fragments = std::min(progress.fragments + gained, cfg.fragmentCap);
-        if (!progress.project)
-            PickProject(player, race->id);
-        SaveRace(player, race->id);
-        Notify(player, Acore::StringFormat("You receive {} {} fragments ({}/{}).", progress.fragments - before, race->name,
-            progress.fragments, cfg.fragmentCap));
-        SendAddon(player, Acore::StringFormat("F:{}:{}:{}", race->id, progress.fragments - before, progress.fragments));
-
-        if (race->keystoneItem && roll_chance_f(cfg.keystoneChance))
-            player->AddItem(race->keystoneItem, 1);
-
-        if (state->skill < cfg.skillPerFindUntil)
-            AddSkill(player, 1);
-        if (state->relic.rank)   // finds count once the relic is in hand: a new relic starts at rank 1
-            AddRelicPower(player, cfg.powerPerFind);
-
-        std::vector<ActiveSite>& held = state->sites[find.continent];
-        for (auto a = held.begin(); a != held.end(); ++a)
-        {
-            if (a->site != find.site)
-                continue;
-            bool depleted = ++a->finds >= cfg.findsPerSite;
-            DigOrdersFind(player, find.site, depleted, where);
-            if (depleted)
-            {
-                held.erase(a);
-                Notify(player, Acore::StringFormat("{} has been depleted. A new dig site has been revealed.", site->name));
-                RollSites(player);
-            }
-            break;
-        }
-        SaveSites(player, find.continent);
-        SendRaces(player);
-        SendSites(player);
-        return true;
     }
 
     bool Solve(Player* player, uint8 raceId, uint32 keystones, std::string& error)
@@ -461,10 +437,10 @@ class go_archaeology_find : public GameObjectScript
 public:
     go_archaeology_find() : GameObjectScript("go_archaeology_find") { }
 
-    bool OnGossipHello(Player* player, GameObject* go) override
+    // Finds are collected as they come up and stand unselectable; one from an older build can only say so.
+    bool OnGossipHello(Player* player, GameObject* /*go*/) override
     {
-        if (!Archaeology::UseFind(player, go))
-            Archaeology::Notify(player, "There is nothing left to dig up here.");
+        Archaeology::Notify(player, "There is nothing left to dig up here.");
         return true;
     }
 };
