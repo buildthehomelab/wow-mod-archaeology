@@ -315,7 +315,9 @@ refreshes lightweight trait state every five seconds and discovery history after
 
 New assignments respect faction restrictions and prefer nearby regions. Characters
 below level 10 in one of the six supported starter zones receive their local starter
-pool on that continent. There are 24 native beginner sites (four each in Northshire,
+pool on that continent. Beginner sites come up only while the skill is at most
+`Archaeology.StarterSites.MaxSkill` (default 50): past it, one still held is retired and
+replaced at the next roll. There are 24 native beginner sites (four each in Northshire,
 Coldridge, Deathknell, Shadowglen, Red Cloud Mesa and Valley of Trials). Their exact
 find XYZ comes from low-level creature spawns in the world database; polygons are
 custom bounds. Not yet surveyed in a game client.

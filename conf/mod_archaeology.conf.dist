@@ -26,6 +26,15 @@ Archaeology.MinLevel = 1
 Archaeology.SitesPerContinent = 4
 
 #
+#    Archaeology.StarterSites.MaxSkill
+#        Description: Skill up to which the beginner sites (the training digs of the six starter
+#                     zones) can come up. Past it they are retired, one still held included, and
+#                     replaced at the next roll. 0 = always.
+#        Default:     50
+
+Archaeology.StarterSites.MaxSkill = 50
+
+#
 #    Archaeology.FindsPerSite
 #        Description: Finds before a dig site is depleted and a new one is revealed (Cataclysm: 3).
 #        Default:     3
