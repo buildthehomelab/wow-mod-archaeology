@@ -41,6 +41,7 @@ namespace Archaeology
         uint32 sitesPerContinent = 4;
         uint32 abandonSeconds = 1800;
         uint32 challengeLevels = 3;
+        uint32 starterSitesMaxSkill = 50;   // beginner (starter-zone) sites come up only while skill <= this; 0 = always
         uint32 findsPerSite = 3;
         uint32 fragmentsMin = 5;
         uint32 fragmentsMax = 9;

@@ -37,6 +37,7 @@ namespace Archaeology
         Config c;
         c.abandonSeconds = std::clamp<uint32>(sConfigMgr->GetOption<uint32>("Archaeology.AbandonCooldownSeconds", 1800), 1, 86400);
         c.challengeLevels = std::min<uint32>(sConfigMgr->GetOption<uint32>("Archaeology.ChallengeLevels", 3), 5);
+        c.starterSitesMaxSkill = sConfigMgr->GetOption<uint32>("Archaeology.StarterSites.MaxSkill", 50);
         c.enabled = sConfigMgr->GetOption<bool>("Archaeology.Enable", true);
         c.sitesPerContinent = std::clamp<uint32>(sConfigMgr->GetOption<uint32>("Archaeology.SitesPerContinent", 4), 1, 8);
         c.findsPerSite = std::max<uint32>(sConfigMgr->GetOption<uint32>("Archaeology.FindsPerSite", 3), 1);
@@ -450,6 +451,17 @@ namespace Archaeology
         return s && s->skill && s->skill >= race.unlockSkill;
     }
 
+    // Whether a site may be one of this character's: skill, level and faction, and the beginner
+    // sites of the starter zones only while the skill is low (Archaeology.StarterSites.MaxSkill).
+    static bool SiteOpen(Player* player, CharState const& s, Site const& site)
+    {
+        if (site.minSkill > s.skill || site.minLevel > player->GetLevel())
+            return false;
+        if (site.team && site.team != uint8(player->GetTeamId()) + 1)
+            return false;
+        return !site.starterZone || !config.starterSitesMaxSkill || s.skill <= config.starterSitesMaxSkill;
+    }
+
     void RollSites(Player* player, uint32 deferredContinent)
     {
         CharState* s = GetState(player);
@@ -464,7 +476,7 @@ namespace Archaeology
             auto end = std::remove_if(held.begin(), held.end(), [player, s, c](ActiveSite const& a)
             {
                 Site const* site = GetSite(a.site);
-                return !site || site->map != CONTINENTS[c] || site->minSkill > s->skill || site->minLevel > player->GetLevel() || (site->team && site->team != uint8(player->GetTeamId()) + 1);
+                return !site || site->map != CONTINENTS[c] || !SiteOpen(player, *s, *site);
             });
             if (end != held.end())
             {
@@ -477,14 +489,14 @@ namespace Archaeology
                 continue;
 
             bool localStarterPool = player->GetLevel() < 10 && std::any_of(sitesByMap[CONTINENTS[c]].begin(), sitesByMap[CONTINENTS[c]].end(),
-                [player](uint32 id) { Site const& site = sites[id]; return site.starterZone == player->GetZoneId() && site.starterZone &&
-                    (!site.team || site.team == uint8(player->GetTeamId()) + 1); });
+                [player, s](uint32 id) { Site const& site = sites[id]; return site.starterZone && site.starterZone == player->GetZoneId() &&
+                    SiteOpen(player, *s, site); });
             std::vector<uint32> pool;
             std::vector<double> weights;
             for (uint32 id : sitesByMap[CONTINENTS[c]])
             {
                 Site const& site = sites[id];
-                if (id == s->excludedSite || site.minSkill > s->skill || site.minLevel > player->GetLevel() || (site.team && site.team != uint8(player->GetTeamId()) + 1))
+                if (id == s->excludedSite || !SiteOpen(player, *s, site))
                     continue;
                 if (localStarterPool && !s->excludedSite && site.starterZone && site.starterZone != player->GetZoneId())
                     continue;
@@ -548,7 +560,7 @@ namespace Archaeology
             { error = "Finish your extra expeditions before abandoning another."; return false; }
             bool alternative = false;
             for (uint32 other : sitesByMap[CONTINENTS[c]])
-                if (other != id && sites[other].minSkill <= s->skill && sites[other].minLevel <= player->GetLevel() && (!sites[other].team || sites[other].team == uint8(player->GetTeamId()) + 1) &&
+                if (other != id && SiteOpen(player, *s, sites[other]) &&
                     std::none_of(held.begin(), held.end(), [other](ActiveSite const& a) { return a.site == other; }))
                     alternative = true;
             if (!CanDigContinent(player, c) || !alternative)
