@@ -884,9 +884,13 @@ end)
 A.On("STATE", refresh)
 A.On("RACES", function()
     -- Fetch every project's name and lore ahead of time; the queue spaces the requests out.
-    for _, race in ipairs(A.UnlockedRaces()) do
+    local races = A.UnlockedRaces()
+    for _, race in ipairs(races) do
         A.RequestProject(race.project)
     end
+    -- The tabs are made now, not on the first open: a frame made while its window is in the
+    -- middle of showing (inside an OnShow) draws nothing until the window is hidden and shown again.
+    for i = 1, #races do tab(i):Hide() end
     refresh()
 end)
 A.On("PROJECT", function(id)

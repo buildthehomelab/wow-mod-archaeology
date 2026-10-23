@@ -156,6 +156,15 @@ local function raceRow(i)
     raceRows[i] = row
     return row
 end
+C.raceRows = raceRows
+
+-- The rows are made as soon as the races are known, not on the first open: a frame made while
+-- its window is in the middle of showing (inside an OnShow) draws nothing until the window is
+-- hidden and shown again, which left the list empty the first time.
+function C.EnsureRaceRows(n)
+    for i = 1, n do raceRow(i):Hide() end
+end
+A.On("RACES", function() C.EnsureRaceRows(#(A.raceOrder or {})) end)
 
 -- The page ---------------------------------------------------------------------------------------
 
