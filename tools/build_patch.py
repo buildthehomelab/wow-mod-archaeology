@@ -307,6 +307,22 @@ class Dbc:
                              "copy in Blizzard's order (grouped by skill)" % skill)
                 seen.add(skill)
                 last = skill
+        if self.table == "Achievement":
+            # The achievement window hides a series' unfinished stages in one walk over the file
+            # (Wow.exe 0x5B38E0): a stage stays hidden only if its predecessor (Supercedes, field 3)
+            # is the row it listed last in that category, as each faction sees it. Sorted by id,
+            # about 54 stages of other series show at once.
+            for faction in (0, 1):
+                listed = {}
+                for key in keys:
+                    row = self.rows[key]
+                    if row[1] not in (UNSET, faction) or row[41] & 0x802 or row[38] == 81:
+                        continue            # other faction, hidden, or Feats of Strength (earned only)
+                    if row[3] in self.rows and listed.get(row[38]) != row[3]:
+                        sys.exit("Achievement.dbc: stage %d doesn't follow its predecessor %d; build on a "
+                                 "copy in Blizzard's order (wow-server tools/client-patches/"
+                                 "achievement_order.py)" % (key, row[3]))
+                    listed[row[38]] = key
         with open(path, "wb") as f:
             f.write(struct.pack("<4s4I", b"WDBC", len(self.rows), self.fields, self.fields * 4, len(self.strings)))
             for key in keys:
