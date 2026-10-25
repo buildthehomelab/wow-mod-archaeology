@@ -165,6 +165,13 @@ namespace
         SendSites(player);
     }
 
+    // Surveying and digging give you away: stealth (Prowl, Shadowmeld too) and invisibility drop.
+    void BreakStealth(Player* player)
+    {
+        player->RemoveAurasByType(SPELL_AURA_MOD_STEALTH);
+        player->RemoveAurasByType(SPELL_AURA_MOD_INVISIBILITY);
+    }
+
     void StopDig(Player* player, CharState& state, char const* why)
     {
         state.digMs = 0;
@@ -260,6 +267,7 @@ namespace Archaeology
             if (player->IsMounted())
                 player->Dismount();
         }
+        BreakStealth(player);
         if (!cfg.digMs)
         {
             CollectFind(player, *state, *active, continent);
@@ -301,6 +309,7 @@ namespace Archaeology
             return;
         }
         Site const* site = GetSite(active->site);
+        BreakStealth(player);
 
         float px = player->GetPositionX(), py = player->GetPositionY();
         if (active->spot < 0 || active->spot >= int32(site->spots.size()))
