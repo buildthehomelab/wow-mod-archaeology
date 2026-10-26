@@ -19,10 +19,11 @@ PREAMBLE = r'''
 #include <vector>
 using uint8=unsigned char; using uint32=unsigned; using int32=int;
 struct Point {float x=0,y=0;};
-struct Site {uint32 id=0,map=0;uint8 race=1;uint32 minSkill=0,minLevel=1;uint8 team=0;uint32 starterZone=0;Point center;};
+struct Site {uint32 id=0,map=0;uint8 race=1;uint32 minSkill=0,minLevel=1;uint8 team=0;uint32 starterZone=0,zone=0;Point center;};
 struct ActiveSite {uint32 site=0,finds=0;int32 spot=-1;};
 struct CharState {uint32 skill=1,abandonUntil=0,excludedSite=0;std::array<std::vector<ActiveSite>,4> sites;std::unordered_map<uint32,uint32> solved;};
-struct Config {uint32 sitesPerContinent=4,challengeLevels=3,starterSitesMaxSkill=50,abandonSeconds=1800;} config;
+struct Config {uint32 sitesPerContinent=4,challengeLevels=3,starterSitesMaxSkill=50,abandonSeconds=1800,findsPerSite=3;} config;
+bool DugOut(ActiveSite const& a) {return a.finds>=config.findsPerSite;}
 struct Guid {uint32 GetCounter() const {return 1;}};
 struct Player {uint32 level=1,map=0,zone=12,team=0;uint32 GetLevel(){return level;}uint32 GetMapId(){return map;}uint32 GetZoneId(){return zone;}uint32 GetTeamId(){return team;}float GetPositionX(){return 0;}float GetPositionY(){return 0;}Guid GetGUID(){return {};}};
 CharState state; unsigned forgotten=0,saves=0,notifications=0,dbWrites=0;bool expansionOpen=false;
@@ -50,6 +51,7 @@ std::mt19937 generator(42);
 template<class V> auto SelectRandomWeightedContainerElement(V& pool,std::vector<double> const& weights) {std::discrete_distribution<std::size_t> pick(weights.begin(),weights.end());return pool.begin()+pick(generator);}
 }}
 void add(uint32 id,uint32 level=1,uint8 team=1,uint32 zone=12,uint32 map=0) {Site s;s.id=id;s.minLevel=level;s.team=team;s.starterZone=zone;s.map=map;sites[id]=s;sitesByMap[map].push_back(id);}
+void zoned(uint32 id,uint32 zone) {Site s;s.id=id;s.zone=zone;sites[id]=s;sitesByMap[0].push_back(id);}
 void reset() {commits.clear();state=CharState();sites.clear();sitesByMap.clear();forgotten=saves=notifications=dbWrites=0;GameTime::seconds=100;}
 '''
 TESTS = r'''
@@ -83,6 +85,23 @@ int main() {
  assert(!AbandonSite(&p,21,error));
  state.skill=50;RollSites(&p);assert(state.sites[0].size()==4);
  config.starterSitesMaxSkill=0;state.skill=300;RollSites(&p);assert(forgotten==1 && state.sites[0].size()==4);config.starterSitesMaxSkill=50;
+ // Zone rotation: a dug-out site keeps its slot while another site you hold in its zone has finds left.
+ auto holds=[](uint32 id){for(auto a:state.sites[0])if(a.site==id)return true;return false;};
+ reset();p.level=20;p.zone=331;for(unsigned i=1;i<=2;++i)zoned(i,331);for(unsigned i=3;i<=8;++i)zoned(i,400+i);
+ state.sites[0]={{1,3,-1},{2,1,-1},{3,0,-1},{4,0,-1}};RollSites(&p);
+ assert(state.sites[0].size()==4 && state.sites[0][0].site==1 && DugOut(state.sites[0][0]));
+ // Its zone's last site dug out, both make way together and the refill passes over them.
+ state.sites[0][1].finds=3;RollSites(&p);assert(state.sites[0].size()==4 && !holds(1) && !holds(2));for(auto a:state.sites[0])assert(!DugOut(a));
+ // A dug-out site can't be abandoned; abandoning its open sibling releases it too.
+ reset();p.level=20;for(unsigned i=1;i<=2;++i)zoned(i,331);for(unsigned i=3;i<=8;++i)zoned(i,400+i);
+ state.sites[0]={{1,3,-1},{2,0,-1},{3,0,-1},{4,0,-1}};RollSites(&p);
+ assert(!AbandonSite(&p,1,error) && state.abandonUntil==0);assert(AbandonSite(&p,2,error));assert(state.sites[0].size()==4 && !holds(1) && !holds(2));
+ // A site alone in its zone (or of unknown zone) makes way at once; another open site takes the slot.
+ reset();p.level=20;zoned(1,0);zoned(2,331);zoned(3,332);config.sitesPerContinent=2;state.sites[0]={{1,3,-1},{2,0,-1}};RollSites(&p);
+ assert(state.sites[0].size()==2 && !holds(1) && holds(3));config.sitesPerContinent=4;
+ // It comes back at once only to fill a slot nothing else is open for.
+ state.sites[0]={{1,3,-1},{2,0,-1},{3,0,-1}};RollSites(&p);
+ assert(state.sites[0].size()==3 && holds(1));for(auto a:state.sites[0])assert(!DugOut(a));
 }
 '''
 

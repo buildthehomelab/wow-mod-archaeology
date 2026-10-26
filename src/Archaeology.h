@@ -119,6 +119,7 @@ namespace Archaeology
         uint32 minLevel = 0;
         uint8 team = 0;
         uint32 starterZone = 0;
+        uint32 zone = 0;             // mod_archaeology_site_zone (tools/build_site_zones.py), 0 = unknown
         std::vector<Point> polygon;
         std::vector<Spot> spots;
         Point center { 0.0f, 0.0f };
@@ -142,7 +143,7 @@ namespace Archaeology
     struct ActiveSite
     {
         uint32 site = 0;
-        uint32 finds = 0;            // finds dug here so far
+        uint32 finds = 0;            // finds dug here so far; Archaeology.FindsPerSite = dug out
         int32 spot = -1;             // index into Site::spots of the hidden find, -1 = none yet
     };
 
@@ -215,6 +216,8 @@ namespace Archaeology
 
     Config const& GetConfig();
     void LoadConfig();
+    // A dug-out site keeps its slot, hidden, until the other sites you hold in its zone are dug too.
+    inline bool DugOut(ActiveSite const& a) { return a.finds >= GetConfig().findsPerSite; }
     void LoadWorldData();
 
     Race const* GetRace(uint8 id);

@@ -39,3 +39,4 @@ DELETE FROM `mod_forever_journal_toy` WHERE `ItemID` IN (9504063,9504064,9504071
 DELETE FROM `mod_forever_journal_collection_note` WHERE `Sort`=90 AND `Note` LIKE 'Archaeology: solve %';
 
 DROP TABLE IF EXISTS `mod_archaeology_site_access`;
+DROP TABLE IF EXISTS `mod_archaeology_site_zone`;

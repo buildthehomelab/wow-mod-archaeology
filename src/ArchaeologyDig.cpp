@@ -6,6 +6,7 @@
  */
 
 #include "Archaeology.h"
+#include "DBCStores.h"
 #include "GameObject.h"
 #include "GameObjectAI.h"
 #include "GameTime.h"
@@ -17,6 +18,8 @@
 #include "SpellScript.h"
 #include "SpellMgr.h"
 #include "SpellScriptLoader.h"
+#include "WorldSession.h"
+#include <algorithm>
 #include <cmath>
 
 namespace
@@ -71,7 +74,7 @@ namespace
             return nullptr;
         for (ActiveSite& a : state.sites[c])
         {
-            Site const* site = GetSite(a.site);
+            Site const* site = DugOut(a) ? nullptr : GetSite(a.site);
             if (site && InPolygon(site->polygon, player->GetPositionX(), player->GetPositionY()))
             {
                 continentOut = uint32(c);
@@ -118,8 +121,9 @@ namespace
         Site const* site = GetSite(siteId);
         Spot const& spot = site->spots[active.spot];
         Race const* race = GetRace(site->race);
+        Position const where(spot.x, spot.y, GroundZ(player, spot));
         float ang = player->GetAngle(spot.x, spot.y);
-        if (GameObject* go = player->SummonGameObject(race->findGo, spot.x, spot.y, GroundZ(player, spot), ang, 0.0f, 0.0f,
+        if (GameObject* go = player->SummonGameObject(race->findGo, where.GetPositionX(), where.GetPositionY(), where.GetPositionZ(), ang, 0.0f, 0.0f,
             std::sin(ang / 2.0f), std::cos(ang / 2.0f), cfg.findSeconds))
             go->SetGameObjectFlag(GO_FLAG_NOT_SELECTABLE);
         active.spot = -1;
@@ -141,6 +145,10 @@ namespace
         if (race->keystoneItem && roll_chance_f(cfg.keystoneChance))
             player->AddItem(race->keystoneItem, 1);
 
+        // Before the skill-up: its RollSites may retire the site and move the orders off it.
+        bool depleted = active.finds + 1 >= cfg.findsPerSite;
+        DigOrdersFind(player, siteId, depleted, where);
+
         if (state.skill < cfg.skillPerFindUntil)
             AddSkill(player, 1);
         if (state.relic.rank)   // finds count once the relic is in hand: a new relic starts at rank 1
@@ -154,9 +162,15 @@ namespace
                 continue;
             if (++a->finds >= cfg.findsPerSite)
             {
-                held.erase(a);
-                Notify(player, Acore::StringFormat("{} has been depleted. A new dig site has been revealed.", site->name));
-                RollSites(player);
+                RollSites(player);   // `a` is gone past here: the site stays (dug out) or makes way
+                if (std::none_of(held.begin(), held.end(), [siteId](ActiveSite const& b) { return b.site == siteId && DugOut(b); }))
+                    Notify(player, Acore::StringFormat("{} has been depleted. A new dig site has been revealed.", site->name));
+                else
+                {
+                    AreaTableEntry const* zone = sAreaTableStore.LookupEntry(site->zone);
+                    Notify(player, Acore::StringFormat("{} has been depleted. Dig out your other sites in {} to reveal new ones.", site->name,
+                        zone ? zone->area_name[player->GetSession()->GetSessionDbcLocale()] : "this zone"));
+                }
             }
             break;
         }
