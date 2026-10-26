@@ -62,7 +62,7 @@ namespace
     {
         for (std::vector<ActiveSite> const& held : state.sites)
             for (ActiveSite const& a : held)
-                if (a.site == site)
+                if (a.site == site && !DugOut(a))
                     return true;
         return false;
     }
@@ -79,7 +79,7 @@ namespace
                 continue;
             for (ActiveSite const& a : state.sites[c])
             {
-                Site const* site = GetSite(a.site);
+                Site const* site = DugOut(a) ? nullptr : GetSite(a.site);
                 if (!site)
                     continue;
                 int32 score = (a.finds == 0 ? 2 : 0) + (site->map == player->GetMapId() ? 1 : 0);

@@ -11,6 +11,7 @@
 #include "DBCStores.h"
 #include "Log.h"
 #include "GameTime.h"
+#include "MapMgr.h"
 #include "Player.h"
 #include "Random.h"
 #include "SpellInfo.h"
@@ -172,6 +173,16 @@ namespace Archaeology
                 s.center.x += p.x / s.polygon.size();
                 s.center.y += p.y / s.polygon.size();
             }
+            // The zone, by vote of a few spots spread over the site (one may lie over a border).
+            std::unordered_map<uint32, uint32> votes;
+            std::size_t step = std::max<std::size_t>(s.spots.size() / 5, 1);
+            for (std::size_t i = 0; i < s.spots.size(); i += step)
+                if (uint32 zone = sMapMgr->GetZoneId(PHASEMASK_NORMAL, s.map, s.spots[i].x, s.spots[i].y, s.spots[i].z))
+                {
+                    uint32 n = ++votes[zone];
+                    if (n > votes[s.zone])
+                        s.zone = zone;
+                }
             sitesByMap[s.map].push_back(s.id);
             ++itr;
         }
@@ -485,14 +496,30 @@ namespace Archaeology
                 if (c != deferredContinent)
                     SaveSites(player, c);
             }
+
+            // A dug-out site keeps its slot while you still have finds to dig in another site of its
+            // zone, so a zone's sites all get dug before new ones come (no farming one site on repeat).
+            // Once the zone is done its dug-out sites make way, and the refill passes them over.
+            std::vector<uint32> released;
+            for (ActiveSite const& a : held)
+                if (DugOut(a) && (!sites[a.site].zone || std::none_of(held.begin(), held.end(), [&a](ActiveSite const& b)
+                    { return !DugOut(b) && sites[b.site].zone == sites[a.site].zone; })))
+                    released.push_back(a.site);
+            bool changed = !released.empty();
+            held.erase(std::remove_if(held.begin(), held.end(), [&released](ActiveSite const& a)
+                { return std::find(released.begin(), released.end(), a.site) != released.end(); }), held.end());
             if (held.size() >= config.sitesPerContinent)
+            {
+                if (changed && c != deferredContinent)
+                    SaveSites(player, c);
                 continue;
+            }
 
             bool localStarterPool = player->GetLevel() < 10 && std::any_of(sitesByMap[CONTINENTS[c]].begin(), sitesByMap[CONTINENTS[c]].end(),
                 [player, s](uint32 id) { Site const& site = sites[id]; return site.starterZone && site.starterZone == player->GetZoneId() &&
                     SiteOpen(player, *s, site); });
-            std::vector<uint32> pool;
-            std::vector<double> weights;
+            std::vector<uint32> pool, again;   // again: the sites just released, if nothing else is left
+            std::vector<double> weights, againWeights;
             for (uint32 id : sitesByMap[CONTINENTS[c]])
             {
                 Site const& site = sites[id];
@@ -507,7 +534,8 @@ namespace Archaeology
                 for (uint32 pid : projectsByRace[site.race])
                     if (projects[pid].rare && !s->solved.count(pid))
                         raresLeft = true;
-                pool.push_back(id);
+                bool justDug = std::find(released.begin(), released.end(), id) != released.end();
+                (justDug ? again : pool).push_back(id);
                 double weight = raresLeft ? 4.0 : 1.0;
                 if (player->GetMapId() == site.map)
                 {
@@ -517,27 +545,31 @@ namespace Archaeology
                 }
                 if (site.starterZone && site.starterZone == player->GetZoneId())
                     weight *= 20.0;
-                weights.push_back(weight);
+                (justDug ? againWeights : weights).push_back(weight);
             }
 
-            bool changed = false;
-            while (held.size() < config.sitesPerContinent && !pool.empty())
+            auto fill = [player, &held, &changed](std::vector<uint32>& from, std::vector<double>& fromWeights)
             {
-                std::vector<double> eligible = weights;
-                bool hasComfortable = std::any_of(pool.begin(), pool.end(), [player](uint32 id)
-                { return sites[id].minLevel <= 1 || sites[id].minLevel + config.challengeLevels <= player->GetLevel(); });
-                bool hasChallenge = std::any_of(held.begin(), held.end(), [player](ActiveSite const& a)
-                { return sites[a.site].minLevel > 1 && sites[a.site].minLevel + config.challengeLevels > player->GetLevel(); });
-                if (hasComfortable && (held.size() + 1 < config.sitesPerContinent || hasChallenge))
-                    for (std::size_t i = 0; i < pool.size(); ++i)
-                        if (sites[pool[i]].minLevel > 1 && sites[pool[i]].minLevel + config.challengeLevels > player->GetLevel())
-                            eligible[i] = 0.0;
-                std::size_t pick = Acore::Containers::SelectRandomWeightedContainerElement(pool, eligible) - pool.begin();
-                held.push_back({ pool[pick], 0, -1 });
-                pool.erase(pool.begin() + pick);
-                weights.erase(weights.begin() + pick);
-                changed = true;
-            }
+                while (held.size() < config.sitesPerContinent && !from.empty())
+                {
+                    std::vector<double> eligible = fromWeights;
+                    bool hasComfortable = std::any_of(from.begin(), from.end(), [player](uint32 id)
+                    { return sites[id].minLevel <= 1 || sites[id].minLevel + config.challengeLevels <= player->GetLevel(); });
+                    bool hasChallenge = std::any_of(held.begin(), held.end(), [player](ActiveSite const& a)
+                    { return !DugOut(a) && sites[a.site].minLevel > 1 && sites[a.site].minLevel + config.challengeLevels > player->GetLevel(); });
+                    if (hasComfortable && (held.size() + 1 < config.sitesPerContinent || hasChallenge))
+                        for (std::size_t i = 0; i < from.size(); ++i)
+                            if (sites[from[i]].minLevel > 1 && sites[from[i]].minLevel + config.challengeLevels > player->GetLevel())
+                                eligible[i] = 0.0;
+                    std::size_t pick = Acore::Containers::SelectRandomWeightedContainerElement(from, eligible) - from.begin();
+                    held.push_back({ from[pick], 0, -1 });
+                    from.erase(from.begin() + pick);
+                    fromWeights.erase(fromWeights.begin() + pick);
+                    changed = true;
+                }
+            };
+            fill(pool, weights);
+            fill(again, againWeights);
             if (changed && c != deferredContinent)
                 SaveSites(player, c);
         }
@@ -556,6 +588,8 @@ namespace Archaeology
             auto& held = s->sites[c];
             auto it = std::find_if(held.begin(), held.end(), [id](ActiveSite const& a) { return a.site == id; });
             if (it == held.end()) continue;
+            if (DugOut(*it))
+            { error = "That dig site is dug out: it makes way once you finish your other sites in its zone."; return false; }
             if (held.size() > config.sitesPerContinent)
             { error = "Finish your extra expeditions before abandoning another."; return false; }
             bool alternative = false;

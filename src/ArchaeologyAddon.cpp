@@ -135,7 +135,8 @@ namespace
         for (uint32 c = 0; c < CONTINENTS.size(); ++c)
             for (ActiveSite const& a : s->sites[c])
                 if (Site const* site = GetSite(a.site))
-                    text += Acore::StringFormat("\n  {} [site {}, recommended level {}] ({}, {} of {} finds left)", site->name, site->id, site->minLevel, GetRace(site->race)->name,
+                    text += DugOut(a) ? Acore::StringFormat("\n  {} [site {}] (dug out: waits for your other sites in its zone)", site->name, site->id)
+                        : Acore::StringFormat("\n  {} [site {}, recommended level {}] ({}, {} of {} finds left)", site->name, site->id, site->minLevel, GetRace(site->race)->name,
                         GetConfig().findsPerSite - a.finds, GetConfig().findsPerSite);
         if (std::string orders = DigOrdersText(player); !orders.empty())
             text += "\n" + orders;
@@ -196,7 +197,7 @@ namespace Archaeology
         std::vector<Site const*> held;
         for (uint32 c = 0; c < CONTINENTS.size(); ++c)
             for (ActiveSite const& a : s->sites[c])
-                if (Site const* site = GetSite(a.site))
+                if (Site const* site = DugOut(a) ? nullptr : GetSite(a.site))
                 {
                     rows.push_back(Acore::StringFormat("{},{},{},{},{}", site->id, site->map, site->race,
                         GetConfig().findsPerSite - a.finds, Clean(site->name)));

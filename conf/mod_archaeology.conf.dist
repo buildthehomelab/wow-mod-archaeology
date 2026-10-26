@@ -37,6 +37,7 @@ Archaeology.StarterSites.MaxSkill = 50
 #
 #    Archaeology.FindsPerSite
 #        Description: Finds before a dig site is depleted and a new one is revealed (Cataclysm: 3).
+#                     A depleted site waits until your other sites in its zone are depleted too.
 #        Default:     3
 
 Archaeology.FindsPerSite = 3

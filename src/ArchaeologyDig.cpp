@@ -6,6 +6,7 @@
  */
 
 #include "Archaeology.h"
+#include "DBCStores.h"
 #include "GameObject.h"
 #include "GameObjectAI.h"
 #include "GameTime.h"
@@ -17,6 +18,8 @@
 #include "SpellScript.h"
 #include "SpellMgr.h"
 #include "SpellScriptLoader.h"
+#include "WorldSession.h"
+#include <algorithm>
 #include <cmath>
 
 namespace
@@ -71,7 +74,7 @@ namespace
             return nullptr;
         for (ActiveSite& a : state.sites[c])
         {
-            Site const* site = GetSite(a.site);
+            Site const* site = DugOut(a) ? nullptr : GetSite(a.site);
             if (site && InPolygon(site->polygon, player->GetPositionX(), player->GetPositionY()))
             {
                 continentOut = uint32(c);
@@ -154,9 +157,15 @@ namespace
                 continue;
             if (++a->finds >= cfg.findsPerSite)
             {
-                held.erase(a);
-                Notify(player, Acore::StringFormat("{} has been depleted. A new dig site has been revealed.", site->name));
-                RollSites(player);
+                RollSites(player);   // `a` is gone past here: the site stays (dug out) or makes way
+                if (std::none_of(held.begin(), held.end(), [siteId](ActiveSite const& b) { return b.site == siteId; }))
+                    Notify(player, Acore::StringFormat("{} has been depleted. A new dig site has been revealed.", site->name));
+                else
+                {
+                    AreaTableEntry const* zone = sAreaTableStore.LookupEntry(site->zone);
+                    Notify(player, Acore::StringFormat("{} has been depleted. Dig out your other sites in {} to reveal new ones.", site->name,
+                        zone ? zone->area_name[player->GetSession()->GetSessionDbcLocale()] : "this zone"));
+                }
             }
             break;
         }
