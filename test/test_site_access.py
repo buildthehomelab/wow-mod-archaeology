@@ -55,6 +55,18 @@ class AccessDataTest(unittest.TestCase):
         for sid,rule in levels.items():
             self.assertEqual(self.db.execute('SELECT min_level FROM mod_archaeology_site WHERE id=?',(int(sid),)).fetchone()[0],rule['min_level'])
 
+    def test_site_zones(self):
+        spec=importlib.util.spec_from_file_location('zones',ROOT/'tools/build_site_zones.py')
+        mod=importlib.util.module_from_spec(spec);spec.loader.exec_module(mod)
+        zones=json.loads((ROOT/'tools/site-zones.json').read_text())
+        sql=(SQL/'mod_archaeology_world_zz_zones.sql').read_text()
+        self.assertEqual(mod.generate(zones),sql)
+        self.db.executescript(sqlite(sql));self.db.executescript(sqlite(sql))   # re-applies cleanly
+        missing=self.db.execute('SELECT id FROM mod_archaeology_site s WHERE enabled=1 AND NOT EXISTS (SELECT 1 FROM mod_archaeology_site_zone z WHERE z.site=s.id)').fetchall()
+        self.assertEqual(missing,[])
+        self.assertEqual(self.db.execute('SELECT COUNT(*) FROM mod_archaeology_site_access a JOIN mod_archaeology_site_zone z ON z.site=a.site WHERE a.starter_zone<>0 AND z.zone<>a.starter_zone').fetchone()[0],0)
+        self.assertEqual(self.db.execute('SELECT COUNT(DISTINCT site) FROM mod_archaeology_site_zone WHERE site IN (169,171,173,175) AND zone=331').fetchone()[0],4)   # Ashenvale
+
     def test_persistent_cooldown_migration(self):
         schema=sqlite((ROOT/'data/sql/db-characters/mod_archaeology_char_expedition.sql').read_text())
         self.db.executescript(schema)

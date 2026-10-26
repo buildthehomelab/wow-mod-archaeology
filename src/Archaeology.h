@@ -119,7 +119,7 @@ namespace Archaeology
         uint32 minLevel = 0;
         uint8 team = 0;
         uint32 starterZone = 0;
-        uint32 zone = 0;             // the zone most of its spots lie in (from the map), 0 = unknown
+        uint32 zone = 0;             // mod_archaeology_site_zone (tools/build_site_zones.py), 0 = unknown
         std::vector<Point> polygon;
         std::vector<Spot> spots;
         Point center { 0.0f, 0.0f };

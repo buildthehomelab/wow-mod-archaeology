@@ -11,7 +11,6 @@
 #include "DBCStores.h"
 #include "Log.h"
 #include "GameTime.h"
-#include "MapMgr.h"
 #include "Player.h"
 #include "Random.h"
 #include "SpellInfo.h"
@@ -120,7 +119,7 @@ namespace Archaeology
             } while (result->NextRow());
         }
 
-        if (QueryResult result = WorldDatabase.Query("SELECT s.`id`, s.`map`, s.`race`, s.`name`, s.`min_skill`, s.`min_level`, COALESCE(a.`team`, 0), COALESCE(a.`starter_zone`, 0) FROM `mod_archaeology_site` s LEFT JOIN `mod_archaeology_site_access` a ON a.`site` = s.`id` WHERE s.`enabled` = 1"))
+        if (QueryResult result = WorldDatabase.Query("SELECT s.`id`, s.`map`, s.`race`, s.`name`, s.`min_skill`, s.`min_level`, COALESCE(a.`team`, 0), COALESCE(a.`starter_zone`, 0), COALESCE(z.`zone`, a.`starter_zone`, 0) FROM `mod_archaeology_site` s LEFT JOIN `mod_archaeology_site_access` a ON a.`site` = s.`id` LEFT JOIN `mod_archaeology_site_zone` z ON z.`site` = s.`id` WHERE s.`enabled` = 1"))
         {
             do
             {
@@ -134,6 +133,7 @@ namespace Archaeology
                 s.minLevel = f[5].Get<uint32>();
                 s.team = f[6].Get<uint8>();
                 s.starterZone = f[7].Get<uint32>();
+                s.zone = f[8].Get<uint32>();
                 sites[s.id] = s;
             } while (result->NextRow());
         }
@@ -173,16 +173,6 @@ namespace Archaeology
                 s.center.x += p.x / s.polygon.size();
                 s.center.y += p.y / s.polygon.size();
             }
-            // The zone, by vote of a few spots spread over the site (one may lie over a border).
-            std::unordered_map<uint32, uint32> votes;
-            std::size_t step = std::max<std::size_t>(s.spots.size() / 5, 1);
-            for (std::size_t i = 0; i < s.spots.size(); i += step)
-                if (uint32 zone = sMapMgr->GetZoneId(PHASEMASK_NORMAL, s.map, s.spots[i].x, s.spots[i].y, s.spots[i].z))
-                {
-                    uint32 n = ++votes[zone];
-                    if (n > votes[s.zone])
-                        s.zone = zone;
-                }
             sitesByMap[s.map].push_back(s.id);
             ++itr;
         }
