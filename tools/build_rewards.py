@@ -29,10 +29,10 @@ def generate(data):
         lines += [f"UPDATE `item_template` SET `spellid_1`={t['spell']}, `spelltrigger_1`=0, `spellcharges_1`=0, "
                   f"`spellid_2`=0, `spelltrigger_2`=0, `spellcharges_2`=0, `ScriptName`='', "
                   f"`description`={quote(t['text'])} WHERE `entry`={t['item']};"]
-    # The target realm's hearthstone-cooldown module uses category 1176 and five minutes.
-    # Explicit item values are required for both runtime and client category sync.
-    lines += ["UPDATE `item_template` SET `spellcooldown_1`=300000, `spellcategory_1`=1176, "
-              "`spellcategorycooldown_1`=300000 WHERE `entry`=9504126;"]
+    # The Hearthstone's own values (-1, 0, -1): the cooldown comes from spell 8690 (category 1176,
+    # 30 min), so the toy shares the Hearthstone's cooldown and mod-legacy's Hasty Hearth applies.
+    lines += ["UPDATE `item_template` SET `spellcooldown_1`=-1, `spellcategory_1`=0, "
+              "`spellcategorycooldown_1`=-1 WHERE `entry`=9504126;"]
     for g in data['gear']:
         values = dict(Class=g['cls'],subclass=g['sub'],InventoryType=g['slot'],Material=g['material'],
                       sheath=g['sheath'],displayid=g['display'],ItemLevel=g['ilvl'],RequiredLevel=g['level'],
