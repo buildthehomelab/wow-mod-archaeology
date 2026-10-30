@@ -41,10 +41,10 @@ class CatalogTests(unittest.TestCase):
         self.assertTrue((ROOT / 'data/sql/db-world/mod_archaeology_world_data.sql').read_text().endswith(sql))
         self.assertNotIn('DELETE FROM `mod_forever_journal_toy`;', sql)
 
-    def test_hearth_toy_shares_evermore_category_and_cooldown(self):
+    def test_hearth_toy_takes_the_hearthstone_cooldown(self):
         sql = build_rewards.generate(self.data)
-        self.assertIn("`spellcooldown_1`=300000, `spellcategory_1`=1176, "
-                      "`spellcategorycooldown_1`=300000 WHERE `entry`=9504126;", sql)
+        self.assertIn("`spellcooldown_1`=-1, `spellcategory_1`=0, "
+                      "`spellcategorycooldown_1`=-1 WHERE `entry`=9504126;", sql)
 
     def test_cpp_dispatch_matches_catalog(self):
         source = (ROOT / 'src/ArchaeologyRewards.cpp').read_text()
