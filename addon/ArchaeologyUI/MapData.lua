@@ -140,3 +140,13 @@ A.ZONES = {
     TheStormPeaks = { 571, 1841.67, 10197.92, 7112.50, 4741.68 },
     ZulDrak = { 571, -600.00, 7668.74, 4993.75, 3329.18 },
 }
+
+-- A client patch that adds WoW Forever's Riverglades brings Forever's frame for the Eastern Kingdoms map and Forever's
+-- Redridge, drawn 110.417 yards further east. Without that patch the numbers above stand.
+for _, zone in ipairs({ GetMapZones(2) }) do
+    if zone == "Riverglades" then
+        A.CONTINENTS[2] = { 0, 16000.00, 7466.60, 35199.90, 23466.60 }
+        A.ZONES.Redridge = { 0, -1681.25, -8575.08, 2170.83, 1447.92 }
+        break
+    end
+end
