@@ -141,15 +141,10 @@ A.ZONES = {
     ZulDrak = { 571, -600.00, 7668.74, 4993.75, 3329.18 },
 }
 
--- A client patch that adds WoW Forever's Riverglades brings Forever's frame for the Eastern Kingdoms map. It can also bring
--- Forever's Redridge, drawn 110.417 yards further east: Forever's Render's Camp overlay is four files and the client's two,
--- so the third file says which map this client has. Without those the numbers above stand.
-for _, zone in ipairs({ GetMapZones(2) }) do
-    if zone == "Riverglades" then
-        A.CONTINENTS[2] = { 0, 16000.00, 7466.60, 35199.90, 23466.60 }
-        break
-    end
-end
+-- A client patch that adds WoW Forever's Riverglades can bring Forever's Redridge, drawn 110.417 yards further east:
+-- Forever's Render's Camp overlay is four files and the client's two, so the third file says which map this client has.
+-- The Eastern Kingdoms map keeps the client's frame (the patch draws the new coast into the client's own map), so
+-- A.CONTINENTS stands.
 if CreateFrame("Frame"):CreateTexture():SetTexture("Interface\\WorldMap\\Redridge\\RENDERSCAMP3") then
     A.ZONES.Redridge = { 0, -1681.25, -8575.08, 2170.83, 1447.92 }
 end
